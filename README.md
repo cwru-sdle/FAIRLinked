@@ -21,7 +21,7 @@ pip install FAIRLinked
 FAIRLinked
 ```
 
-![FAIRLinked](FAIRLinkedv0.2.png)
+![FAIRLinked](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/FAIRLinkedv0.2.png)
 
 # Acknowledgment:
 
