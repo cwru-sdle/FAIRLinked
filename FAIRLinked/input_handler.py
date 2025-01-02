@@ -277,40 +277,42 @@ def has_all_ontology_files() -> bool:
 
 def has_existing_datacube_file() -> Tuple[bool, str]:
     """
-    Prompts the user to specify if they have an existing RDF data cube dataset
-    and validates the file format (.ttl or .jsonld).
-
+    Prompts the user to specify if they have an existing RDF data cube dataset,
+    which may be either:
+      - A single file (.ttl, .jsonld)
+      - A directory that contains .ttl/.jsonld files
     Returns:
-        Tuple[bool, str]: A tuple containing:
-            - bool: True if user has an existing file
-            - str: File path if exists, empty string if not
-
-    Raises:
-        FileNotFoundError: If the specified file does not exist
-        ValueError: If the file format is not .ttl or .jsonld
+        (False, "") if user says 'no',
+        (True, path) if user says 'yes' and provides a valid path that exists
+        (whether it's a file or directory).
     """
     while True:
         try:
             has_file = input("Do you have an existing RDF data cube dataset? (yes/no): ").strip().lower()
             if has_file not in ["yes", "no"]:
                 raise ValueError("Please answer 'yes' or 'no'")
-            
+
             if has_file == "no":
                 return False, ""
-            
-            file_path = input("Enter the path to your RDF data cube file (.ttl or .jsonld): ").strip()
-            if not os.path.isfile(file_path):
-                raise FileNotFoundError(f"The file '{file_path}' does not exist. Please enter a valid file path.")
-            
-            if not (file_path.lower().endswith('.ttl') or file_path.lower().endswith('.jsonld')):
-                raise ValueError("The file must be either a Turtle (.ttl) or JSON-LD (.jsonld) file.")
-            
+
+            # Here, the user said "yes."
+            file_path = input(
+                "Enter the path to your RDF data cube file/folder (can be .ttl/.jsonld or a directory): "
+            ).strip()
+
+            # We now allow either a file or a directory, but it must exist:
+            if not os.path.exists(file_path):
+                print(f"The path '{file_path}' does not exist. Please enter a valid path.")
+                continue
+
+            # If it exists (directory or file), we accept it
             return True, file_path
-            
-        except (FileNotFoundError, ValueError) as e:
+
+        except ValueError as e:
             print(e)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+
 
 def should_save_csv() -> bool:
     """
@@ -330,3 +332,75 @@ def should_save_csv() -> bool:
             print(e)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+
+def choose_conversion_mode() -> str:
+    """
+    Prompts the user to decide whether to convert the entire DataFrame as one dataset
+    or each row as an individual dataset for RDF conversion.
+
+    Returns:
+        str: 'entire' or 'row-by-row'
+    """
+    while True:
+        try:
+            mode = input("Do you want to convert the entire DataFrame as one dataset or row-by-row? (entire/row-by-row): ").strip().lower()
+            if mode not in ["entire", "row-by-row"]:
+                raise ValueError("Invalid choice. Please enter 'entire' or 'row-by-row'.")
+            return mode
+        except ValueError as e:
+            print(e)
+            
+def get_approved_id_columns(candidate_id_columns: List[str], mode: str) -> List[str]:
+    """
+    Description:
+        Given a list of candidate ID columns (those that contain 'id' in their name),
+        prompts the user for each column whether they want it included in the dataset 
+        naming. The prompt text changes depending on whether we are in 'row-by-row' 
+        mode or 'entire' mode.
+
+    Algorithm:
+        1) If there are no candidate_id_columns, print a message and return empty list.
+        2) Print each candidate column to the user, 
+           asking if it should be included in naming.
+           - If mode == 'row-by-row', mention "row-based dataset naming."
+           - If mode == 'entire', mention "slice naming for entire dataset."
+        3) Collect approved columns in a list.
+        4) Return that list.
+
+    Args:
+        candidate_id_columns (List[str]): Columns that appear to be ID-like (contain "id" or "ID").
+        mode (str): 'row-by-row' or 'entire'—used to tailor the prompt text.
+
+    Returns:
+        List[str]: Subset of candidate_id_columns that the user approves for naming.
+    """
+    approved_columns = []
+    if not candidate_id_columns:
+        print("No ID-like columns found. Naming will only use ORCID + timestamp.")
+        return approved_columns
+
+    print("\nThe following columns appear to be identifiers (contain 'id' in their name):")
+    for col in candidate_id_columns:
+        while True:
+            try:
+                if mode == "row-by-row":
+                    question_text = f"Include column '{col}' in the row-based dataset naming? (yes/no): "
+                else:
+                    # entire
+                    question_text = f"Include column '{col}' in the slice naming for the entire dataset? (yes/no): "
+
+                answer = input(question_text).strip().lower()
+                if answer not in ["yes", "no"]:
+                    raise ValueError("Please answer 'yes' or 'no'.")
+                if answer == 'yes':
+                    approved_columns.append(col)
+                break
+            except ValueError as e:
+                print(e)
+
+    if not approved_columns:
+        print("No columns were approved. Naming will be ORCID + timestamp only.")
+    else:
+        print(f"Approved ID columns for naming: {approved_columns}")
+
+    return approved_columns
