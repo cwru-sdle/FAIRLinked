@@ -6,6 +6,8 @@ from rdflib.namespace import RDF, XSD, DCTERMS
 from datetime import datetime
 import re
 import traceback
+import random
+import string
 
 try:
     from rdflib.namespace import QB
@@ -14,7 +16,7 @@ except ImportError:
     QB = Namespace('http://purl.org/linked-data/cube#')
 
 from rdflib.namespace import SKOS
-from FAIRLinked.input_handler import get_approved_id_columns
+from FAIRLinked.input_handler import get_approved_id_columns, get_identifiers
 
 # =============================================================================
 #                            CONSTANTS
@@ -182,7 +184,7 @@ def write_naming_conventions_doc(root_folder_path: str,
             f"  {dataset_name}_{numeric_orcid}_{overall_timestamp}.jsonld.sha256\n\n"
             "Where {anyApprovedIDs} are user-approved ID columns (e.g. 'ExperimentId').\n"
         )
-    else:
+    elif conversion_mode == "row-by-row":
         # row-by-row mode => each row => separate DataSet
         msg = (
             "Naming Conventions for ROW-BY-ROW Mode\n"
@@ -197,6 +199,21 @@ def write_naming_conventions_doc(root_folder_path: str,
             "   {anyApprovedIDs}_{orcidDigits}_{timestamp}.jsonld\n"
             "   {anyApprovedIDs}_{orcidDigits}_{timestamp}.jsonld.sha256\n\n"
             "Where {anyApprovedIDs} are user-approved ID columns, e.g. 'ExperimentId'.\n"
+        )
+    else:
+        msg = (
+            "Naming Conventions for CRADLE Mode\n"
+            "--------------------------------------\n"
+            f"Root folder: Output_{numeric_orcid}_{overall_timestamp}\n\n"
+            "We produce subfolders 'ttl', 'jsonld', 'hash'.\n\n"
+            "Each row => separate qb:DataSet => mds:Dataset_{randomLetter}_{enteredIDs}_{anyApprovedIDs}_{orcidDigits}_{timestamp}\n"
+            "           plus a qb:Slice => mds:Slice_{randomLetter}_{enteredIDs}_{anyApprovedIDs}_{orcidDigits}_{timestamp}\n"
+            "           and a qb:SliceKey => mds:SliceKey_{randomLetter}_{enteredIDs}_{anyApprovedIDs}_{orcidDigits}_{timestamp}\n\n"
+            "Output filenames per row:\n"
+            "   {randomLetter}_{enteredIDs}_{anyApprovedIDs}_{orcidDigits}_{timestamp}.ttl\n"
+            "   {randomLetter}_{enteredIDs}_{anyApprovedIDs}_{orcidDigits}_{timestamp}.jsonld\n"
+            "   {randomLetter}_{enteredIDs}_{anyApprovedIDs}_{orcidDigits}_{timestamp}.jsonld.sha256\n\n"
+            "Where {enteredIDs} are additional top level concept IDs and {anyApprovedIDs} are user-approved ID columns, e.g. 'ExperimentId'.\n"
         )
 
     with open(txt_path, 'w', encoding='utf-8') as f:
@@ -428,6 +445,17 @@ def process_unit(unit_str: str, ns_map: dict, user_ns: Namespace) -> URIRef:
     except Exception as e:
         print(f"Error processing unit '{unit_str}': {e}")
         return None
+    
+def _create_id_string(id_dict) -> str:
+    """
+    Function to turn user-entered IDs into a string for CRADLE naming
+    """
+    id_string = ""
+    for key in id_dict:
+        if id_dict[key] != "":
+            id_string += "_" + str(id_dict[key])
+
+    return id_string
 
 
 # =============================================================================
@@ -786,6 +814,159 @@ def convert_row_by_row(
         with open(hash_path, 'w') as hf:
             hf.write(file_hash)
 
+# =============================================================================
+#          ROW-BY-ROW FOR CRADLE
+# =============================================================================
+
+def convert_row_by_row_CRADLE(
+    df: pd.DataFrame,
+    variable_metadata: dict,
+    ns_map: dict,
+    user_chosen_prefix: str,
+    orcid: str,
+    root_folder_path: str,
+    overall_timestamp: str
+):
+    """
+    Description:
+        Converts each row of a DataFrame into its own qb:DataSet in RDF, prompting the user
+        to choose which ID columns to incorporate in naming. Each row-based dataset shares
+        the same folder timestamp to keep them grouped.
+
+    Algorithm:
+        1) Identify candidate ID columns (contain 'id'), pass 'row-by-row' to get_approved_id_columns(...).
+        2) Extract which columns are dimensions vs. measures => create a single DSD for entire DF.
+        3) For each row => build a new Graph that:
+            - Copies the DSD
+            - Creates a new qb:DataSet => mds:Dataset_{someIDs}_{orcid}_{timestamp}
+            - Creates a SliceKey => mds:SliceKey_{someIDs}_{orcid}_{timestamp}
+            - Creates a Slice => mds:Slice_{someIDs}_{orcid}_{timestamp}
+            - Adds Observations for each measure
+        4) Write each row's TTL/JSON-LD + .sha256 hash in subfolders.
+
+    Args:
+        df (pd.DataFrame): The entire DataFrame to convert row-by-row.
+        variable_metadata (dict): column => metadata dictionary.
+        ns_map (dict): prefix => Namespace mapping.
+        user_chosen_prefix (str): e.g. 'mds'.
+        orcid (str): The user's ORCID, from which we extract digits.
+        root_folder_path (str): The top-level folder for outputs.
+        overall_timestamp (str): The run's global timestamp for consistent naming.
+
+    Returns:
+        None
+    """
+    user_ns = ns_map[user_chosen_prefix]
+
+    candidate_id_cols = [c for c in df.columns if re.search(r'id', c, re.IGNORECASE)]
+    approved_id_cols = get_approved_id_columns(candidate_id_cols, mode='row-by-row')
+
+    missing_ids = get_identifiers(approved_id_cols)
+
+    # Build a single DSD for entire DF
+    dimensions, measures = extract_variables(variable_metadata, df.columns)
+    if EXPERIMENT_ID_COLUMN in df.columns and EXPERIMENT_ID_COLUMN not in dimensions:
+        dimensions.insert(0, EXPERIMENT_ID_COLUMN)
+
+    dsd_graph, dsd_uri = create_dsd(variable_metadata, dimensions, measures, ns_map, user_ns)
+
+    # For each row => new dataset
+    for idx, row in df.iterrows():
+        # naming: from approved ID columns
+        name_parts_file = []
+        name_parts_iri = []
+        for col in approved_id_cols:
+            val = row[col] if pd.notnull(row[col]) else "NotFound"
+            name_parts_file.append(_sanitize_for_filename(str(val)))
+            name_parts_iri.append(_sanitize_for_iri(str(val)))
+
+        numeric_orcid = ''.join(re.findall(r'\d+', orcid))
+
+        # fallback => orcid + timestamp
+        if any(name_parts_file):
+            combined_file = "_".join(name_parts_file + [numeric_orcid, overall_timestamp])
+        else:
+            combined_file = f"{numeric_orcid}_{overall_timestamp}"
+        combined_file = _sanitize_for_filename(combined_file)
+        letter = random.choice(string.ascii_lowercase)
+        combined_file = letter + _create_id_string(missing_ids) + "_" + combined_file
+        
+
+        if any(name_parts_iri):
+            combined_iri = "_".join(name_parts_iri + [numeric_orcid, overall_timestamp])
+        else:
+            combined_iri = f"{numeric_orcid}_{overall_timestamp}"
+        combined_iri = _sanitize_for_iri(combined_iri)
+        combined_iri = letter + _create_id_string(missing_ids) + "_" + combined_iri
+
+        dataset_id_str = _sanitize_for_iri(f"Dataset_{combined_iri}")
+        slice_id_str = _sanitize_for_iri(f"Slice_{combined_iri}")
+        slice_key_id = _sanitize_for_iri(f"SliceKey_{combined_iri}")
+
+        dataset_uri = user_ns[dataset_id_str]
+        slice_uri = user_ns[slice_id_str]
+        slice_key_uri = user_ns[slice_key_id]
+
+        # Copy the DSD graph into a fresh row_graph
+        row_graph = dsd_graph.__class__()
+        for prefix, ns_obj in ns_map.items():
+            row_graph.bind(prefix, ns_obj)
+        row_graph.bind('skos', SKOS)
+        for triple in dsd_graph:
+            row_graph.add(triple)
+
+        # qb:DataSet
+        row_graph.add((dataset_uri, RDF.type, QB.DataSet))
+        row_graph.add((dataset_uri, QB.structure, dsd_uri))
+        row_graph.add((dataset_uri, DCTERMS.title, Literal(dataset_id_str)))
+        row_graph.add((dataset_uri, DCTERMS.creator, Literal(orcid)))
+
+        # Single SliceKey for these dimensions
+        row_graph.add((slice_key_uri, RDF.type, QB.SliceKey))
+        fixed_dimensions = dimensions
+        for dim_name in fixed_dimensions:
+            dim_prop = get_property_uri(dim_name, variable_metadata[dim_name], ns_map, user_ns)
+            row_graph.add((slice_key_uri, QB.componentProperty, dim_prop))
+
+        # Single Slice
+        row_graph.add((slice_uri, RDF.type, QB.Slice))
+        row_graph.add((slice_uri, QB.sliceStructure, slice_key_uri))
+        row_graph.add((dataset_uri, QB.slice, slice_uri))
+
+        not_found_uri = user_ns['NotFound']
+        for dim_name in fixed_dimensions:
+            dim_val = row.get(dim_name)
+            dim_meta = variable_metadata[dim_name]
+            dim_prop = get_property_uri(dim_name, dim_meta, ns_map, user_ns)
+            if pd.notnull(dim_val):
+                row_graph.add((slice_uri, dim_prop, Literal(dim_val)))
+            else:
+                row_graph.add((slice_uri, dim_prop, not_found_uri))
+
+        # Observations
+        obs_counter = 1
+        variable_dims = []
+        observations, obs_counter = create_observation(
+            row_graph, row, variable_metadata, variable_dims, measures, ns_map, user_ns, obs_counter
+        )
+        for obs_uri in observations:
+            row_graph.add((slice_uri, QB.observation, obs_uri))
+
+        # Write to subfolders
+        subfolders = create_subfolders(root_folder_path)
+        ttl_path = os.path.join(subfolders["ttl"], f"{combined_file}.ttl")
+        jsonld_path = os.path.join(subfolders["jsonld"], f"{combined_file}.jsonld")
+        hash_path = os.path.join(subfolders["hash"], f"{combined_file}.jsonld.sha256")
+
+        row_graph.serialize(destination=ttl_path, format='turtle')
+        row_graph.serialize(destination=jsonld_path, format='json-ld', auto_compact=True)
+
+
+        # compute hash
+        file_hash = compute_file_hash(jsonld_path)
+        with open(hash_path, 'w') as hf:
+            hf.write(file_hash)
+
 
 # =============================================================================
 #          ENTIRE-DATASET CONVERSION
@@ -936,6 +1117,7 @@ def convert_entire_dataset(
         hash_file.write(file_hash)
 
 
+
 # =============================================================================
 #           MASTER FUNCTION
 # =============================================================================
@@ -1025,17 +1207,28 @@ def convert_dataset_to_rdf_with_mode(
                 overall_timestamp=overall_timestamp
             )
 
+        elif conversion_mode == "CRADLE":
+            convert_row_by_row_CRADLE(
+                df=df,
+                variable_metadata=variable_metadata,
+                ns_map=ns_map,
+                user_chosen_prefix=user_chosen_prefix,
+                orcid=orcid,
+                root_folder_path=root_folder_path,
+                overall_timestamp=overall_timestamp
+            )
+
         else:
             raise ValueError("Invalid conversion_mode. Choose 'entire' or 'row-by-row'.")
 
         # 4) Write naming conventions doc
         write_naming_conventions_doc(
-            root_folder_path=root_folder_path,
-            conversion_mode=conversion_mode,
-            orcid=orcid,
-            overall_timestamp=overall_timestamp,
-            dataset_name=sanitized_dataset_name
-        )
+             root_folder_path=root_folder_path,
+             conversion_mode=conversion_mode,
+             orcid=orcid,
+             overall_timestamp=overall_timestamp,
+             dataset_name=sanitized_dataset_name
+         )
 
         print(
             f"Conversion completed under mode='{conversion_mode}'. "

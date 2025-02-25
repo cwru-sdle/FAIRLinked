@@ -61,3 +61,4 @@ LIGHT_COLORS = {
 # These will be populated by mds_ontology_analyzer
 CATEGORY_COLORS = {}
 ONTO_CORE_CATEGORIES = set()
+
