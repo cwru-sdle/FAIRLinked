@@ -11,7 +11,10 @@ from FAIRLinked.input_handler import (
     has_all_ontology_files,
     has_existing_datacube_file,
     should_save_csv,
-    choose_conversion_mode
+    choose_conversion_mode,
+    check_ingestion,
+    get_identifiers
+
 )
 import os
 from FAIRLinked.mds_ontology_analyzer import get_classification
@@ -54,7 +57,11 @@ def main():
         if is_experiment:
             run_experiment_workflow()
         else:
-            run_standard_workflow()
+            ingestion_mode = check_ingestion()
+            if ingestion_mode:
+                run_ingestion_workflow()
+            else:
+                run_standard_workflow()
 
     except Exception as e:
         print(f"An error occurred in the main workflow: {e}")
@@ -178,6 +185,53 @@ def run_standard_workflow():
     except Exception as e:
         print(f"An error occurred in the standard workflow: {e}")
         # traceback.print_exc()
+
+def run_ingestion_workflow():
+
+    """
+        Processes namespace and data Excel files to generate RDF outputs with FAIRLinked.
+
+    Steps:
+    1. Gather user inputs (ORCID, namespace/data Excel, output folder).
+    2. Prompt for conversion mode (entire or row-by-row).
+    3. If entire mode => ask for dataset name; if row-by-row => skip it.
+    4. Parse the Excel templates => produce RDF using convert_dataset_to_rdf_with_mode.
+    """
+    try:
+        orcid = get_orcid()
+        namespace_excel_path = get_input_namespace_excel()
+        data_excel_path = get_input_data_excel()
+        output_folder_path = get_output_folder_path()
+
+        conversion_mode = "CRADLE"
+
+        dataset_name = ""
+
+        # Parse user-provided Excel for namespace map
+        namespace_map = parse_excel_to_namespace_map(namespace_excel_path)
+
+        # Read data Excel => variable_metadata + DataFrame
+        variable_metadata, df = read_excel_template(data_excel_path)
+
+        # Perform the conversion
+        convert_dataset_to_rdf_with_mode(
+            df=df,
+            variable_metadata=variable_metadata,
+            namespace_map=namespace_map,
+            user_chosen_prefix='mds',
+            output_folder_path=output_folder_path,
+            orcid=orcid,
+            dataset_name=dataset_name,
+            fixed_dimensions=None,
+            conversion_mode=conversion_mode
+        )
+
+    except Exception as e:
+        print(f"An error occurred in the standard workflow: {e}")
+        # traceback.print_exc()
+
+        
+
 
 if __name__ == "__main__":
     main()

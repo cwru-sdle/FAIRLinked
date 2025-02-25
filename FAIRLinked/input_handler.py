@@ -404,3 +404,64 @@ def get_approved_id_columns(candidate_id_columns: List[str], mode: str) -> List[
         print(f"Approved ID columns for naming: {approved_columns}")
 
     return approved_columns
+
+def check_ingestion() -> str:
+    """
+    Prompts the user whether data is for ingesting into CRADLE.
+
+    Returns:
+        bool: True if data is for ingesting into CRADLE, False otherwise
+    """
+    while True:
+        try:
+            ingestion_mode = input("Do you have data for CRADLE ingestion? (yes/no): ").strip().lower()
+            if ingestion_mode not in ["yes","no"]:
+                raise ValueError("Please answer 'yes' or 'no'.")
+            else:
+                return ingestion_mode == "yes"
+        except ValueError as e:
+            print(e)
+
+
+def get_identifiers(approved_id_cols) -> dict:
+    """
+    Prompt the user to enter identifiers
+    """
+    id_dict = {}
+    fields = ["SampleId", "ToolId", "RecipeId", "ExposureId", "StepId"]
+
+    approved_id_cols_lower = {col.lower() for col in approved_id_cols}
+    
+    missing_ids = [id for id in fields if id.lower() not in approved_id_cols_lower]
+    print(f"\nMissing Identifiers: {missing_ids}")
+
+    for missing_id in missing_ids:
+        while True:
+            try:
+                user_input = input(f"Enter {missing_id} (Leave blank if not available): ").strip()
+                check_valid_id(user_input)
+                id_dict[missing_id] = user_input
+                break  # Move to the next missing_id if input is valid
+            except ValueError as e:
+                print(f"Error: {e}. Please enter a valid {missing_id}.")
+
+    print(f"\nCollected Identifiers: {id_dict}")
+    return id_dict
+
+def check_valid_id(user_input):
+    if user_input and not re.fullmatch(r"[A-Za-z0-9]+", user_input):
+        raise ValueError("Input must contain only letters and numbers (no spaces or special characters).")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
