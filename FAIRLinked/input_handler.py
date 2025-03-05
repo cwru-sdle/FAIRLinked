@@ -236,18 +236,18 @@ def get_dataset_name() -> str:
     Offers 'SampleDataset' as a fallback option if invalid input is provided.
 
     Returns:
-        str: A valid dataset name containing only letters and underscores.
+        str: A valid dataset name containing only letters, numbers, and underscores.
     """
     while True:
         try:
-            name = input("Enter a name for your dataset (letters and underscores only): ").strip()
-            if re.match(r'^[A-Za-z_]+$', name):
+            name = input("Enter a name for your dataset (letters, numbers, and underscores only): ").strip()
+            if re.match(r'^[A-Za-z0-9_]+$', name):
                 return name
             
             use_default = input("Invalid name. Would you like to use 'SampleDataset' instead? (yes/no): ").strip().lower()
             if use_default == 'yes':
                 return 'SampleDataset'
-            print("Please try again with only letters and underscores.")
+            print("Please try again with only letters, numbers, and underscores.")
             
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
