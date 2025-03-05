@@ -807,7 +807,7 @@ def convert_row_by_row(
         hash_path = os.path.join(subfolders["hash"], f"{combined_file}.jsonld.sha256")
 
         row_graph.serialize(destination=ttl_path, format='turtle')
-        row_graph.serialize(destination=jsonld_path, format='json-ld')
+        row_graph.serialize(destination=jsonld_path, format='json-ld', auto_compact=True)
 
         # compute hash
         file_hash = compute_file_hash(jsonld_path)
@@ -1110,7 +1110,7 @@ def convert_entire_dataset(
     hash_path = os.path.join(output_folder_paths["hash"], f"{safe_file_name}.jsonld.sha256")
 
     entire_graph.serialize(destination=ttl_path, format='turtle')
-    entire_graph.serialize(destination=jsonld_path, format='json-ld')
+    entire_graph.serialize(destination=jsonld_path, format='json-ld', auto_compact=True)
 
     file_hash = compute_file_hash(jsonld_path)
     with open(hash_path, 'w') as hash_file:
