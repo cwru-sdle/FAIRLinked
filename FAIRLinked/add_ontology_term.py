@@ -2,15 +2,11 @@
 """
 Script to interactively add a new term to an existing ontology in Turtle (TTL) format.
 
-It prompts the user for required metadata such as label, parent class, value type, and unit,
-and appends the formatted RDF triples to a new file (original name suffixed with _rxl895).
-
-This script is useful for ontology developers working on modular additions while preserving
-the integrity of the original ontology file.
+Prompts the user for term metadata (label, parent class, value type, unit) and appends RDF triples
+to a new file (original name suffixed with _rxl895) to preserve the original.
 """
 
 import os
-import sys
 from datetime import datetime
 
 def get_term_details():
@@ -18,10 +14,7 @@ def get_term_details():
     Prompt the user to input details for a new ontology term.
 
     Returns:
-        dict: A dictionary containing term_name, label, parent_class, definition,
-              value_type, and unit.
-    Raises:
-        ValueError: If required inputs are left empty or invalid selections are made.
+        dict: A dictionary with term_name, label, parent_class, definition, value_type, and unit.
     """
     print("\nPlease provide the following details for the new term:")
     
@@ -47,17 +40,14 @@ def get_term_details():
             parent_class = parent_classes[int(parent_choice) - 1]
             break
         except (ValueError, IndexError):
-            print("Invalid selection. Please enter a number between 1 and", len(parent_classes))
+            print("Invalid selection. Please enter a valid number.")
     
     definition = input("Enter the definition: ").strip()
     if not definition:
         raise ValueError("Definition cannot be empty")
     
     print("\nSelect value type (if applicable):")
-    value_types = [
-        "xsd:string", "xsd:float", "xsd:integer", "xsd:dateTime",
-        "rdf:Seq", "None"
-    ]
+    value_types = ["xsd:string", "xsd:float", "xsd:integer", "xsd:dateTime", "rdf:Seq", "None"]
     for i, vtype in enumerate(value_types, 1):
         print(f"{i}. {vtype}")
     
@@ -67,7 +57,7 @@ def get_term_details():
             value_type = value_types[int(value_choice) - 1]
             break
         except (ValueError, IndexError):
-            print("Invalid selection. Please enter a number between 1 and", len(value_types))
+            print("Invalid selection. Please enter a valid number.")
     
     unit = None
     if value_type in ["xsd:float", "xsd:integer"]:
@@ -89,7 +79,7 @@ def get_term_details():
                 unit = units[int(unit_choice) - 1]
                 break
             except (ValueError, IndexError):
-                print("Invalid selection. Please enter a number between 1 and", len(units))
+                print("Invalid selection. Please enter a valid number.")
     
     return {
         "term_name": term_name,
@@ -102,13 +92,13 @@ def get_term_details():
 
 def format_term(term_details):
     """
-    Format term details into RDF/Turtle syntax for ontology inclusion.
+    Format term details into RDF/Turtle syntax.
 
     Args:
-        term_details (dict): Dictionary with metadata for the new term.
+        term_details (dict): Metadata for the new term.
 
     Returns:
-        str: A string representing RDF Turtle triples to be appended.
+        str: RDF Turtle triples to be appended.
     """
     term = f"\n# Added on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
     term += f"mds:{term_details['term_name']} a owl:Class ;\n"
@@ -117,23 +107,23 @@ def format_term(term_details):
     term += f"    skos:definition \"{term_details['definition']}\""
     
     if term_details['value_type'] != "None":
-        term += " ;\n    mds:value " + term_details['value_type']
+        term += f" ;\n    mds:value {term_details['value_type']}"
     
     if term_details['unit'] and term_details['unit'] != "None":
-        term += " ;\n    mds:unit " + term_details['unit']
+        term += f" ;\n    mds:unit {term_details['unit']}"
     
     term += " .\n"
     return term
 
 def add_term_to_ontology(ontology_path):
     """
-    Add a new term to a TTL ontology file and write the result to a new file.
+    Add a new term to a TTL ontology file and write to a new versioned file.
 
     Args:
-        ontology_path (str): Path to the existing ontology TTL file.
+        ontology_path (str): Path to the TTL ontology file.
 
     Returns:
-        bool: True if term was added successfully, False otherwise.
+        bool: True if added successfully, else False.
     """
     try:
         term_details = get_term_details()
@@ -142,8 +132,7 @@ def add_term_to_ontology(ontology_path):
         directory = os.path.dirname(ontology_path)
         filename = os.path.basename(ontology_path)
         name, ext = os.path.splitext(filename)
-        new_filename = f"{name}_rxl895{ext}"
-        new_path = os.path.join(directory, new_filename)
+        new_path = os.path.join(directory, f"{name}_rxl895{ext}")
         
         with open(ontology_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -152,25 +141,9 @@ def add_term_to_ontology(ontology_path):
             f.write(content)
             f.write(new_term)
         
-        print(f"\n✅ Successfully added new term 'mds:{term_details['term_name']}' to {new_path}")
-        print(f"📁 Original file '{ontology_path}' was not modified.")
+        print(f"\n✅ Term 'mds:{term_details['term_name']}' added to: {new_path}")
         return True
 
     except Exception as e:
         print(f"\n❌ Error: {str(e)}")
         return False
-
-def main():
-    """
-    Main function to prompt the user for an ontology file and add a new term.
-    """
-    ontology_path = input("Enter the path to your ontology file: ").strip()
-    
-    if not os.path.exists(ontology_path):
-        print(f"❌ Error: File '{ontology_path}' does not exist.")
-        return
-    
-    add_term_to_ontology(ontology_path)
-
-if __name__ == "__main__":
-    main()

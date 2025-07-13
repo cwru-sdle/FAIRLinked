@@ -1,34 +1,16 @@
 import pandas as pd
 import json
-from datetime import datetime
-import os
 import re
+import os
 import difflib
 import rdflib
+from datetime import datetime
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 
 def normalize(text):
-    """
-    Normalize a string by converting it to lowercase and removing non-alphanumeric characters.
-
-    Args:
-        text (str): The input string.
-
-    Returns:
-        str: The normalized string.
-    """
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
 
 def extract_terms_from_ontology(ontology_path):
-    """
-    Extract terms (classes and their labels) from an ontology file in Turtle (.ttl) format.
-
-    Args:
-        ontology_path (str): Path to the ontology TTL file.
-
-    Returns:
-        list of dict: A list of dictionaries with keys 'iri', 'label', and 'normalized'.
-    """
     g = rdflib.Graph()
     g.parse(ontology_path, format="ttl")
 
@@ -45,16 +27,6 @@ def extract_terms_from_ontology(ontology_path):
     return terms
 
 def find_best_match(column, ontology_terms):
-    """
-    Find the best matching ontology term for a given CSV column name.
-
-    Args:
-        column (str): The column name from the CSV file.
-        ontology_terms (list of dict): List of ontology terms with normalized labels.
-
-    Returns:
-        dict or None: Best match term dictionary or None if no close match is found.
-    """
     norm_col = normalize(column)
     matches = [term for term in ontology_terms if term["normalized"] == norm_col]
 
@@ -71,19 +43,6 @@ def find_best_match(column, ontology_terms):
     return None
 
 def convert_csv_to_jsonld(csv_path, ontology_path, output_path, matched_log_path, unmatched_log_path):
-    """
-    Convert a CSV file into a JSON-LD representation using an ontology for semantic enrichment.
-
-    Args:
-        csv_path (str): Path to the input CSV file.
-        ontology_path (str): Path to the TTL ontology file.
-        output_path (str): Path to output the resulting JSON-LD file.
-        matched_log_path (str): Path to save the matched column log.
-        unmatched_log_path (str): Path to save the unmatched column log.
-
-    Returns:
-        None
-    """
     df = pd.read_csv(csv_path)
     columns = list(df.columns)
     ontology_terms = extract_terms_from_ontology(ontology_path)
@@ -93,7 +52,7 @@ def convert_csv_to_jsonld(csv_path, ontology_path, output_path, matched_log_path
 
     jsonld = {
         "@context": {
-            "mds": "http://example.org/mds/",
+            "mds": "https://cwrusdle.bitbucket.io/mds/",
             "schema": "http://schema.org/",
             "dcterms": "http://purl.org/dc/terms/",
             "skos": "http://www.w3.org/2004/02/skos/core#",
@@ -115,11 +74,10 @@ def convert_csv_to_jsonld(csv_path, ontology_path, output_path, matched_log_path
 
     for col in columns:
         match = find_best_match(col, ontology_terms)
+        iri = str(match["iri"]).split("/")[-1].split("#")[-1] if match else col
         if match:
-            iri = str(match["iri"]).split("/")[-1].split("#")[-1]
             matched_log.append(f"{col} => {iri}")
         else:
-            iri = col
             unmatched_log.append(col)
 
         entry = {
@@ -139,34 +97,15 @@ def convert_csv_to_jsonld(csv_path, ontology_path, output_path, matched_log_path
                 "@language": "en"
             }
         }
-
         jsonld["@graph"].append(entry)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     with open(output_path, "w") as f:
         json.dump(jsonld, f, indent=2)
-    print(f"✅ JSON-LD written to: {output_path}")
 
     with open(matched_log_path, "w") as f:
         f.write("\n".join(matched_log))
-    print(f"🟢 Matched columns logged to: {matched_log_path}")
 
     with open(unmatched_log_path, "w") as f:
         f.write("\n".join(set(unmatched_log)))
-    print(f"⚠️ Unmatched columns logged to: {unmatched_log_path}")
-
-# === RUN ===
-if __name__ == "__main__":
-    """
-    Entry point for running the script.
-    Converts the specified CSV file to JSON-LD using an ontology for semantic annotation.
-    Logs matched and unmatched columns to respective log files.
-    """
-    convert_csv_to_jsonld(
-        csv_path="/Users/lambaritu67/Desktop/fairlinked/data/pv_modules_info/t50-iv-sv-netsem-modules-info.csv",
-        ontology_path="/Users/lambaritu67/Desktop/fairlinked/data/Test_Ontology_FAIRLinked/MDS-Onto-BuiltEnv-PV-Module-v0.3.0.0.ttl",
-        output_path="/Users/lambaritu67/Desktop/fairlinked/output/t50-netsem-validated.jsonld",
-        matched_log_path="/Users/lambaritu67/Desktop/fairlinked/output/matched_columns.log",
-        unmatched_log_path="/Users/lambaritu67/Desktop/fairlinked/output/unmatched_columns.log"
-    )

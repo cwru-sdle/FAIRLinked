@@ -4,14 +4,24 @@ import pandas as pd
 from tqdm import tqdm
 
 def extract_row_from_jsonld(data: dict, filename: str):
+    """
+    Extracts a single row of data from a JSON-LD object.
+
+    Args:
+        data (dict): JSON-LD data parsed as dictionary.
+        filename (str): Name of the file the data came from.
+
+    Returns:
+        tuple: (row_values, fair_types, units) as dictionaries.
+    """
     row = {}
     fair_types = {}
     units = {}
-    
+
     for item in data.get("@graph", []):
         alt_label = item.get("skos:altLabel", "").strip()
         if not alt_label:
-            continue  # skip entries without altLabel
+            continue
 
         value = item.get("qudt:value", "")
         fair_type = item.get("@type", "")
@@ -28,16 +38,16 @@ def extract_row_from_jsonld(data: dict, filename: str):
 
 def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_output", output_dir: str = "outputs"):
     """
-    Converts a directory of JSON-LD files into a single CSV/Parquet/Arrow with:
-    - One row per file
-    - Columns from skos:altLabel
-    - Values from qudt:value
-    - Extra header rows for @type and qudt:hasUnit
+    Converts a directory of JSON-LD files into a tabular format (CSV, Parquet, Arrow).
+    Each row represents a JSON-LD file with:
+      - Column headers from skos:altLabel
+      - Values from qudt:value
+      - Extra header rows for FAIR type (@type) and units (qudt:hasUnit)
 
     Args:
-        input_dir (str): Path to the directory containing JSON-LD files.
-        output_basename (str): Output filename base (no extension).
-        output_dir (str): Directory to save CSV, Arrow, and Parquet outputs.
+        input_dir (str): Directory containing JSON-LD files.
+        output_basename (str): Base name for output files.
+        output_dir (str): Output directory to save CSV, Parquet, and Arrow files.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -61,15 +71,15 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
                 print(f"❌ Error parsing {filename}: {e}")
 
     if not data_rows:
-        print("⚠️ No JSON-LD records found.")
+        print("⚠️ No valid JSON-LD files found.")
         return
 
-    # Create main DataFrame and reorder headers
+    # Create dataframes
     df = pd.DataFrame(data_rows)
     fair_df = pd.DataFrame(fair_type_rows)
     unit_df = pd.DataFrame(unit_rows)
 
-    # Sort columns alphabetically except source file
+    # Reorder columns alphabetically, placing __source_file__ at the end
     cols = [col for col in df.columns if col != "__source_file__"]
     cols.sort()
     final_cols = cols + ["__source_file__"]
@@ -78,10 +88,10 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
     fair_df = fair_df[final_cols]
     unit_df = unit_df[final_cols]
 
-    # Insert the two header rows on top
+    # Add header rows for type and units
     df_with_headers = pd.concat([fair_df.iloc[[0]], unit_df.iloc[[0]], df], ignore_index=True)
 
-    # Output paths
+    # Define output paths
     csv_path = os.path.join(output_dir, f"{output_basename}.csv")
     parquet_path = os.path.join(output_dir, f"{output_basename}.parquet")
     arrow_path = os.path.join(output_dir, f"{output_basename}.arrow")
@@ -93,10 +103,10 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
 
     print(f"\n✅ Output files saved to:\n- {csv_path}\n- {parquet_path}\n- {arrow_path}")
 
-# Example usage
+# ----------------------
+# USAGE SHOULD GO IN README, NOT MAIN BLOCK
+# ----------------------
+
 if __name__ == "__main__":
-    jsonld_directory_to_csv(
-        input_dir="/Users/lambaritu67/Desktop/fairlinked/data/FAIRLinked_test_outputs/output_test_data/DS0d69555d-Manufacturer-SampleID",
-        output_basename="merged_DS0d69555d",
-        output_dir="outputs"
-    )
+    print("❌ This script is intended to be imported and used in other scripts or notebooks.")
+    print("   Please call jsonld_directory_to_csv(...) with appropriate paths.")
