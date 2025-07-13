@@ -82,4 +82,3 @@ Let us know if you'd like to include:
 * ORCID links or contact emails
 * Example datasets or a GIF walkthrough
 
-Once ready, we'll commit this as `README.md` to your branch before creating the PR.
