@@ -9,8 +9,7 @@ setup(
     author='Ritika Lamba, Van Tran, Balashanmuga Priyan Rajamohan, Kai Zheng, Benjamin Pierce, Erika I. Barcelos, Roger H. French',
     author_email='rxf131@case.edu',
     license='BSD-2-Clause',
-    packages=find_packages(where='packages'),  # ⬅️ Ensure your code is under 'packages/'
-    package_dir={'': 'packages'},              # ⬅️ Map logical root to physical 'packages/'
+    packages=find_packages(),  # ⬅️ Ensure your code is under 'packages/'
     install_requires=[
         'rdflib>=7.0.0',
         'typing-extensions>=4.0.0',
