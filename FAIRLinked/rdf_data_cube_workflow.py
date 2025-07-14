@@ -27,11 +27,11 @@ from FAIRLinked.rdf_to_df import parse_rdf_to_df
 import traceback
 from pprint import pprint
 
-def main():
+def rdf_data_cube_workflow_start():
     """
     Welcome to FAIRLinked 🚀
 
-    The main entry point for the FAIRLinked data processing workflow.
+    The entry point for the FAIRLinked data processing workflow using RDF Data Cube.
 
     Steps Overview:
     1. Checks if an existing RDF data cube file/folder is present.
@@ -41,7 +41,7 @@ def main():
        - Otherwise, parse existing Excel files for namespaces & data, 
          then convert them to RDF in 'entire' or 'row-by-row' mode.
     """
-    print("Welcome to FAIRLinked 🚀")
+    print("Welcome to FAIRLinked RDF Data Cube 🚀")
 
     try:
         # 1) Check if an existing RDF data cube is present
