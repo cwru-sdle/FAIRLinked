@@ -6,7 +6,7 @@ setup(
     description='Transform research data into FAIR-compliant RDF using the RDF Data Cube Vocabulary.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    author='Ritika Lamba, Van Tran, Balashanmuga Priyan Rajamohan, Kai Zheng, Benjamin Pierce, Erika I. Barcelos, Roger H. French',
+    author='Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French',
     author_email='rxf131@case.edu',
     license='BSD-2-Clause',
     packages=find_packages(),  # ⬅️ Ensure your code is under 'packages/'

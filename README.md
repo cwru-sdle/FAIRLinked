@@ -31,11 +31,14 @@ Version 0.3.0.0 brings a major expansion of FAIRLinked's capabilities with:
 
 ## ✍️ Authors
 
+* **Van D. Tran**
 * **Ritika Lamba**
 * **Balashanmuga Priyan Rajamohan**
-* Van Tran
+* Gabriel Ponon
 * Kai Zheng
 * Benjamin Pierce
+* Quynh D. Tran
+* Ozan Dernek
 * Yinghui Wu
 * Laura Bruckman
 * Erika I. Barcelos
@@ -55,12 +58,18 @@ You can install FAIRLinked using pip:
 ```bash
 pip install FAIRLinked
 ```
+---
 
-## Package Usage
+## RDF DataCube Workflow
 
-```bash
-FAIRLinked
+```python
+import FAIRLinked.rdf_data_cube_workflow as rdf_data_cube_workflow
+from rdf_data_cube_workflow import rdf_data_cube_workflow_start
+
+rdf_data_cube_workflow_start()
+
 ```
+
 
 ![FAIRLinked](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/FAIRLinkedv0.2.png)
 
