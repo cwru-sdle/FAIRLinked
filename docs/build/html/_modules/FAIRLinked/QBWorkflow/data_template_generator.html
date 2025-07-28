@@ -1,0 +1,288 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAIRLinked.QBWorkflow.data_template_generator &mdash; FAIRLinked 0.3.0.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1e448af"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            FAIRLinked
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAIRLinked.html">FAIRLinked package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FAIRLinked</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">FAIRLinked.QBWorkflow.data_template_generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for FAIRLinked.QBWorkflow.data_template_generator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">openpyxl</span>
+<span class="kn">from</span> <span class="nn">openpyxl.styles</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PatternFill</span><span class="p">,</span> <span class="n">Alignment</span><span class="p">,</span> <span class="n">Font</span><span class="p">,</span> <span class="n">Border</span><span class="p">,</span> <span class="n">Side</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">FAIRLinked.QBWorkflow.utility</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CATEGORY_COLORS</span><span class="p">,</span> <span class="n">ALT_LABEL_INSTR</span><span class="p">,</span> 
+    <span class="n">UNIT_INSTR</span><span class="p">,</span> <span class="n">IS_MEASURE_INSTR</span><span class="p">,</span> <span class="n">EXISTING_URI_INSTR</span><span class="p">,</span> 
+    <span class="n">EXPERIMENT_ID_INSTR</span><span class="p">,</span> <span class="n">NO_TERMS_MSG</span><span class="p">,</span> <span class="n">TEMPLATE_GENERATED_MSG</span>
+<span class="p">)</span>
+
+<div class="viewcode-block" id="generate_data_xlsx_template">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.data_template_generator.generate_data_xlsx_template">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_data_xlsx_template</span><span class="p">(</span><span class="n">children_terms</span><span class="p">,</span> <span class="n">output_xlsx_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates an Excel template for data collection with various features such as merged cells, category headers, </span>
+<span class="sd">    colors, formatting, and borders. If no categories are provided, a &#39;Miscellaneous&#39; category is generated.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        children_terms (dict): A dictionary where keys represent ontology categories (e.g., &#39;mds:tool&#39;) and values </span>
+<span class="sd">                               are lists of terms (e.g., [&#39;InstrumentId&#39;, &#39;InstrumentName&#39;]). If categories are empty, </span>
+<span class="sd">                               a default &#39;Miscellaneous&#39; category is created.</span>
+<span class="sd">        output_xlsx_file_path (str): The path where the generated Excel file should be saved.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None: The function creates and saves an Excel file with the specified formatting at the provided path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create a new workbook and select the active worksheet</span>
+    <span class="n">wb</span> <span class="o">=</span> <span class="n">openpyxl</span><span class="o">.</span><span class="n">Workbook</span><span class="p">()</span>
+    <span class="n">ws</span> <span class="o">=</span> <span class="n">wb</span><span class="o">.</span><span class="n">active</span>
+
+    <span class="c1"># Define border style</span>
+    <span class="n">thin_border</span> <span class="o">=</span> <span class="n">Border</span><span class="p">(</span>
+        <span class="n">left</span><span class="o">=</span><span class="n">Side</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;thin&#39;</span><span class="p">),</span>
+        <span class="n">right</span><span class="o">=</span><span class="n">Side</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;thin&#39;</span><span class="p">),</span>
+        <span class="n">top</span><span class="o">=</span><span class="n">Side</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;thin&#39;</span><span class="p">),</span>
+        <span class="n">bottom</span><span class="o">=</span><span class="n">Side</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;thin&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Row indices based on 1-indexing</span>
+    <span class="n">row_category_headers</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">row_static_instructions_start</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">row_static_instructions_end</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">row_variable_names</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">row_data_start</span> <span class="o">=</span> <span class="mi">7</span>
+
+    <span class="c1"># Add the instruction in Row 1, Column B</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_category_headers</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">EXPERIMENT_ID_INSTR</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">column_dimensions</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">50</span>
+
+    <span class="c1"># Static instructions in Column A</span>
+    <span class="n">instruction_colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;FFF2CC&quot;</span><span class="p">,</span> <span class="s2">&quot;E2EFDA&quot;</span><span class="p">,</span> <span class="s2">&quot;D9E1F2&quot;</span><span class="p">,</span> <span class="s2">&quot;FCE4D6&quot;</span><span class="p">]</span>  <span class="c1"># Light colors for each instruction</span>
+    <span class="n">static_instructions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ALT_LABEL_INSTR</span><span class="p">,</span>
+        <span class="n">UNIT_INSTR</span><span class="p">,</span>
+        <span class="n">IS_MEASURE_INSTR</span><span class="p">,</span>
+        <span class="n">EXISTING_URI_INSTR</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">instruction</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">static_instructions</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">row_static_instructions_start</span><span class="p">):</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">instruction</span><span class="p">)</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fill_color</span> <span class="o">=</span> <span class="n">instruction_colors</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="n">row_static_instructions_start</span><span class="p">]</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">PatternFill</span><span class="p">(</span><span class="n">start_color</span><span class="o">=</span><span class="n">fill_color</span><span class="p">,</span> <span class="n">end_color</span><span class="o">=</span><span class="n">fill_color</span><span class="p">,</span> <span class="n">fill_type</span><span class="o">=</span><span class="s2">&quot;solid&quot;</span><span class="p">)</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+        <span class="n">ws</span><span class="o">.</span><span class="n">row_dimensions</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="mi">60</span>  <span class="c1"># Adjust row height for wrapping</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">column_dimensions</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">80</span>  <span class="c1"># To accommodate long instructions</span>
+
+    <span class="c1"># Column B: ExperimentId header (Row 6)</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_variable_names</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;ExperimentId&quot;</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">column_dimensions</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">20</span>
+
+    <span class="c1"># Determine which categories have terms</span>
+    <span class="n">categories_with_terms</span> <span class="o">=</span> <span class="p">{</span><span class="n">category</span><span class="p">:</span> <span class="n">terms</span> <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">terms</span> <span class="ow">in</span> <span class="n">children_terms</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">terms</span><span class="p">}</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">categories_with_terms</span><span class="p">:</span>
+        <span class="c1"># No categories have terms, create a &#39;Miscellaneous&#39; category</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">NO_TERMS_MSG</span><span class="p">)</span>
+        <span class="n">categories_with_terms</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Miscellaneous&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;var1&#39;</span><span class="p">,</span> <span class="s1">&#39;var2&#39;</span><span class="p">,</span> <span class="s1">&#39;var3&#39;</span><span class="p">]}</span>
+        <span class="n">category_colors</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Miscellaneous&#39;</span><span class="p">:</span> <span class="s1">&#39;CCCCCC&#39;</span><span class="p">}</span>  <span class="c1"># Light gray</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Use the existing CATEGORY_COLORS for the categories present</span>
+        <span class="n">category_colors</span> <span class="o">=</span> <span class="p">{</span><span class="n">category</span><span class="p">:</span> <span class="n">CATEGORY_COLORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="s2">&quot;FFFFFF&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="n">categories_with_terms</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+
+    <span class="c1"># Starting from Column C</span>
+    <span class="n">col_idx</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># Column C</span>
+
+    <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">terms</span> <span class="ow">in</span> <span class="n">categories_with_terms</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Add debug print</span>
+        <span class="c1"># print(f&quot;Processing category: {category}&quot;)</span>
+        <span class="c1"># print(f&quot;Available colors: {CATEGORY_COLORS}&quot;)</span>
+        
+        <span class="n">start_col</span> <span class="o">=</span> <span class="n">col_idx</span>
+        <span class="c1"># Write variable names</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_variable_names</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col_idx</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">term</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+            <span class="n">ws</span><span class="o">.</span><span class="n">column_dimensions</span><span class="p">[</span><span class="n">openpyxl</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_column_letter</span><span class="p">(</span><span class="n">col_idx</span><span class="p">)]</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+            <span class="n">col_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">end_col</span> <span class="o">=</span> <span class="n">col_idx</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="c1"># Merge category headers (Row 1)</span>
+        <span class="n">ws</span><span class="o">.</span><span class="n">merge_cells</span><span class="p">(</span><span class="n">start_row</span><span class="o">=</span><span class="n">row_category_headers</span><span class="p">,</span> <span class="n">start_column</span><span class="o">=</span><span class="n">start_col</span><span class="p">,</span> <span class="n">end_row</span><span class="o">=</span><span class="n">row_category_headers</span><span class="p">,</span> <span class="n">end_column</span><span class="o">=</span><span class="n">end_col</span><span class="p">)</span>
+        <span class="n">category_name</span> <span class="o">=</span> <span class="n">category</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;mds:&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+        <span class="n">category_cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_category_headers</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">start_col</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">category_name</span><span class="p">)</span>
+
+        <span class="c1"># Apply formatting to category header</span>
+        <span class="n">fill_color</span> <span class="o">=</span> <span class="n">category_colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="s2">&quot;FFFFFF&quot;</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;Using color {fill_color} for category {category}&quot;)</span>
+        <span class="n">fill</span> <span class="o">=</span> <span class="n">PatternFill</span><span class="p">(</span><span class="n">start_color</span><span class="o">=</span><span class="n">fill_color</span><span class="p">,</span> <span class="n">end_color</span><span class="o">=</span><span class="n">fill_color</span><span class="p">,</span> <span class="n">fill_type</span><span class="o">=</span><span class="s2">&quot;solid&quot;</span><span class="p">)</span>
+        <span class="n">category_cell</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
+        <span class="n">category_cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+        <span class="n">category_cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Apply borders to each cell in the merged range of category header</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_col</span><span class="p">,</span> <span class="n">end_col</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_category_headers</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+
+        <span class="c1"># Apply fill and borders to variable name cells and data cells</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_col</span><span class="p">,</span> <span class="n">end_col</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Variable name cells</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_variable_names</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+            <span class="c1"># Data cells</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">row_data_start</span><span class="p">,</span> <span class="n">row_data_start</span> <span class="o">+</span> <span class="mi">2</span><span class="p">):</span>  <span class="c1"># Adjust range as needed</span>
+                <span class="n">data_cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+                <span class="n">data_cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+                <span class="n">data_cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+
+    <span class="c1"># Add the &quot;Data (if any)&quot; column</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_category_headers</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col_idx</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Data (if any) Supply the name of your data file&quot;</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">column_dimensions</span><span class="p">[</span><span class="n">openpyxl</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_column_letter</span><span class="p">(</span><span class="n">col_idx</span><span class="p">)]</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">30</span>
+
+    <span class="c1"># FileName header in Row 6</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_variable_names</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col_idx</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;FileName&quot;</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">wrap_text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">Font</span><span class="p">(</span><span class="n">bold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+
+    <span class="c1"># Apply alignment and borders to FileName data cells</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">row_data_start</span><span class="p">,</span> <span class="n">row_data_start</span> <span class="o">+</span> <span class="mi">2</span><span class="p">):</span>  <span class="c1"># Adjust range as needed</span>
+        <span class="n">data_cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col_idx</span><span class="p">)</span>
+        <span class="n">data_cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+        <span class="n">data_cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+
+    <span class="c1"># Sample data rows</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_data_start</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>  <span class="c1"># ExperimentId</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_data_start</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">col_idx</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Image_1.jpg&quot;</span><span class="p">)</span>  <span class="c1"># FileName</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row_data_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">)</span>  <span class="c1"># Next ExperimentId</span>
+
+    <span class="c1"># Apply borders and alignment to ExperimentId data cells</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">row_data_start</span><span class="p">,</span> <span class="n">row_data_start</span> <span class="o">+</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+
+    <span class="c1"># Center align all cells and apply borders</span>
+    <span class="n">max_row</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">max_row</span>
+    <span class="n">max_col</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">max_column</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">ws</span><span class="o">.</span><span class="n">iter_rows</span><span class="p">(</span><span class="n">min_row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_row</span><span class="o">=</span><span class="n">max_row</span><span class="p">,</span> <span class="n">min_col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_col</span><span class="o">=</span><span class="n">max_col</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">row</span> <span class="o">&gt;</span> <span class="n">row_variable_names</span><span class="p">:</span>  <span class="c1"># Data cells</span>
+                <span class="n">cell</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">Alignment</span><span class="p">(</span><span class="n">horizontal</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">vertical</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="n">thin_border</span>
+
+    <span class="c1"># Save the workbook</span>
+    <span class="n">wb</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_xlsx_file_path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">TEMPLATE_GENERATED_MSG</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_xlsx_file_path</span><span class="p">))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

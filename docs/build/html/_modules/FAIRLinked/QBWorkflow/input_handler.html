@@ -1,0 +1,646 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAIRLinked.QBWorkflow.input_handler &mdash; FAIRLinked 0.3.0.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1e448af"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            FAIRLinked
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAIRLinked.html">FAIRLinked package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FAIRLinked</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">FAIRLinked.QBWorkflow.input_handler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for FAIRLinked.QBWorkflow.input_handler</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">FAIRLinked.QBWorkflow.utility</span> <span class="kn">import</span> <span class="n">validate_orcid_format</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<div class="viewcode-block" id="check_if_running_experiment">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.check_if_running_experiment">[docs]</a>
+<span class="k">def</span> <span class="nf">check_if_running_experiment</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to answer whether they are currently running an experiment, accepting only &#39;yes&#39; or &#39;no&#39;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: Returns `True` if the user enters &#39;yes&#39;, otherwise `False`.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the input is not &#39;yes&#39; or &#39;no&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">is_running_experiment</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Are you running an experiment now? (yes/no): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">is_running_experiment</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid input. Please enter &#39;yes&#39; or &#39;no&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">is_running_experiment</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_domain">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_domain">[docs]</a>
+<span class="k">def</span> <span class="nf">get_domain</span><span class="p">(</span><span class="n">domains_hashset</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to select a domain from the available options (present in a hashset), ensuring proper handling of spaces and case.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        domains_hashset (set): A set of available domain names.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The selected domain name in lowercase.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the input is not a valid number corresponding to a domain in the list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Available domains:&quot;</span><span class="p">)</span>
+            <span class="n">domains_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">domains_hashset</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">domain</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">domains_list</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">domain</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">selection</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter the number corresponding to the domain: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">selection</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">domains_list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid selection. Please enter a number from the list above.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">domains_list</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_orcid">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_orcid">[docs]</a>
+<span class="k">def</span> <span class="nf">get_orcid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to input an ORC_ID, ensuring that it conforms to the proper format by using a validation function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: A valid ORC_ID string.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the ORC_ID is empty or invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">orcid</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter ORC_ID: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">orcid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ORC_ID cannot be empty. Please enter a valid ORC_ID.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">validate_orcid_format</span><span class="p">(</span><span class="n">orcid</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid ORC_ID format. Please enter a valid ORC_ID.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">orcid</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_input_namespace_excel">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_input_namespace_excel">[docs]</a>
+<span class="k">def</span> <span class="nf">get_input_namespace_excel</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to enter the file path for a namespace Excel file and validates whether the file exists.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The valid file path of the Excel file.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If the file path provided by the user does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">excel_file_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter the path to the namespace Excel file: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">excel_file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The file &#39;</span><span class="si">{</span><span class="n">excel_file_path</span><span class="si">}</span><span class="s2">&#39; does not exist. Please enter a valid file path.&quot;</span><span class="p">)</span>
+            <span class="c1"># Optionally, check if the file has a valid Excel extension</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">excel_file_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.xlsx&#39;</span><span class="p">,</span> <span class="s1">&#39;.xlsm&#39;</span><span class="p">,</span> <span class="s1">&#39;.xltx&#39;</span><span class="p">,</span> <span class="s1">&#39;.xltm&#39;</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The file is not a valid Excel file. Please provide a file with an &#39;.xlsx&#39;, &#39;.xlsm&#39;, &#39;.xltx&#39;, or &#39;.xltm&#39; extension.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">excel_file_path</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_input_data_excel">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_input_data_excel">[docs]</a>
+<span class="k">def</span> <span class="nf">get_input_data_excel</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to enter the file path for a data Excel file and validates whether the file exists.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The valid file path of the Excel file.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If the file path provided by the user does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">excel_file_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter the path to the data Excel file: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">excel_file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The file &#39;</span><span class="si">{</span><span class="n">excel_file_path</span><span class="si">}</span><span class="s2">&#39; does not exist. Please enter a valid file path.&quot;</span><span class="p">)</span>
+            <span class="c1"># Optionally, check if the file has a valid Excel extension</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">excel_file_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.xlsx&#39;</span><span class="p">,</span> <span class="s1">&#39;.xlsm&#39;</span><span class="p">,</span> <span class="s1">&#39;.xltx&#39;</span><span class="p">,</span> <span class="s1">&#39;.xltm&#39;</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The file is not a valid Excel file. Please provide a file with an &#39;.xlsx&#39;, &#39;.xlsm&#39;, &#39;.xltx&#39;, or &#39;.xltm&#39; extension.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">excel_file_path</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="get_output_folder_path">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_output_folder_path">[docs]</a>
+<span class="k">def</span> <span class="nf">get_output_folder_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to provide an output folder path, and creates the folder if it does not exist.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The valid path to the output folder.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        NotADirectoryError: If the path provided is not a valid directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">folder_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter the path to the output folder: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">folder_path</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">folder_path</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The folder </span><span class="si">{</span><span class="n">folder_path</span><span class="si">}</span><span class="s2"> has been created.&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">folder_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">NotADirectoryError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The path </span><span class="si">{</span><span class="n">folder_path</span><span class="si">}</span><span class="s2"> is not a directory. Please enter a valid directory path.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">folder_path</span>
+        <span class="k">except</span> <span class="ne">NotADirectoryError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+            
+<div class="viewcode-block" id="get_namespace_for_dataset">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_namespace_for_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">get_namespace_for_dataset</span><span class="p">(</span><span class="n">namespace_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to select a namespace for their dataset, excluding predefined standard vocabulary namespaces.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        namespace_map (dict): A dictionary where the keys are namespace prefixes and the values are corresponding base URIs.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The selected namespace prefix.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the user selects a number outside the valid range.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">standard_vocab_namespaces</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;xsd&quot;</span><span class="p">,</span> <span class="s2">&quot;skos&quot;</span><span class="p">,</span> <span class="s2">&quot;void&quot;</span><span class="p">,</span> <span class="s2">&quot;dct&quot;</span><span class="p">,</span> <span class="s2">&quot;foaf&quot;</span><span class="p">,</span> <span class="s2">&quot;org&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;admingeo&quot;</span><span class="p">,</span> <span class="s2">&quot;interval&quot;</span><span class="p">,</span> <span class="s2">&quot;qb&quot;</span><span class="p">,</span> <span class="s2">&quot;sdmx-concept&quot;</span><span class="p">,</span> <span class="s2">&quot;sdmx-dimension&quot;</span><span class="p">,</span> <span class="s2">&quot;sdmx-attribute&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sdmx-measure&quot;</span><span class="p">,</span> <span class="s2">&quot;sdmx-metadata&quot;</span><span class="p">,</span> <span class="s2">&quot;sdmx-code&quot;</span><span class="p">,</span> <span class="s2">&quot;sdmx-subject&quot;</span><span class="p">,</span> <span class="s2">&quot;qudt&quot;</span><span class="p">,</span> <span class="s2">&quot;ex-geo&quot;</span>
+    <span class="p">]</span>
+    <span class="n">filtered_namespace_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">namespace_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">standard_vocab_namespaces</span><span class="p">}</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Available namespaces:&quot;</span><span class="p">)</span>
+            <span class="n">namespaces_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">filtered_namespace_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">namespace</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">namespaces_list</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">filtered_namespace_map</span><span class="p">[</span><span class="n">namespace</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="n">selection</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter the number corresponding to the namespace you want to use: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">selection</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">namespaces_list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid selection. Please enter a number from the list above.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">namespaces_list</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_ontology_file">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_ontology_file">[docs]</a>
+<span class="k">def</span> <span class="nf">get_ontology_file</span><span class="p">(</span><span class="n">prompt_message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to enter the file path for an ontology file and validates whether it exists</span>
+<span class="sd">    and has the correct extension (.ttl).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prompt_message (str): Custom prompt message to specify which ontology file is being requested.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The valid file path of the ontology file.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If the file path provided does not exist.</span>
+<span class="sd">        ValueError: If the file does not have a .ttl extension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enter the path to the </span><span class="si">{</span><span class="n">prompt_message</span><span class="si">}</span><span class="s2">: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The file &#39;</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&#39; does not exist. Please enter a valid file path.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.ttl&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The file must be a Turtle (.ttl) ontology file.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">file_path</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_dataset_name">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_dataset_name">[docs]</a>
+<span class="k">def</span> <span class="nf">get_dataset_name</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to enter a name for their dataset. Only allows letters and underscores.</span>
+<span class="sd">    Offers &#39;SampleDataset&#39; as a fallback option if invalid input is provided.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: A valid dataset name containing only letters, numbers, and underscores.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter a name for your dataset (letters, numbers, and underscores only): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[A-Za-z0-9_]+$&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">name</span>
+            
+            <span class="n">use_default</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Invalid name. Would you like to use &#39;SampleDataset&#39; instead? (yes/no): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">use_default</span> <span class="o">==</span> <span class="s1">&#39;yes&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s1">&#39;SampleDataset&#39;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Please try again with only letters, numbers, and underscores.&quot;</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="has_all_ontology_files">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.has_all_ontology_files">[docs]</a>
+<span class="k">def</span> <span class="nf">has_all_ontology_files</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to confirm availability of all required ontology files.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the user indicates they have both required ontology files </span>
+<span class="sd">              (lowest-level, combined), False otherwise.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the user provides an answer other than &#39;yes&#39; or &#39;no&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Do you have these ontology files (lowest-level, MDS combined)? (yes/no): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please answer &#39;yes&#39; or &#39;no&#39;&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">response</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="has_existing_datacube_file">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.has_existing_datacube_file">[docs]</a>
+<span class="k">def</span> <span class="nf">has_existing_datacube_file</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to specify if they have an existing RDF data cube dataset,</span>
+<span class="sd">    which may be either:</span>
+<span class="sd">      - A single file (.ttl, .jsonld)</span>
+<span class="sd">      - A directory that contains .ttl/.jsonld files</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        (False, &quot;&quot;) if user says &#39;no&#39;,</span>
+<span class="sd">        (True, path) if user says &#39;yes&#39; and provides a valid path that exists</span>
+<span class="sd">        (whether it&#39;s a file or directory).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">has_file</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Do you have an existing RDF data cube dataset? (yes/no): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">has_file</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please answer &#39;yes&#39; or &#39;no&#39;&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">has_file</span> <span class="o">==</span> <span class="s2">&quot;no&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="c1"># Here, the user said &quot;yes.&quot;</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+                <span class="s2">&quot;Enter the path to your RDF data cube file/folder (can be .ttl/.jsonld or a directory): &quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+            <span class="c1"># We now allow either a file or a directory, but it must exist:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The path &#39;</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&#39; does not exist. Please enter a valid path.&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># If it exists (directory or file), we accept it</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">file_path</span>
+
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="should_save_csv">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.should_save_csv">[docs]</a>
+<span class="k">def</span> <span class="nf">should_save_csv</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user whether they want to save the DataFrame as CSV.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if user wants to save CSV, False otherwise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">save_csv</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Do you want to save the DataFrame to a CSV file? (yes/no): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">save_csv</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please answer &#39;yes&#39; or &#39;no&#39;&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">save_csv</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span>
+            
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="choose_conversion_mode">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.choose_conversion_mode">[docs]</a>
+<span class="k">def</span> <span class="nf">choose_conversion_mode</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user to decide whether to convert the entire DataFrame as one dataset</span>
+<span class="sd">    or each row as an individual dataset for RDF conversion.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: &#39;entire&#39; or &#39;row-by-row&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Do you want to convert the entire DataFrame as one dataset or row-by-row? (entire/row-by-row): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;entire&quot;</span><span class="p">,</span> <span class="s2">&quot;row-by-row&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid choice. Please enter &#39;entire&#39; or &#39;row-by-row&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mode</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+            
+<div class="viewcode-block" id="get_approved_id_columns">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_approved_id_columns">[docs]</a>
+<span class="k">def</span> <span class="nf">get_approved_id_columns</span><span class="p">(</span><span class="n">candidate_id_columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Description:</span>
+<span class="sd">        Given a list of candidate ID columns (those that contain &#39;id&#39; in their name),</span>
+<span class="sd">        prompts the user for each column whether they want it included in the dataset </span>
+<span class="sd">        naming. The prompt text changes depending on whether we are in &#39;row-by-row&#39; </span>
+<span class="sd">        mode or &#39;entire&#39; mode.</span>
+
+<span class="sd">    Algorithm:</span>
+<span class="sd">        1) If there are no candidate_id_columns, print a message and return empty list.</span>
+<span class="sd">        2) Print each candidate column to the user, </span>
+<span class="sd">           asking if it should be included in naming.</span>
+<span class="sd">           - If mode == &#39;row-by-row&#39;, mention &quot;row-based dataset naming.&quot;</span>
+<span class="sd">           - If mode == &#39;entire&#39;, mention &quot;slice naming for entire dataset.&quot;</span>
+<span class="sd">        3) Collect approved columns in a list.</span>
+<span class="sd">        4) Return that list.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        candidate_id_columns (List[str]): Columns that appear to be ID-like (contain &quot;id&quot; or &quot;ID&quot;).</span>
+<span class="sd">        mode (str): &#39;row-by-row&#39; or &#39;entire&#39;—used to tailor the prompt text.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[str]: Subset of candidate_id_columns that the user approves for naming.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">approved_columns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidate_id_columns</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No ID-like columns found. Naming will only use ORCID + timestamp.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">approved_columns</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The following columns appear to be identifiers (contain &#39;id&#39; in their name):&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">candidate_id_columns</span><span class="p">:</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;row-by-row&quot;</span><span class="p">:</span>
+                    <span class="n">question_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Include column &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; in the row-based dataset naming? (yes/no): &quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># entire</span>
+                    <span class="n">question_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Include column &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; in the slice naming for the entire dataset? (yes/no): &quot;</span>
+
+                <span class="n">answer</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="n">question_text</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">answer</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please answer &#39;yes&#39; or &#39;no&#39;.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">answer</span> <span class="o">==</span> <span class="s1">&#39;yes&#39;</span><span class="p">:</span>
+                    <span class="n">approved_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">approved_columns</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No columns were approved. Naming will be ORCID + timestamp only.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Approved ID columns for naming: </span><span class="si">{</span><span class="n">approved_columns</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">approved_columns</span></div>
+
+
+<div class="viewcode-block" id="get_row_identifier_columns">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_row_identifier_columns">[docs]</a>
+<span class="k">def</span> <span class="nf">get_row_identifier_columns</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">col_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">col</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)}</span>
+
+    <span class="c1"># Print the columns with their corresponding numbers</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Available columns:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">col_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Prompt user input</span>
+    <span class="n">selected</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter column numbers separated by commas (e.g., 0,2,3): &quot;</span><span class="p">)</span>
+
+    <span class="c1"># Parse input into a list of integers</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">selected_indices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">selected</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid input. Please enter numbers only.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># Get the corresponding column names</span>
+    <span class="n">selected_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col_map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">selected_indices</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">col_map</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">selected_columns</span></div>
+
+
+
+<div class="viewcode-block" id="check_ingestion">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.check_ingestion">[docs]</a>
+<span class="k">def</span> <span class="nf">check_ingestion</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompts the user whether data is for ingesting into CRADLE.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if data is for ingesting into CRADLE, False otherwise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ingestion_mode</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Do you have data for CRADLE ingestion? (yes/no): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">ingestion_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;yes&quot;</span><span class="p">,</span><span class="s2">&quot;no&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please answer &#39;yes&#39; or &#39;no&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ingestion_mode</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_identifiers">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.get_identifiers">[docs]</a>
+<span class="k">def</span> <span class="nf">get_identifiers</span><span class="p">(</span><span class="n">approved_id_cols</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prompt the user to enter identifiers</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">id_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SampleId&quot;</span><span class="p">,</span> <span class="s2">&quot;ToolId&quot;</span><span class="p">,</span> <span class="s2">&quot;RecipeId&quot;</span><span class="p">,</span> <span class="s2">&quot;ExposureId&quot;</span><span class="p">,</span> <span class="s2">&quot;StepId&quot;</span><span class="p">]</span>
+
+    <span class="n">approved_id_cols_lower</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">approved_id_cols</span><span class="p">}</span>
+    
+    <span class="n">missing_ids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">id</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">if</span> <span class="nb">id</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">approved_id_cols_lower</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Missing Identifiers: </span><span class="si">{</span><span class="n">missing_ids</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">missing_id</span> <span class="ow">in</span> <span class="n">missing_ids</span><span class="p">:</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">user_input</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enter </span><span class="si">{</span><span class="n">missing_id</span><span class="si">}</span><span class="s2"> (Leave blank if not available): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">check_valid_id</span><span class="p">(</span><span class="n">user_input</span><span class="p">)</span>
+                <span class="n">id_dict</span><span class="p">[</span><span class="n">missing_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">user_input</span>
+                <span class="k">break</span>  <span class="c1"># Move to the next missing_id if input is valid</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Please enter a valid </span><span class="si">{</span><span class="n">missing_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Collected Identifiers: </span><span class="si">{</span><span class="n">id_dict</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">id_dict</span></div>
+
+
+<div class="viewcode-block" id="check_valid_id">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.input_handler.check_valid_id">[docs]</a>
+<span class="k">def</span> <span class="nf">check_valid_id</span><span class="p">(</span><span class="n">user_input</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">user_input</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[A-Za-z0-9]+&quot;</span><span class="p">,</span> <span class="n">user_input</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input must contain only letters and numbers (no spaces or special characters).&quot;</span><span class="p">)</span></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
