@@ -1,6 +1,6 @@
 import openpyxl
 import pandas as pd
-from FAIRLinked.utility import (
+from FAIRLinked.QBWorkflow.utility import (
     ALT_LABEL_INSTR,
     UNIT_INSTR,
     IS_MEASURE_INSTR,

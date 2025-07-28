@@ -14,9 +14,9 @@ This tool is actively developed and maintained by the **SDLE Research Center at 
 
 ---
 
-## ✨ New in v0.3.0.0
+## ✨ New in v0.3
 
-Version 0.3.0.0 brings a major expansion of FAIRLinked's capabilities with:
+Version 0.3 brings a major expansion of FAIRLinked's capabilities with:
 
 - ✅ **New term addition** to ontologies (`add_ontology_term.py`)
 - ✅ **Search/filter terms** in existing RDF files (`search_ontology_terms.py`)
@@ -26,6 +26,8 @@ Version 0.3.0.0 brings a major expansion of FAIRLinked's capabilities with:
 - ✅ **Auto web scraping** to fetch the latest MDS-Onto `.ttl`, `.jsonld`, `.nt`, and `.owl` files from the official Bitbucket
 - ✅ **Robust CLI handlers** with built-in validations and retry logic
 - ✅ **Modular file outputs** including support for `.ttl`, `.jsonld`, `.owl`, `.nt`, `.csv`, `.xlsx`, `.parquet`, `.arrow`
+
+Documentations of how to use functions in FAIRLinked can be found [here](https://github.com/cwru-sdle/FAIRLinked/docs/build/html/index.html)
 
 ---
 
@@ -63,7 +65,7 @@ pip install FAIRLinked
 ## RDF DataCube Workflow
 
 ```python
-import FAIRLinked.rdf_data_cube_workflow as rdf_data_cube_workflow
+import FAIRLinked.QBWorkflow.rdf_data_cube_workflow as rdf_data_cube_workflow
 from rdf_data_cube_workflow import rdf_data_cube_workflow_start
 
 rdf_data_cube_workflow_start()

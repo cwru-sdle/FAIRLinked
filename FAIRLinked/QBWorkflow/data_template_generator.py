@@ -2,7 +2,7 @@ import openpyxl
 from openpyxl.styles import (
     PatternFill, Alignment, Font, Border, Side
 )
-from FAIRLinked.utility import (
+from FAIRLinked.QBWorkflow.utility import (
     CATEGORY_COLORS, ALT_LABEL_INSTR, 
     UNIT_INSTR, IS_MEASURE_INSTR, EXISTING_URI_INSTR, 
     EXPERIMENT_ID_INSTR, NO_TERMS_MSG, TEMPLATE_GENERATED_MSG

@@ -5,18 +5,17 @@ import os
 import difflib
 import rdflib
 from datetime import datetime
-from rdflib.namespace import RDF, RDFS, OWL, SKOS
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, Graph
 
 def normalize(text):
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
 
-def extract_terms_from_ontology(ontology_path):
-    g = rdflib.Graph()
-    g.parse(ontology_path, format="ttl")
+def extract_terms_from_ontology(ontology_graph):
+    mds_ontology = ontology_graph
 
     terms = []
-    for s in g.subjects(RDF.type, OWL.Class):
-        labels = list(g.objects(s, SKOS.altLabel)) + list(g.objects(s, RDFS.label))
+    for s in mds_ontology.subjects(RDF.type, OWL.Class):
+        labels = list(mds_ontology.objects(s, SKOS.altLabel)) + list(mds_ontology.objects(s, RDFS.label))
         for label in labels:
             label_str = str(label).strip()
             terms.append({
@@ -42,10 +41,10 @@ def find_best_match(column, ontology_terms):
 
     return None
 
-def convert_csv_to_jsonld(csv_path, ontology_path, output_path, matched_log_path, unmatched_log_path):
+def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path):
     df = pd.read_csv(csv_path)
     columns = list(df.columns)
-    ontology_terms = extract_terms_from_ontology(ontology_path)
+    ontology_terms = extract_terms_from_ontology(ontology_graph)
 
     matched_log = []
     unmatched_log = []

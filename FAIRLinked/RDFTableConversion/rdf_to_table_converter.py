@@ -4,7 +4,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from rdflib import Graph
-from .utility import NAMESPACE_MAP  # Ensure this exists in your package
+from FAIRLinked.QBWorkflow.utility import NAMESPACE_MAP  # Ensure this exists in your package
 
 
 def _guess_rdf_format(filename):

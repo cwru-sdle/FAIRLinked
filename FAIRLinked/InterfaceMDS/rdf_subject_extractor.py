@@ -3,25 +3,8 @@ import pandas as pd
 from rdflib import Graph, RDFS
 from rdflib.namespace import DCTERMS, DC, SKOS
 from fuzzysearch import find_near_matches
-
-
-def load_graph_from_file(file_path):
-    """
-    Load an RDF file into an rdflib Graph object.
-
-    Args:
-        file_path (str): Path to the RDF file (.ttl or other RDF-supported formats).
-
-    Returns:
-        rdflib.Graph: Parsed RDF graph.
-    """
-    graph = Graph()
-    try:
-        graph.parse(file_path, format="turtle" if file_path.endswith(".ttl") else None)
-        print(f"✅ Loaded RDF file: {file_path}")
-    except Exception as e:
-        print(f"❌ Failed to parse {file_path}: {e}")
-    return graph
+import FAIRLinked.InterfaceMDS.load_mds_ontology
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
 
 def extract_subject_details(graph):
@@ -116,7 +99,7 @@ def main():
         print(f"❌ File not found: {file_path}")
         return
 
-    graph = load_graph_from_file(file_path)
+    graph = load_mds_ontology_graph()
     df = extract_subject_details(graph)
 
     output_csv = file_path.replace(".ttl", "_subjects.csv")

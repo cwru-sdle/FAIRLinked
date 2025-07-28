@@ -1,7 +1,7 @@
 from rdflib import Graph, Namespace, URIRef, RDF, OWL
 from typing import Dict, Set, List, Tuple, Union
 from collections import defaultdict
-from FAIRLinked.utility import NAMESPACE_MAP, LIGHT_COLORS, CATEGORY_COLORS, ONTO_CORE_CATEGORIES
+from FAIRLinked.QBWorkflow.utility import NAMESPACE_MAP, LIGHT_COLORS, CATEGORY_COLORS, ONTO_CORE_CATEGORIES
 
 ###############################################################################
 # Global Namespaces
