@@ -1,0 +1,168 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAIRLinked.QBWorkflow.utility &mdash; FAIRLinked 0.3.0.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1e448af"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            FAIRLinked
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAIRLinked.html">FAIRLinked package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FAIRLinked</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">FAIRLinked.QBWorkflow.utility</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for FAIRLinked.QBWorkflow.utility</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="n">NAMESPACE_MAP</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;rdf&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rdfs&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;owl&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/2002/07/owl#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;xsd&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/2001/XMLSchema#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skos&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/2004/02/skos/core#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;void&quot;</span><span class="p">:</span> <span class="s2">&quot;http://rdfs.org/ns/void#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dct&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/dc/terms/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;foaf&quot;</span><span class="p">:</span> <span class="s2">&quot;http://xmlns.com/foaf/0.1/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;org&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/ns/org#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;admingeo&quot;</span><span class="p">:</span> <span class="s2">&quot;http://data.ordnancesurvey.co.uk/ontology/admingeo/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;interval&quot;</span><span class="p">:</span> <span class="s2">&quot;http://reference.data.gov.uk/def/intervals/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qb&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/cube#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qudt&quot;</span><span class="p">:</span> <span class="s2">&quot;http://qudt.org/2.1/vocab/unit&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mds&quot;</span><span class="p">:</span> <span class="s2">&quot;https://cwrusdle.bitbucket.io/mds#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sdmx-concept&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/sdmx/2009/concept#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sdmx-dimension&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/sdmx/2009/dimension#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sdmx-attribute&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/sdmx/2009/attribute#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sdmx-measure&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/sdmx/2009/measure#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sdmx-metadata&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/sdmx/2009/metadata#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sdmx-code&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/sdmx/2009/code#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sdmx-subject&quot;</span><span class="p">:</span> <span class="s2">&quot;http://purl.org/linked-data/sdmx/2009/subject#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ex-geo&quot;</span><span class="p">:</span> <span class="s2">&quot;http://example.org/geo#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;eg&quot;</span><span class="p">:</span> <span class="s2">&quot;http://example.org/ns#&quot;</span>
+<span class="p">}</span>
+
+<span class="c1"># === Instruction Texts and Messages ===</span>
+<span class="n">ALT_LABEL_INSTR</span> <span class="o">=</span> <span class="s2">&quot;Alternative Label - write mappings to the columns that you use in your dataset&quot;</span>
+<span class="n">UNIT_INSTR</span> <span class="o">=</span> <span class="s2">&quot;Indicate what unit you are using to qualify your measure. Refer to https://www.qudt.org/doc/DOC_VOCAB-UNITS.html&quot;</span>
+<span class="n">IS_MEASURE_INSTR</span> <span class="o">=</span> <span class="s2">&quot;If Measure indicate YES, else (dimension) indicate NO&quot;</span>
+<span class="n">EXISTING_URI_INSTR</span> <span class="o">=</span> <span class="s2">&quot;If you already have a URI for this particular column, indicate it like so mds:InstrumentId. Ensure mds is defined in the other sheet&quot;</span>
+<span class="n">EXPERIMENT_ID_INSTR</span> <span class="o">=</span> <span class="s2">&quot;If you don&#39;t mention an ExperimentId, IDs will be generated for each experiment&quot;</span>
+<span class="n">NO_TERMS_MSG</span> <span class="o">=</span> <span class="s2">&quot;No matching terms found in the ontology. A default template has been generated for your use case.&quot;</span>
+<span class="n">TEMPLATE_GENERATED_MSG</span> <span class="o">=</span> <span class="s2">&quot;Excel template has been successfully generated at &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span>
+
+<span class="c1"># === Column Headers ===</span>
+<span class="n">HEADER_NAMESPACE</span> <span class="o">=</span> <span class="s2">&quot;Namespace you are using&quot;</span>
+<span class="n">HEADER_BASE_URI</span> <span class="o">=</span> <span class="s2">&quot;Base URI&quot;</span>
+
+<div class="viewcode-block" id="validate_orcid_format">
+<a class="viewcode-back" href="../../../FAIRLinked.QBWorkflow.html#FAIRLinked.QBWorkflow.utility.validate_orcid_format">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_orcid_format</span><span class="p">(</span><span class="n">orcid</span><span class="p">):</span>
+    <span class="c1"># Basic ORCID format validation (e.g., 0000-0000-0000-0000)</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{4}</span><span class="s2">$&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">orcid</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<span class="c1"># Light color palette for category mapping</span>
+<span class="n">LIGHT_COLORS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;red&quot;</span><span class="p">:</span> <span class="s2">&quot;FFE6E6&quot;</span><span class="p">,</span>      <span class="c1"># Very Light Red</span>
+    <span class="s2">&quot;green&quot;</span><span class="p">:</span> <span class="s2">&quot;E6FFE6&quot;</span><span class="p">,</span>    <span class="c1"># Very Light Green</span>
+    <span class="s2">&quot;blue&quot;</span><span class="p">:</span> <span class="s2">&quot;E6E6FF&quot;</span><span class="p">,</span>     <span class="c1"># Very Light Blue</span>
+    <span class="s2">&quot;yellow&quot;</span><span class="p">:</span> <span class="s2">&quot;FFFCE6&quot;</span><span class="p">,</span>   <span class="c1"># Very Light Yellow</span>
+    <span class="s2">&quot;orange&quot;</span><span class="p">:</span> <span class="s2">&quot;FFF5E6&quot;</span><span class="p">,</span>   <span class="c1"># Very Light Orange</span>
+    <span class="s2">&quot;purple&quot;</span><span class="p">:</span> <span class="s2">&quot;FFE6FF&quot;</span><span class="p">,</span>   <span class="c1"># Very Light Purple</span>
+    <span class="s2">&quot;cyan&quot;</span><span class="p">:</span> <span class="s2">&quot;E6FFFF&quot;</span><span class="p">,</span>     <span class="c1"># Very Light Cyan</span>
+    <span class="s2">&quot;pink&quot;</span><span class="p">:</span> <span class="s2">&quot;FFE6F0&quot;</span><span class="p">,</span>     <span class="c1"># Very Light Pink</span>
+    <span class="s2">&quot;mint&quot;</span><span class="p">:</span> <span class="s2">&quot;E6FFF0&quot;</span><span class="p">,</span>     <span class="c1"># Very Light Mint</span>
+    <span class="s2">&quot;lavender&quot;</span><span class="p">:</span> <span class="s2">&quot;F0E6FF&quot;</span>  <span class="c1"># Very Light Lavender</span>
+<span class="p">}</span>
+
+<span class="c1"># These will be populated by mds_ontology_analyzer</span>
+<span class="n">CATEGORY_COLORS</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">ONTO_CORE_CATEGORIES</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

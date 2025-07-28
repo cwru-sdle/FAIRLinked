@@ -79,9 +79,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Sphinx documentation
-docs/_build/
-
 # Flask/Django
 instance/
 .webassets-cache
