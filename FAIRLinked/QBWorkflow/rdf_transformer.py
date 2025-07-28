@@ -16,7 +16,7 @@ except ImportError:
     QB = Namespace('http://purl.org/linked-data/cube#')
 
 from rdflib.namespace import SKOS
-from FAIRLinked.input_handler import get_approved_id_columns, get_identifiers
+from FAIRLinked.QBWorkflow.input_handler import get_approved_id_columns, get_identifiers,  get_row_identifier_columns
 
 # =============================================================================
 #                            CONSTANTS
@@ -668,6 +668,53 @@ def create_observation(dataset_graph: Graph,
     return observations, observation_counter
 
 
+def create_observation_2(row: pd.Series,
+                       variable_metadata: dict,
+                       ns_map: dict,
+                       user_ns: Namespace,
+                       file_name: str) -> Graph:
+
+    row_graph = Graph(identifier=user_ns[file_name])
+    for prefix, namespace in ns_map.items():
+        row_graph.bind(prefix, namespace)
+
+    MDS = Namespace("https://cwrusdle.bitbucket.io/mds#")
+    QUDT = Namespace("http://qudt.org/schema/qudt/")
+    UNIT = Namespace("http://qudt.org/vocab/unit/")
+    QK = Namespace("http://qudt.org/vocab/quantitykind/")
+    PROV = Namespace("http://www.w3.org/ns/prov#")
+    SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
+
+    row_graph.bind("mds", MDS)
+    row_graph.bind("qudt", QUDT)
+    row_graph.bind("unit", UNIT)
+    row_graph.bind("quantitykind", QK)
+    row_graph.bind("prov", PROV)
+    row_graph.bind("skos", SKOS)    
+
+    for var, metadata in variable_metadata.items():
+        unit_uri = process_unit(metadata.get(UNIT_FIELD), ns_map, user_ns)
+        var_uri = get_property_uri(var, metadata, ns_map, user_ns)
+        var_instance_uri = URIRef(var_uri + "-" +  file_name)
+        var_val = row.get(var)
+        var_cat = metadata.get(CATEGORY_FIELD)
+        if pd.notnull(var_val):
+            if pd.notnull(unit_uri):
+                row_graph.add((var_instance_uri, RDF.type, var_uri))
+                row_graph.add((var_instance_uri, QUDT.hasUnit, unit_uri))
+                row_graph.add((var_instance_uri, QUDT.value, Literal(var_val, datatype=XSD.float)))
+            else:
+                row_graph.add((var_instance_uri, RDF.type, var_uri))
+                row_graph.add((var_instance_uri, QUDT.hasUnit, BNode()))
+                row_graph.add((var_instance_uri, QUDT.value, Literal(var_val, datatype=XSD.string)))
+
+
+    return row_graph
+
+        
+
+
+
 # =============================================================================
 #          ROW-BY-ROW CONVERSION
 # =============================================================================
@@ -858,17 +905,15 @@ def convert_row_by_row_CRADLE(
     """
     user_ns = ns_map[user_chosen_prefix]
 
-    candidate_id_cols = [c for c in df.columns if re.search(r'id', c, re.IGNORECASE)]
-    approved_id_cols = get_approved_id_columns(candidate_id_cols, mode='row-by-row')
 
-    missing_ids = get_identifiers(approved_id_cols)
+    approved_id_cols = get_row_identifier_columns(df=df)
 
     # Build a single DSD for entire DF
-    dimensions, measures = extract_variables(variable_metadata, df.columns)
-    if EXPERIMENT_ID_COLUMN in df.columns and EXPERIMENT_ID_COLUMN not in dimensions:
-        dimensions.insert(0, EXPERIMENT_ID_COLUMN)
+    # dimensions, measures = extract_variables(variable_metadata, df.columns)
+    # if EXPERIMENT_ID_COLUMN in df.columns and EXPERIMENT_ID_COLUMN not in dimensions:
+    #     dimensions.insert(0, EXPERIMENT_ID_COLUMN)
 
-    dsd_graph, dsd_uri = create_dsd(variable_metadata, dimensions, measures, ns_map, user_ns)
+    # dsd_graph, dsd_uri = create_dsd(variable_metadata, dimensions, measures, ns_map, user_ns)
 
     # For each row => new dataset
     for idx, row in df.iterrows():
@@ -884,73 +929,78 @@ def convert_row_by_row_CRADLE(
 
         # fallback => orcid + timestamp
         if any(name_parts_file):
-            combined_file = "_".join(name_parts_file + [numeric_orcid, overall_timestamp])
+            combined_file = "-".join(name_parts_file + [numeric_orcid, overall_timestamp])
         else:
-            combined_file = f"{numeric_orcid}_{overall_timestamp}"
-        combined_file = _sanitize_for_filename(combined_file)
+            combined_file = f"{numeric_orcid}-{overall_timestamp}"
         letter = random.choice(string.ascii_lowercase)
-        combined_file = letter + _create_id_string(missing_ids) + "_" + combined_file
+        combined_file = letter + "-" + combined_file
+        
+        row_graph = create_observation_2(row=row,
+                       variable_metadata=variable_metadata,
+                       ns_map=ns_map,
+                       user_ns=user_ns,
+                       file_name=combined_file)
+
         
 
-        if any(name_parts_iri):
-            combined_iri = "_".join(name_parts_iri + [numeric_orcid, overall_timestamp])
-        else:
-            combined_iri = f"{numeric_orcid}_{overall_timestamp}"
-        combined_iri = _sanitize_for_iri(combined_iri)
-        combined_iri = letter + _create_id_string(missing_ids) + "_" + combined_iri
+        # if any(name_parts_iri):
+        #     combined_iri = "-".join(name_parts_iri + [numeric_orcid, overall_timestamp])
+        # else:
+        #     combined_iri = f"{numeric_orcid}-{overall_timestamp}"
+        # combined_iri = letter + "-" + combined_iri
 
-        dataset_id_str = _sanitize_for_iri(f"Dataset_{combined_iri}")
-        slice_id_str = _sanitize_for_iri(f"Slice_{combined_iri}")
-        slice_key_id = _sanitize_for_iri(f"SliceKey_{combined_iri}")
+        # dataset_id_str = "Dataset" + "-" + combined_iri
+        # slice_id_str = "Slice" + "-" + combined_iri
+        # slice_key_id = "SliceKey" + "-" + combined_iri
 
-        dataset_uri = user_ns[dataset_id_str]
-        slice_uri = user_ns[slice_id_str]
-        slice_key_uri = user_ns[slice_key_id]
+        # dataset_uri = user_ns[dataset_id_str]
+        # slice_uri = user_ns[slice_id_str]
+        # slice_key_uri = user_ns[slice_key_id]
 
-        # Copy the DSD graph into a fresh row_graph
-        row_graph = dsd_graph.__class__()
-        for prefix, ns_obj in ns_map.items():
-            row_graph.bind(prefix, ns_obj)
-        row_graph.bind('skos', SKOS)
-        for triple in dsd_graph:
-            row_graph.add(triple)
+        # # Copy the DSD graph into a fresh row_graph
+        # row_graph = dsd_graph.__class__()
+        # for prefix, ns_obj in ns_map.items():
+        #     row_graph.bind(prefix, ns_obj)
+        # row_graph.bind('skos', SKOS)
+        # for triple in dsd_graph:
+        #     row_graph.add(triple)
 
-        # qb:DataSet
-        row_graph.add((dataset_uri, RDF.type, QB.DataSet))
-        row_graph.add((dataset_uri, QB.structure, dsd_uri))
-        row_graph.add((dataset_uri, DCTERMS.title, Literal(dataset_id_str)))
-        row_graph.add((dataset_uri, DCTERMS.creator, Literal(orcid)))
+        # # qb:DataSet
+        # row_graph.add((dataset_uri, RDF.type, QB.DataSet))
+        # row_graph.add((dataset_uri, QB.structure, dsd_uri))
+        # row_graph.add((dataset_uri, DCTERMS.title, Literal(dataset_id_str)))
+        # row_graph.add((dataset_uri, DCTERMS.creator, Literal(orcid)))
 
-        # Single SliceKey for these dimensions
-        row_graph.add((slice_key_uri, RDF.type, QB.SliceKey))
-        fixed_dimensions = dimensions
-        for dim_name in fixed_dimensions:
-            dim_prop = get_property_uri(dim_name, variable_metadata[dim_name], ns_map, user_ns)
-            row_graph.add((slice_key_uri, QB.componentProperty, dim_prop))
+        # # Single SliceKey for these dimensions
+        # row_graph.add((slice_key_uri, RDF.type, QB.SliceKey))
+        # fixed_dimensions = dimensions
+        # for dim_name in fixed_dimensions:
+        #     dim_prop = get_property_uri(dim_name, variable_metadata[dim_name], ns_map, user_ns)
+        #     row_graph.add((slice_key_uri, QB.componentProperty, dim_prop))
 
-        # Single Slice
-        row_graph.add((slice_uri, RDF.type, QB.Slice))
-        row_graph.add((slice_uri, QB.sliceStructure, slice_key_uri))
-        row_graph.add((dataset_uri, QB.slice, slice_uri))
+        # # Single Slice
+        # row_graph.add((slice_uri, RDF.type, QB.Slice))
+        # row_graph.add((slice_uri, QB.sliceStructure, slice_key_uri))
+        # row_graph.add((dataset_uri, QB.slice, slice_uri))
 
-        not_found_uri = user_ns['NotFound']
-        for dim_name in fixed_dimensions:
-            dim_val = row.get(dim_name)
-            dim_meta = variable_metadata[dim_name]
-            dim_prop = get_property_uri(dim_name, dim_meta, ns_map, user_ns)
-            if pd.notnull(dim_val):
-                row_graph.add((slice_uri, dim_prop, Literal(dim_val)))
-            else:
-                row_graph.add((slice_uri, dim_prop, not_found_uri))
+        # not_found_uri = user_ns['NotFound']
+        # for dim_name in fixed_dimensions:
+        #     dim_val = row.get(dim_name)
+        #     dim_meta = variable_metadata[dim_name]
+        #     dim_prop = get_property_uri(dim_name, dim_meta, ns_map, user_ns)
+        #     if pd.notnull(dim_val):
+        #         row_graph.add((slice_uri, dim_prop, Literal(dim_val)))
+        #     else:
+        #         row_graph.add((slice_uri, dim_prop, not_found_uri))
 
-        # Observations
-        obs_counter = 1
-        variable_dims = []
-        observations, obs_counter = create_observation(
-            row_graph, row, variable_metadata, variable_dims, measures, ns_map, user_ns, obs_counter
-        )
-        for obs_uri in observations:
-            row_graph.add((slice_uri, QB.observation, obs_uri))
+        # # Observations
+        # obs_counter = 1
+        # variable_dims = []
+        # observations, obs_counter = create_observation(
+        #     row_graph, row, variable_metadata, variable_dims, measures, ns_map, user_ns, obs_counter
+        # )
+        # for obs_uri in observations:
+        #     row_graph.add((slice_uri, QB.observation, obs_uri))
 
         # Write to subfolders
         subfolders = create_subfolders(root_folder_path)

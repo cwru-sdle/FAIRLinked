@@ -7,7 +7,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from FAIRLinked.utility import NAMESPACE_MAP
+from FAIRLinked.QBWorkflow.utility import NAMESPACE_MAP
 
 def parse_rdf_to_df(file_path: str,
                     variable_metadata_json_path: str,

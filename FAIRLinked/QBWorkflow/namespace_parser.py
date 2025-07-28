@@ -1,4 +1,4 @@
-from FAIRLinked.utility import NAMESPACE_MAP
+from FAIRLinked.QBWorkflow.utility import NAMESPACE_MAP
 import openpyxl
 
 def parse_excel_to_namespace_map(excel_file_path):

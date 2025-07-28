@@ -1,4 +1,4 @@
-from FAIRLinked.utility import NAMESPACE_MAP, HEADER_NAMESPACE, HEADER_BASE_URI
+from FAIRLinked.QBWorkflow.utility import NAMESPACE_MAP, HEADER_NAMESPACE, HEADER_BASE_URI
 import openpyxl
 from openpyxl.styles import PatternFill, Alignment, Font, Border, Side
 

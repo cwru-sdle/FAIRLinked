@@ -1,4 +1,4 @@
-from FAIRLinked.input_handler import (
+from FAIRLinked.QBWorkflow.input_handler import (
     check_if_running_experiment,
     get_domain,
     get_orcid,
@@ -17,13 +17,13 @@ from FAIRLinked.input_handler import (
 
 )
 import os
-from FAIRLinked.mds_ontology_analyzer import get_classification
-from FAIRLinked.namespace_template_generator import generate_namespace_excel
-from FAIRLinked.data_template_generator import generate_data_xlsx_template
-from FAIRLinked.namespace_parser import parse_excel_to_namespace_map
-from FAIRLinked.data_parser import read_excel_template
-from FAIRLinked.rdf_transformer import convert_dataset_to_rdf_with_mode
-from FAIRLinked.rdf_to_df import parse_rdf_to_df
+from FAIRLinked.QBWorkflow.mds_ontology_analyzer import get_classification
+from FAIRLinked.QBWorkflow.namespace_template_generator import generate_namespace_excel
+from FAIRLinked.QBWorkflow.data_template_generator import generate_data_xlsx_template
+from FAIRLinked.QBWorkflow.namespace_parser import parse_excel_to_namespace_map
+from FAIRLinked.QBWorkflow.data_parser import read_excel_template
+from FAIRLinked.QBWorkflow.rdf_transformer import convert_dataset_to_rdf_with_mode
+from FAIRLinked.QBWorkflow.rdf_to_df import parse_rdf_to_df
 import traceback
 from pprint import pprint
 
@@ -106,7 +106,7 @@ def parse_existing_datacube_workflow(file_path: str):
 
 def run_experiment_workflow():
     """
-    Generates namespace and data templates with optional ontology analysis for FAIRLinked.
+    Generates namespace and data templates with optional ontology analysis for FAIRLinked.QBWorkflow.
 
     Steps:
     1. Check if the user has local ontology files (lowest-level & combined).
@@ -140,7 +140,7 @@ def run_experiment_workflow():
 
 def run_standard_workflow():
     """
-    Processes namespace and data Excel files to generate RDF outputs with FAIRLinked.
+    Processes namespace and data Excel files to generate RDF outputs with FAIRLinked.QBWorkflow.
 
     Steps:
     1. Gather user inputs (ORCID, namespace/data Excel, output folder).
@@ -189,7 +189,7 @@ def run_standard_workflow():
 def run_ingestion_workflow():
 
     """
-        Processes namespace and data Excel files to generate RDF outputs with FAIRLinked.
+        Processes namespace and data Excel files to generate RDF outputs with FAIRLinked.QBWorkflow.
 
     Steps:
     1. Gather user inputs (ORCID, namespace/data Excel, output folder).
@@ -232,6 +232,3 @@ def run_ingestion_workflow():
 
         
 
-
-if __name__ == "__main__":
-    main()

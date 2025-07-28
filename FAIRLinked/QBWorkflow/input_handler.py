@@ -1,5 +1,5 @@
 import re
-from FAIRLinked.utility import validate_orcid_format
+from FAIRLinked.QBWorkflow.utility import validate_orcid_format
 import os
 from typing import Dict, Set, List, Tuple
 
@@ -404,6 +404,30 @@ def get_approved_id_columns(candidate_id_columns: List[str], mode: str) -> List[
         print(f"Approved ID columns for naming: {approved_columns}")
 
     return approved_columns
+
+def get_row_identifier_columns(df) -> List[str]:
+    col_map = {i: col for i, col in enumerate(df.columns)}
+
+    # Print the columns with their corresponding numbers
+    print("Available columns:")
+    for i, col in col_map.items():
+        print(f"{i}: {col}")
+
+    # Prompt user input
+    selected = input("Enter column numbers separated by commas (e.g., 0,2,3): ")
+
+    # Parse input into a list of integers
+    try:
+        selected_indices = [int(i.strip()) for i in selected.split(",")]
+    except ValueError:
+        print("Invalid input. Please enter numbers only.")
+        return []
+
+    # Get the corresponding column names
+    selected_columns = [col_map[i] for i in selected_indices if i in col_map]
+
+    return selected_columns
+
 
 def check_ingestion() -> str:
     """
