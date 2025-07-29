@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='FAIRLinked',
-    version='0.3.0.5',  # ⬅️ Updated version to match recent work
+    version='0.3.0.6',  # ⬅️ Updated version to match recent work
     description='Transform research data into FAIR-compliant RDF using the RDF Data Cube Vocabulary.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',

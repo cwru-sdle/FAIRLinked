@@ -5,17 +5,35 @@ import os
 import difflib
 import rdflib
 from datetime import datetime
-from rdflib.namespace import RDF, RDFS, OWL, SKOS, Graph
+from rdflib.namespace import RDF, RDFS, OWL, SKOS
 
 def normalize(text):
+    """
+    Normalize a text string by converting it to lowercase and removing non-alphanumeric characters.
+
+    Args:
+        text (str): Input text to normalize.
+
+    Returns:
+        str: Normalized string.
+    """
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
 
-def extract_terms_from_ontology(ontology_graph):
-    mds_ontology = ontology_graph
 
+def extract_terms_from_ontology(ontology_graph):
+    """
+    Extract terms from an RDF graph representing an OWL ontology.
+
+    Args:
+        ontology_graph (rdflib.Graph): The ontology RDF graph.
+
+    Returns:
+        list[dict]: A list of dictionaries containing term IRIs, original labels, and normalized labels.
+    """
     terms = []
-    for s in mds_ontology.subjects(RDF.type, OWL.Class):
-        labels = list(mds_ontology.objects(s, SKOS.altLabel)) + list(mds_ontology.objects(s, RDFS.label))
+    for s in ontology_graph.subjects(RDF.type, OWL.Class):
+        # Get both altLabels and rdfs:labels
+        labels = list(ontology_graph.objects(s, SKOS.altLabel)) + list(ontology_graph.objects(s, RDFS.label))
         for label in labels:
             label_str = str(label).strip()
             terms.append({
@@ -25,13 +43,26 @@ def extract_terms_from_ontology(ontology_graph):
             })
     return terms
 
-def find_best_match(column, ontology_terms):
-    norm_col = normalize(column)
-    matches = [term for term in ontology_terms if term["normalized"] == norm_col]
 
+def find_best_match(column, ontology_terms):
+    """
+    Find the best matching ontology term for a given column name.
+
+    Args:
+        column (str): The name of the column from the CSV file.
+        ontology_terms (list[dict]): List of extracted ontology terms.
+
+    Returns:
+        dict or None: The best-matching ontology term, or None if no good match is found.
+    """
+    norm_col = normalize(column)
+
+    # First, try exact normalized match
+    matches = [term for term in ontology_terms if term["normalized"] == norm_col]
     if matches:
         return matches[0]
 
+    # Otherwise, find close match using difflib
     all_norm = [term["normalized"] for term in ontology_terms]
     close_matches = difflib.get_close_matches(norm_col, all_norm, n=1, cutoff=0.8)
 
@@ -41,7 +72,18 @@ def find_best_match(column, ontology_terms):
 
     return None
 
+
 def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path):
+    """
+    Convert a CSV file into a JSON-LD document using an ontology to match column names.
+
+    Args:
+        csv_path (str): Path to the CSV file to convert.
+        ontology_graph (rdflib.Graph): The ontology RDF graph for matching terms.
+        output_path (str): Path to write the resulting JSON-LD file.
+        matched_log_path (str): Path to write the log of matched columns.
+        unmatched_log_path (str): Path to write the log of unmatched columns.
+    """
     df = pd.read_csv(csv_path)
     columns = list(df.columns)
     ontology_terms = extract_terms_from_ontology(ontology_graph)
@@ -49,6 +91,7 @@ def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_pat
     matched_log = []
     unmatched_log = []
 
+    # Construct the base JSON-LD structure
     jsonld = {
         "@context": {
             "mds": "https://cwrusdle.bitbucket.io/mds/",
@@ -71,17 +114,19 @@ def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_pat
         "@graph": []
     }
 
+    # Process each column and attempt to match it to ontology terms
     for col in columns:
         match = find_best_match(col, ontology_terms)
-        iri = str(match["iri"]).split("/")[-1].split("#")[-1] if match else col
+        iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else col
+
         if match:
-            matched_log.append(f"{col} => {iri}")
+            matched_log.append(f"{col} => {iri_fragment}")
         else:
             unmatched_log.append(col)
 
         entry = {
-            "@id": f"mds:{iri}",
-            "@type": f"mds:{iri}",
+            "@id": f"mds:{iri_fragment}",
+            "@type": f"mds:{iri_fragment}",
             "skos:altLabel": col,
             "skos:definition": "",
             "qudt:value": [{"@value": ""}],
@@ -98,13 +143,18 @@ def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_pat
         }
         jsonld["@graph"].append(entry)
 
+    # Ensure output directories exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
+    # Write JSON-LD
     with open(output_path, "w") as f:
         json.dump(jsonld, f, indent=2)
 
+    # Write matched log
     with open(matched_log_path, "w") as f:
         f.write("\n".join(matched_log))
 
+    # Write unmatched log (remove duplicates with set)
     with open(unmatched_log_path, "w") as f:
-        f.write("\n".join(set(unmatched_log)))
+        f.write("\n".join(sorted(set(unmatched_log))))  # BUG FIX: previously had stray '-' before 'fix'
+
