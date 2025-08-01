@@ -2,14 +2,14 @@ from setuptools import setup, find_packages
 
 setup(
     name='FAIRLinked',
-    version='0.3.0.6',  # ⬅️ Updated version to match recent work
-    description='Transform research data into FAIR-compliant RDF using the RDF Data Cube Vocabulary.',
+    version='0.3.0.7',
+    description='Transform research data into FAIR-compliant RDF using the RDF Data Cube Vocabulary. Align your datasets with MDS-Onto and convert them into Linked Data, enhancing interoperability and reusability for seamless data integration. See the README or vignette for more information. This tool is used by the SDLE Research Center at Case Western Reserve University.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    author='Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French',
+    author='Ritika Lamba, Van Tran, Balashanmuga Priyan Rajamohan, Kai Zheng, Benjamin Pierce, Erika I. Barcelos, Roger H. French',
     author_email='rxf131@case.edu',
-    license='BSD-2-Clause',
-    packages=find_packages(),  # ⬅️ Ensure your code is under 'packages/'
+    license='BSD-3-Clause',
+    packages=find_packages(),
     install_requires=[
         'rdflib>=7.0.0',
         'typing-extensions>=4.0.0',
@@ -25,8 +25,6 @@ setup(
             'pytest-cov'
         ]
     },
-    include_package_data=True,
-    zip_safe=False,
     python_requires='>=3.9.18',
     classifiers=[
         'Development Status :: 4 - Beta',

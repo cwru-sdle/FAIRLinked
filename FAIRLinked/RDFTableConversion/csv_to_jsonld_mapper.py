@@ -73,16 +73,16 @@ def find_best_match(column, ontology_terms):
     return None
 
 
-def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path):
+def json_ld_template_generator(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path):
     """
-    Convert a CSV file into a JSON-LD document using an ontology to match column names.
+    Use a CSV file into a JSON-LD template that user can fill out column metadata.
 
     Args:
-        csv_path (str): Path to the CSV file to convert.
+        csv_path (str): Path to the CSV file to generate JSON-LD template.
         ontology_graph (rdflib.Graph): The ontology RDF graph for matching terms.
         output_path (str): Path to write the resulting JSON-LD file.
-        matched_log_path (str): Path to write the log of matched columns.
-        unmatched_log_path (str): Path to write the log of unmatched columns.
+        matched_log_path (str): Path to write the log of columns that matched the ontology.
+        unmatched_log_path (str): Path to write the log of columns that can't be found in the ontology.
     """
     df = pd.read_csv(csv_path)
     columns = list(df.columns)
@@ -139,6 +139,9 @@ def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_pat
             "skos:note": {
                 "@value": "placeholder note for user to fill",
                 "@language": "en"
+            },
+            "mds:hasStudyStage": {
+                
             }
         }
         jsonld["@graph"].append(entry)
@@ -157,4 +160,3 @@ def convert_csv_to_jsonld(csv_path, ontology_graph, output_path, matched_log_pat
     # Write unmatched log (remove duplicates with set)
     with open(unmatched_log_path, "w") as f:
         f.write("\n".join(sorted(set(unmatched_log))))  # BUG FIX: previously had stray '-' before 'fix'
-
