@@ -28,13 +28,6 @@ FAIRLinked.RDFTableConversion.jsonld\_batch\_converter module
    :show-inheritance:
    :undoc-members:
 
-FAIRLinked.RDFTableConversion.rdf\_to\_table\_converter module
---------------------------------------------------------------
-
-.. automodule:: FAIRLinked.RDFTableConversion.rdf_to_table_converter
-   :members:
-   :show-inheritance:
-   :undoc-members:
 
 Module contents
 ---------------
