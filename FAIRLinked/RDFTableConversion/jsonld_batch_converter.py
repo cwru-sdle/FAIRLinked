@@ -103,10 +103,4 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
 
     print(f"\n✅ Output files saved to:\n- {csv_path}\n- {parquet_path}\n- {arrow_path}")
 
-# ----------------------
-# USAGE SHOULD GO IN README, NOT MAIN BLOCK
-# ----------------------
 
-if __name__ == "__main__":
-    print("❌ This script is intended to be imported and used in other scripts or notebooks.")
-    print("   Please call jsonld_directory_to_csv(...) with appropriate paths.")

@@ -62,6 +62,20 @@ pip install FAIRLinked
 ```
 ---
 
+## Interface MDS Subpackage
+
+```python
+import FAIRLinked.InterfaceMDS
+```
+Functions in Interface MDS allow users to interact with MDS-Onto and search for terms relevant to their domains. This include loading MDS-Onto into an RDFLib Graph, view domains and subdomains, term search, and add new ontology terms to a local copy.
+
+## RDF Table Conversion Subpackage
+
+```python
+import FAIRLinked.RDFTableConversion
+```
+Functions in this subpackage allow to generate a JSON-LD metadata template from a CSV with MDS-compliant terms, generate JSON-LDs filled with data and MDS semantic relationships, and then convert a directory of JSON-LDs back into tabular format. 
+
 ## RDF DataCube Workflow
 
 ```python
@@ -71,6 +85,8 @@ from rdf_data_cube_workflow import rdf_data_cube_workflow_start
 rdf_data_cube_workflow_start()
 
 ```
+
+The RDF DataCube workflow turns tabular data into a format compliant with the [RDF Data Cube vocabulary](https://www.w3.org/TR/vocab-data-cube/). 
 
 
 ![FAIRLinked](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/FAIRLinkedv0.2.png)
@@ -86,10 +102,9 @@ This work was supported by:
 ---
 ## 🤝 Contributing
 
-We welcome pull requests and new ideas! If you use FAIRLinked in your research, please **cite the project** or **reach out to the authors**.
+We welcome new ideas and community contributions! If you use FAIRLinked in your research, please **cite the project** or **reach out to the authors**.
 
 Let us know if you'd like to include:
 * Badges (e.g., PyPI version, License, Docs)
 * ORCID links or contact emails
 * Example datasets or a GIF walkthrough
-
