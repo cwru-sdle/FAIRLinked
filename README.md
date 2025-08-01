@@ -27,7 +27,7 @@ Version 0.3 brings a major expansion of FAIRLinked's capabilities with:
 - ✅ **Robust CLI handlers** with built-in validations and retry logic
 - ✅ **Modular file outputs** including support for `.ttl`, `.jsonld`, `.owl`, `.nt`, `.csv`, `.xlsx`, `.parquet`, `.arrow`
 
-Documentations of how to use functions in FAIRLinked can be found [here](https://fairlinked.readthedocs.io/en/latest/index.html)
+Documentations of how to use functions in FAIRLinked can be found [here](https://fairlinked.readthedocs.io/)
 
 ---
 
