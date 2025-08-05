@@ -9,6 +9,18 @@ import uuid
 import pandas as pd
 from rdflib import Graph, URIRef, Literal, Namespace
 from rdflib.namespace import RDF, SKOS, OWL, RDFS
+from urllib.parse import quote
+
+import os
+import json
+import copy
+import random
+import string
+import warnings
+from datetime import datetime
+from urllib.parse import quote
+import pandas as pd
+from rdflib import Graph, URIRef, Literal, Namespace
 
 def extract_data_from_csv(
     metadata_template,
@@ -71,85 +83,94 @@ def extract_data_from_csv(
     else:
         prop_metadata_dict = {}
 
-    for _, row in df.iloc[2:].iterrows():
-        # Generate row key and full identifier
-        row_key_val = [str(row[col]).strip() for col in row_key_cols if col in row and pd.notna(row[col])]
-        row_key = "-".join(row_key_val)
-        timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-        full_row_key = f"{row_key}-{orcid}-{timestamp}"
+    for idx, row in df.iloc[2:].iterrows():
+        try:
+            # Generate row key and full identifier
+            row_key_val = [str(row[col]).strip() for col in row_key_cols if col in row and pd.notna(row[col])]
+            row_key = "-".join(row_key_val)
+            timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+            full_row_key = f"{row_key}-{orcid}-{timestamp}"
 
-        # Deep copy the template and assign @id
-        template_copy = copy.deepcopy(graph_template)
-        subject_lookup = {}  # Maps skos:altLabel → generated @id
+            # Deep copy the template and assign @id
+            template_copy = copy.deepcopy(graph_template)
+            subject_lookup = {}  # Maps skos:altLabel → generated @id
 
-        for item in template_copy:
-            if "@type" not in item or not item["@type"]:
-                warnings.warn(f"Missing or empty @type in template item: {item}")
-                continue
-            if "skos:altLabel" not in item or not item["skos:altLabel"]:
-                raise ValueError("Missing skos:altLabel in template")
-
-            prefix, localname = item["@type"].split(":")
-            subject_uri = f"{context[prefix]}{localname}.{full_row_key}"
-            item["@id"] = subject_uri
-            subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
-
-            if "prov:generatedAtTime" in item:
-                item["prov:generatedAtTime"]["@value"] = datetime.utcnow().isoformat() + "Z"
-
-            if "qudt:hasUnit" in item and not item["qudt:hasUnit"].get("@id"):
-                del item["qudt:hasUnit"]
-            if "qudt:hasQuantityKind" in item and not item["qudt:hasQuantityKind"].get("@id"):
-                del item["qudt:hasQuantityKind"]
-
-        jsonld_data = {
-            "@context": context,
-            "@graph": template_copy
-        }
-
-        g = Graph(identifier=URIRef(f"{base_uri}{full_row_key}"))
-        g.parse(data=json.dumps(jsonld_data), format="json-ld")
-
-        QUDT = Namespace("http://qudt.org/schema/qudt/")
-        for alt_label, subj_uri in subject_lookup.items():
-            if alt_label in row:
-                g.remove((subj_uri, QUDT.value, None))
-                g.add((subj_uri, QUDT.value, Literal(row[alt_label])))
-
-        # === Add object/datatype properties to known subject URIs if given ===
-        if prop_column_pair_dict:
-            for key, column_pair_list in prop_column_pair_dict.items():
-                prop_metadata = prop_metadata_dict.get(key)
-                if not prop_metadata:
+            for item in template_copy:
+                if "@type" not in item or not item["@type"]:
+                    warnings.warn(f"Missing or empty @type in template item: {item}")
                     continue
-                prop_uri, prop_type = prop_metadata
-                pred_uri = URIRef(prop_uri)
+                if "skos:altLabel" not in item or not item["skos:altLabel"]:
+                    raise ValueError("Missing skos:altLabel in template")
 
-                for subj_col, obj_col in column_pair_list:
-                    if subj_col not in row or pd.isna(row[subj_col]):
+                prefix, localname = item["@type"].split(":")
+                subject_uri = f"{context[prefix]}{localname}.{full_row_key}"
+                item["@id"] = subject_uri
+                subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
+
+                if "prov:generatedAtTime" in item:
+                    item["prov:generatedAtTime"]["@value"] = datetime.utcnow().isoformat() + "Z"
+
+                if "qudt:hasUnit" in item and not item["qudt:hasUnit"].get("@id"):
+                    del item["qudt:hasUnit"]
+                if "qudt:hasQuantityKind" in item and not item["qudt:hasQuantityKind"].get("@id"):
+                    del item["qudt:hasQuantityKind"]
+
+            jsonld_data = {
+                "@context": context,
+                "@graph": template_copy
+            }
+
+            g = Graph(identifier=URIRef(f"{base_uri}{full_row_key}"))
+            g.parse(data=json.dumps(jsonld_data), format="json-ld")
+
+            QUDT = Namespace("http://qudt.org/schema/qudt/")
+            for alt_label, subj_uri in subject_lookup.items():
+                if alt_label in row:
+                    g.remove((subj_uri, QUDT.value, None))
+                    g.add((subj_uri, QUDT.value, Literal(row[alt_label])))
+
+            # Add object/datatype properties if given
+            if prop_column_pair_dict:
+                for key, column_pair_list in prop_column_pair_dict.items():
+                    prop_metadata = prop_metadata_dict.get(key)
+                    if not prop_metadata:
                         continue
-                    alt_label = subj_col
-                    subj_uri = subject_lookup.get(alt_label)
-                    if not subj_uri:
-                        continue
+                    prop_uri, prop_type = prop_metadata
+                    pred_uri = URIRef(prop_uri)
 
-                    obj_val = row[obj_col]
-                    if pd.isna(obj_val):
-                        continue
+                    for subj_col, obj_col in column_pair_list:
+                        if subj_col not in row or pd.isna(row[subj_col]):
+                            continue
+                        alt_label = subj_col
+                        subj_uri = subject_lookup.get(alt_label)
+                        if not subj_uri:
+                            continue
 
-                    if prop_type == "Object Property":
-                        obj_uri = URIRef(f"{base_uri}{str(obj_val).strip()}")
-                        g.add((subj_uri, pred_uri, obj_uri))
-                    elif prop_type == "Datatype Property":
-                        g.add((subj_uri, pred_uri, Literal(obj_val)))
+                        obj_val = row[obj_col]
+                        if pd.isna(obj_val):
+                            continue
 
-        # === Save the RDF graph ===
-        random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
-        output_file = os.path.join(output_folder, f"{random_suffix}-{full_row_key}.jsonld")
-        g.serialize(destination=output_file, format="json-ld", context=context, indent=2)
-        results.append(g)
+                        if prop_type == "Object Property":
+                            obj_uri = subject_lookup.get(obj_col)
+                            if obj_uri is None:
+                                obj_val_str = str(obj_val).strip()
+                                obj_uri = URIRef(f"{base_uri}{quote(obj_val_str, safe='')}")
+                            g.add((subj_uri, pred_uri, obj_uri))
+                        elif prop_type == "Datatype Property":
+                            g.add((subj_uri, pred_uri, Literal(obj_val)))
+
+            # Save the RDF graph to file
+            random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
+            output_file = os.path.join(output_folder, f"{random_suffix}-{full_row_key}.jsonld")
+            g.serialize(destination=output_file, format="json-ld", context=context, indent=2)
+            results.append(g)
+
+        except Exception as e:
+            warnings.warn(f"Error processing row {idx} with key {row_key if 'row_key' in locals() else 'N/A'}: {e}")
+            continue
 
     return results
+
 
 def generate_prop_metadata_dict(ontology_graph):
     """
