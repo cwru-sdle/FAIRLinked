@@ -132,7 +132,7 @@ def add_term_to_ontology(ontology_path):
         directory = os.path.dirname(ontology_path)
         filename = os.path.basename(ontology_path)
         name, ext = os.path.splitext(filename)
-        new_path = os.path.join(directory, f"{name}_rxl895{ext}")
+        new_path = os.path.join(directory, f"{name}_{ext}")
         
         with open(ontology_path, 'r', encoding='utf-8') as f:
             content = f.read()
