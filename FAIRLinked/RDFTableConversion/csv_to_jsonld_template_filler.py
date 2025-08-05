@@ -65,8 +65,8 @@ def extract_data_from_csv(
     graph_template = metadata_template.get("@graph", [])
 
     if prop_column_pair_dict:
-        if ontology_path is None:
-            raise ValueError("ontology_path must be provided if prop_column_pair_dict is used")
+        if ontology_graph is None:
+            raise ValueError("ontology_graph must be provided if prop_column_pair_dict is used")
         prop_metadata_dict = generate_prop_metadata_dict(ontology_graph)
     else:
         prop_metadata_dict = {}
