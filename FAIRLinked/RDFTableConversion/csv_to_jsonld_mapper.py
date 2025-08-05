@@ -104,7 +104,8 @@ def json_ld_template_generator(csv_path, ontology_graph, output_path, matched_lo
             "unit": "http://qudt.org/vocab/unit/",
             "quantitykind": "http://qudt.org/vocab/quantitykind/",
             "owl": "http://www.w3.org/2002/07/owl#",
-            "wd": "http://www.wikidata.org/entity/"
+            "wd": "http://www.wikidata.org/entity/",
+            "cco": "https://www.commoncoreontologies.org/"
         },
         "@id": "mds:dataset",
         "dcterms:created": {
