@@ -5,10 +5,10 @@ import random
 import string
 import warnings
 from datetime import datetime
-
+import uuid
 import pandas as pd
 from rdflib import Graph, URIRef, Literal, Namespace
-from rdflib.namespace import RDF, SKOS
+from rdflib.namespace import RDF, SKOS, OWL, RDFS
 
 def extract_data_from_csv(
     metadata_template,
@@ -73,7 +73,7 @@ def extract_data_from_csv(
 
     for _, row in df.iloc[2:].iterrows():
         # Generate row key and full identifier
-        row_key_val = [str(row[col]).strip() for col in row_key_cols if pd.notna(row[col]) and col in row]
+        row_key_val = [str(row[col]).strip() for col in row_key_cols if col in row and pd.notna(row[col])]
         row_key = "-".join(row_key_val)
         timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         full_row_key = f"{row_key}-{orcid}-{timestamp}"
@@ -133,7 +133,7 @@ def extract_data_from_csv(
                     if not subj_uri:
                         continue
 
-                    obj_val = row.get(obj_col)
+                    obj_val = row[obj_col]
                     if pd.isna(obj_val):
                         continue
 
