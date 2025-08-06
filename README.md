@@ -42,7 +42,6 @@ Documentations of how to use functions in FAIRLinked can be found [here](https:/
 * Quynh D. Tran
 * Ozan Dernek
 * Yinghui Wu
-* Laura Bruckman
 * Erika I. Barcelos
 * Roger H. French
 
