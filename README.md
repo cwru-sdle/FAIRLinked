@@ -64,7 +64,7 @@ pip install FAIRLinked
 
 ## Interface MDS Subpackage
 
-![InterfaceMDS](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/InterfaceMDS.png)
+![InterfaceMDS](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/InterfaceMDSGitHub.png)
 
 
 ```python
