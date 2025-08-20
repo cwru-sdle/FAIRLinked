@@ -1,6 +1,6 @@
 # FAIRLinked
 
-FAIRLinked is a powerful tool for transforming research data into FAIR-compliant RDF using the RDF Data Cube Vocabulary. It helps you align tabular or semi-structured datasets with the MDS-Onto ontology and convert them into Linked Data formats, enhancing interoperability, discoverability, and reuse.
+FAIRLinked is a powerful tool for transforming research data into FAIR-compliant RDF. It helps you align tabular or semi-structured datasets with the MDS-Onto ontology and convert them into Linked Data formats, enhancing interoperability, discoverability, and reuse.
 
 With FAIRLinked, you can:
 
@@ -64,17 +64,152 @@ pip install FAIRLinked
 
 ## Interface MDS Subpackage
 
+![InterfaceMDS](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/InterfaceMDS.png)
+
 ```python
 import FAIRLinked.InterfaceMDS
 ```
 Functions in Interface MDS allow users to interact with MDS-Onto and search for terms relevant to their domains. This include loading MDS-Onto into an RDFLib Graph, view domains and subdomains, term search, and add new ontology terms to a local copy.
 
+### To load the latest version of MDS-Onto
+```python
+import FAIRLinked.InterfaceMDS.load_mds_ontology 
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+
+mds_graph = load_mds_ontology_graph()
+```
+
+### To view domains/subdomains in MDS-Onto
+```python
+import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
+from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_viewer
+
+domain_subdomain_viewer()
+```
+
+### Search for terms in MDS-Onto
+
+```python
+import FAIRLinked.InterfaceMDS.rdf_subject_extractor
+from FAIRLinked.InterfaceMDS.rdf_subject_extractor import extract_subject_details
+from FAIRLinked.InterfaceMDS.rdf_subject_extractor import fuzzy_filter_subjects_strict
+import FAIRLinked.InterfaceMDS.load_mds_ontology 
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+
+
+mds_graph = load_mds_ontology_graph()
+onto_dataframe = extract_subject_details(mds_graph)
+search_results = fuzzy_filter_subjects_strict(df=onto_dataframe, keywords=["Detector"])
+
+print(search_results)
+```
+
+### Find Domain, Subdomain, and Study Stages
+```python
+# %%
+import FAIRLinked.InterfaceMDS.term_search_general
+from FAIRLinked.InterfaceMDS.term_search_general import term_search_general
+
+term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"])
+```
+
+### Add a new term to Ontology
+
+```python
+import rdflib
+import FAIRLinked.InterfaceMDS.add_ontology_term
+from FAIRLinked.InterfaceMDS.add_ontology_term import add_term_to_ontology
+
+add_term_to_ontology("path/to/mds-onto/file.ttl")
+```
+
 ## RDF Table Conversion Subpackage
+
+![FAIRLinkedCore](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/FAIRLinkedCore.png)
 
 ```python
 import FAIRLinked.RDFTableConversion
 ```
 Functions in this subpackage allow to generate a JSON-LD metadata template from a CSV with MDS-compliant terms, generate JSON-LDs filled with data and MDS semantic relationships, and then convert a directory of JSON-LDs back into tabular format. 
+
+### Generate a JSON-LD template from CSV
+
+```python
+import rdflib
+from rdflib import Graph
+import FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import json_ld_template_generator
+
+mds_graph = Graph()
+mds_graph.parse("path/to/ontology/file")
+
+json_ld_template_generator(csv_path="path/to/data/csv", 
+                           ontology_graph=mds_graph, 
+                           output_path="path/to/output/json-ld/template", 
+                           matched_log_path="path/to/output/matched/terms", 
+                           unmatched_log_path="path/to/output/unmatched/terms")
+
+```
+
+### Create JSON-LDs from CSVs
+
+```python
+import rdflib
+from rdflib import Graph
+import json
+import FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import extract_data_from_csv
+
+with open("path/to/metadata/template", "r") as f:
+    metadata_template = json.load(f) 
+
+extract_data_from_csv(metadata_template=metadata_template, 
+                      csv_file="path/to/data/csv",
+                      row_key_cols=["sample_id"],
+                      orcid="0000-0000-0000-0000", 
+                      output_folder="path/to/output/folder/json-lds")
+```
+
+### Create JSON-LDs with relationships between data instances
+
+```python
+import FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import extract_data_from_csv
+import json
+import FAIRLinked.InterfaceMDS.load_mds_ontology 
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+
+
+mds_graph = load_mds_ontology_graph()
+
+with open("path/to/metadata/template", "r") as f:
+    metadata_template = json.load(f) 
+
+prop_col_pair_dict = {"name of relationship specified by rdfs:label": [("column_1", "column_2")]}
+
+extract_data_from_csv(metadata_template=metadata_template, 
+                      csv_file="path/to/csv/data",
+                      row_key_cols=["column_1", "column_3", "column_7"],
+                      orcid="0000-0000-0000-0000", 
+                      output_folder="path/to/output",
+                      prop_column_pair_dict=prop_col_pair_dict,
+                      ontology_graph=mds_graph)
+```
+
+### Turn JSON-LD directory back to CSV
+
+```python
+import rdflib
+from rdflib import Graph
+import FAIRLinked.RDFTableConversion.jsonld_batch_converter
+from FAIRLinked.RDFTableConversion.jsonld_batch_converter import jsonld_directory_to_csv
+
+jsonld_directory_to_csv(input_dir="path/to/json-ld/directory",
+                        output_basename="Name-of-CSV",
+                        output_dir="path/to/output/directory")
+```
+
+
 
 ## RDF DataCube Workflow
 
