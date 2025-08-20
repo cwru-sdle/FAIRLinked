@@ -66,6 +66,7 @@ pip install FAIRLinked
 
 ![InterfaceMDS](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/InterfaceMDS.png)
 
+
 ```python
 import FAIRLinked.InterfaceMDS
 ```
@@ -126,6 +127,7 @@ add_term_to_ontology("path/to/mds-onto/file.ttl")
 ## RDF Table Conversion Subpackage
 
 ![FAIRLinkedCore](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/FAIRLinkedCore.png)
+
 
 ```python
 import FAIRLinked.RDFTableConversion
