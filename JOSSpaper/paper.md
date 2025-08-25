@@ -20,8 +20,11 @@ authors:
   affiliation: 2, 3
   orcid: "0009-0003-5326-1706"
 - name: Quynh D. Tran
-  affiliation: 2, 3
+  affiliation: 1, 3
   orcid: "0009-0006-4025-1834"
+- name: Ozan Dernek
+  affiliation: 1, 3
+  orcid: "0000-0002-5071-9684"
 - name: Erika I. Barcelos
   affiliation: 1, 3
   orcid: "0000-0002-9273-8488"
