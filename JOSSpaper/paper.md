@@ -67,7 +67,7 @@ The package is organized into three subpackages, each addressing different level
 
 3. `RDFTableConversion` – A streamlined FAIRification workflow for users who prefer a lighter approach that does not require RDF Data Cube. Instead, it leverages a JSON-LD template populated with standard JSON objects derived from table columns. This approach enables users to transform tabular datasets into linked data while maintaining control over metadata content and structure.
 
-By offering both advanced and simplified pathways for converting data into semantically rich, machine-readable formats, FAIRLinked lowers the barrier to adopting FAIR principles in the materials science community. Its modular design allows researchers to choose the workflow that best matches their technical expertise, data complexity, and intended use cases, thereby promoting greater data discoverability, interoperability, and reuse.
+By offering both advanced and simplified pathways for converting data into semantically rich, machine-readable formats, `FAIRLinked` lowers the barrier to adopting FAIR principles in the materials science community. Its modular design allows researchers to choose the workflow that best matches their technical expertise, data complexity, and intended use cases, thereby promoting greater data discoverability, interoperability, and reuse.
 
 
 # Statement of Need
@@ -82,7 +82,7 @@ While these principles are well established, there exists a notable lack of dedi
 
 One widely adopted approach to realize FAIR is through the Resource Description Framework (RDF), which represents knowledge as subject–predicate–object triples within a graph structure [@allenmangSemanticWebWorking2020]. RDF facilitates semantic interoperability by linking data to shared vocabularies and ontologies, enabling seamless integration, querying, and reuse across diverse experimental sources and terminological variations.
 
-FAIRLinked was developed to address this critical gap within the materials science community by providing practical workflows and tools that transform heterogeneous, multimodal, and terminologically inconsistent materials data into RDF-based, machine-actionable formats fully compliant with the FAIR principles.
+`FAIRLinked` was developed to address this critical gap within the materials science community by providing practical workflows and tools that transform heterogeneous, multimodal, and terminologically inconsistent materials data into RDF-based, machine-actionable formats fully compliant with the FAIR principles.
 
 
 # Materials Data Science Ontology (MDS-Onto)
@@ -108,11 +108,11 @@ By enriching ontology terms with these metadata, MDS-Onto enables targeted and e
 
 # Key Features
 
-The FAIRLinked package comprises three subpackages—InterfaceMDS, RDFTableConversion, and QBWorkflow—each addressing distinct aspects of FAIRification based on MDS-Onto.
+The `FAIRLinked` package comprises three subpackages—InterfaceMDS, RDFTableConversion, and QBWorkflow—each addressing distinct aspects of FAIRification based on MDS-Onto.
 
 ## Interfacing with MDS-Onto (InterfaceMDS)
 
-The InterfaceMDS subpackage provides a suite of functions enabling users to access and query MDS-Onto. Given the size of MDS-Onto, which contains thousands of ontology terms, manual inspection of ontology files (e.g., Turtle or JSON-LD formats) is impractical. To facilitate efficient exploration, InterfaceMDS offers the following key functionalities:
+The `InterfaceMDS` subpackage provides a suite of functions enabling users to access and query MDS-Onto. Given the size of MDS-Onto, which contains thousands of ontology terms, manual inspection of ontology files (e.g., Turtle or JSON-LD formats) is impractical. To facilitate efficient exploration, `InterfaceMDS` offers the following key functionalities:
 
 * Retrieval of the latest MDS-Onto version.
 
@@ -128,7 +128,7 @@ These capabilities significantly simplify user interaction with the ontology and
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The RDFTableConversion subpackage implements the core FAIRification workflow through the following steps:
+The `RDFTableConversion` subpackage implements the core FAIRification workflow through the following steps:
 
 1. Metadata Template Preparation: Users populate a metadata template with essential contextual information, including units of measurement, provenance, and other relevant details.
 
@@ -144,7 +144,7 @@ This workflow offers researchers a more straightforward approach to FAIRifying t
 
 ## RDF Data Cube Workflow (QBWorkflow)
 
-The QBWorkflow subpackage builds upon the RDF Data Cube vocabulary to provide a structured FAIRification workflow tailored for multidimensional datasets. According to the RDF Data Cube model, variables within a dataset are classified into three categories: Measures, Dimensions, and Attributes [@RDFDataCube]. A Measure represents a quantitative observation or population parameter. A Dimension defines characteristics that identify and segment the population of interest. Attributes comprise supplementary metadata related to the dataset, such as measurement units or information about the data-collecting organization. This workflow facilitates rigorous, ontology-compliant representation of complex datasets, thereby enhancing interoperability and enabling advanced querying and analysis.
+The `QBWorkflow` subpackage builds upon the RDF Data Cube vocabulary to provide a structured FAIRification workflow tailored for multidimensional datasets. According to the RDF Data Cube model, variables within a dataset are classified into three categories: Measures, Dimensions, and Attributes [@RDFDataCube]. A Measure represents a quantitative observation or population parameter. A Dimension defines characteristics that identify and segment the population of interest. Attributes comprise supplementary metadata related to the dataset, such as measurement units or information about the data-collecting organization. This workflow facilitates rigorous, ontology-compliant representation of complex datasets, thereby enhancing interoperability and enabling advanced querying and analysis.
 
 When users invoke the RDF Data Cube workflow, they are guided through the FAIRification process via a series of structured steps:
 
@@ -163,7 +163,7 @@ This structured and guided approach ensures that even complex, multidimensional 
 
 # Code Availability
 
-The source code for FAIRLinked can be found [here](https://pypi.org/project/FAIRLinked/) or in our [GitHub repository](https://github.com/cwru-sdle/FAIRLinked). 
+The source code for `FAIRLinked` can be found [here](https://pypi.org/project/FAIRLinked/) or in our [GitHub repository](https://github.com/cwru-sdle/FAIRLinked). 
 
 
 # Acknowledgement
