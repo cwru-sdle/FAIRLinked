@@ -106,6 +106,9 @@ By enriching ontology terms with these metadata, MDS-Onto enables targeted and e
 
 ![The Materials Data Science Ontology connects terms to stages in a study protocol and different domains in materials science, allowing scientists to extract terms that are immediately useful to them.\label{fig:Structure of MDS-Onto}](MDS-Onto.png)
 
+![MDS-Onto Framework for Materials Data Scientific Workflow: FAIRification of materials sample, tools, recipe, data and results, analysis process, modelling using machine learning techniques, and inferences. \label{fig:MDS Study Stages}](MDS-StudyStages.png)
+
+
 # Key Features
 
 The `FAIRLinked` package comprises three subpackages—InterfaceMDS, RDFTableConversion, and QBWorkflow—each addressing distinct aspects of FAIRification based on MDS-Onto.
