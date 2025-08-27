@@ -16,24 +16,25 @@ authors:
   orcid: "0009-0008-4355-0543"
 - name: Ritika Lamba
   affiliation: 2, 3
-- name: Balashanmuga Priyan Rajamohan
-  affiliation: 2, 3
-  orcid: "0009-0003-5326-1706"
+  orcid: "0009-0007-8483-019X"
 - name: Quynh D. Tran
   affiliation: 1, 3
   orcid: "0009-0006-4025-1834"
+- name: Balashanmuga Priyan Rajamohan
+  affiliation: 2, 3
+  orcid: "0009-0003-5326-1706"
 - name: Ozan Dernek
   affiliation: 1, 3
   orcid: "0000-0002-5071-9684"
-- name: Erika I. Barcelos
-  affiliation: 1, 3
-  orcid: "0000-0002-9273-8488"
 - name: Yinghui Wu
   affiliation: 2, 3
   orcid: "0000-0003-3991-5155"
 - name: Laura S. Bruckman
   affiliation: 1, 3
   orcid: "0000-0003-1271-1072"
+- name: Erika I. Barcelos
+  affiliation: 1, 3
+  orcid: "0000-0002-9273-8488"
 - name: Roger H. French
   corresponding: yes
   orcid: "0000-0002-6162-0532"
@@ -74,9 +75,9 @@ By offering both advanced and simplified pathways for converting data into seman
 
 Modern materials science research draws on data generated from a wide range of experimental techniques across multiple application domains, including crystallography, photovoltaics, advanced manufacturing, and semiconductors. These techniques include, for example, current–voltage (IV) measurements, Suns–Voc testing, X-ray diffraction, synchrotron X-ray scattering, pyrometry, UV–Vis spectroscopy, and Fourier-transform infrared (FTIR) spectroscopy, among many others. Such experiments produce measurements of diverse material properties under various conditions.
 
-The heterogeneity of these data sources introduces the well-known “3V” challenges of big data—volume, velocity, and variety [@laney3DDataManagement2001]. Materials science datasets are also frequently multimodal, consisting of numerical tables, images, time-series measurements, and other formats. Compounding these challenges, different research groups often use inconsistent terminologies, abbreviations, or naming conventions for the same quantities, instruments, or experimental procedures. This inconsistency creates significant barriers to integrating datasets across laboratories and domains, thereby reducing interoperability and increasing the effort required for data reuse [@bradleyDevelopmentAutomatedFramework2025].
+The heterogeneity of these data sources introduces the well-known “3V” challenges of big data: volume, velocity, and variety [@laney3DDataManagement2001]. Materials science datasets are also frequently multimodal, consisting of numerical tables, images, time-series measurements, and other formats. Compounding these challenges, different research groups often use inconsistent terminologies, abbreviations, or naming conventions for the same quantities, instruments, or experimental procedures. This inconsistency creates significant barriers to integrating datasets across laboratories and domains, thereby reducing interoperability and increasing the effort required for data reuse [@bradleyDevelopmentAutomatedFramework2025].
 
-To maximize their value and prepare them for advanced analysis—particularly with artificial intelligence (AI) and machine learning—these datasets must be machine-actionable. The FAIR principles—Findable, Accessible, Interoperable, and Reusable—offer a widely recognized framework for achieving this objective [@rajamohanFAIRAIReadyEmpowering2025]. Rather than prescribing specific technical standards, these principles define the qualities a dataset should possess to minimize human intervention and enable automated processing.
+To maximize their value and prepare them for advanced analysis, particularly with artificial intelligence (AI) and machine learning, these datasets must be machine-actionable. The FAIR principles, which stands for Findable, Accessible, Interoperable, and Reusable, offer a widely recognized framework for achieving this objective [@rajamohanFAIRAIReadyEmpowering2025]. Rather than prescribing specific technical standards, these principles define the qualities a dataset should possess to minimize human intervention and enable automated processing.
 
 While these principles are well established, there exists a notable lack of dedicated software packages designed specifically to support materials research scientists in FAIRifying their data according to these guidelines.
 
