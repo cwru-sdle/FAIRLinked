@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='FAIRLinked',
-    version='0.3.0.16',
-    description='Transform research data into FAIR-compliant RDF using the RDF Data Cube Vocabulary. Align your datasets with MDS-Onto and convert them into Linked Data, enhancing interoperability and reusability for seamless data integration. See the README or vignette for more information. This tool is used by the SDLE Research Center at Case Western Reserve University.',
+    version='0.3.0.17',
+    description='Transform materials research data into FAIR-compliant RDF Data. Align your datasets with MDS-Onto and convert them into Linked Data, enhancing interoperability and reusability for seamless data integration. See the README or vignette for more information. This tool is used by the SDLE Research Center at Case Western Reserve University.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     author='Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Yinghui Wu, Erika I. Barcelos, Roger H. French, Laura S. Bruckman',

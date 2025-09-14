@@ -10,6 +10,8 @@ With FAIRLinked, you can:
 - Generate metadata summaries and RDF templates
 - Prepare datasets for FAIR repository submission
 
+![FAIRLinked Subpackages](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/fig1-fairlinked.png)
+
 This tool is actively developed and maintained by the **SDLE Research Center at Case Western Reserve University** and is used in multiple federally funded projects.
 
 ---
@@ -70,7 +72,7 @@ pip install FAIRLinked
 ```python
 import FAIRLinked.InterfaceMDS
 ```
-Functions in Interface MDS allow users to interact with MDS-Onto and search for terms relevant to their domains. This include loading MDS-Onto into an RDFLib Graph, view domains and subdomains, term search, and add new ontology terms to a local copy.
+Functions in Interface MDS allow users to interact with MDS-Onto and search for terms relevant to their domains. This includes loading MDS-Onto into an RDFLib Graph, view domains and subdomains, term search, and add new ontology terms to a local copy.
 
 ### To load the latest version of MDS-Onto
 ```python
@@ -81,6 +83,9 @@ mds_graph = load_mds_ontology_graph()
 ```
 
 ### To view domains/subdomains in MDS-Onto
+
+Terms in MDS-Onto are categorized under domains and subdomains, groupings related to topic areas currently being researched at SDLE and collaborators. More information about domains and subdomains can be found [here](https://cwrusdle.bitbucket.io/).
+
 ```python
 import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
 from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_viewer
@@ -106,6 +111,7 @@ print(search_results)
 ```
 
 ### Find Domain, Subdomain, and Study Stages
+
 ```python
 # %%
 import FAIRLinked.InterfaceMDS.term_search_general
@@ -126,7 +132,7 @@ add_term_to_ontology("path/to/mds-onto/file.ttl")
 
 ## RDF Table Conversion Subpackage
 
-![FAIRLinkedCore](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/FAIRLinkedCore.png)
+![FAIRLinkedCore](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/fig2-fairlinked.png)
 
 
 ```python
