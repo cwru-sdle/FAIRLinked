@@ -26,12 +26,12 @@ authors:
 - name: Ozan Dernek
   affiliation: 1, 3
   orcid: "0000-0002-5071-9684"
-- name: Yinghui Wu
-  affiliation: 2, 3
-  orcid: "0000-0003-3991-5155"
 - name: Laura S. Bruckman
   affiliation: 1, 3
   orcid: "0000-0003-1271-1072"
+- name: Yinghui Wu
+  affiliation: 2, 3
+  orcid: "0000-0003-3991-5155"
 - name: Erika I. Barcelos
   affiliation: 1, 3
   orcid: "0000-0002-9273-8488"
