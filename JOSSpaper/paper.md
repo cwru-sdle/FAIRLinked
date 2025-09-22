@@ -5,7 +5,7 @@ tags:
 - Ontology
 - FAIR
 - Materials Data Science
-date: "22 August 2025"
+date: "22 September 2025"
 output:
   pdf_document: default
   html_document:
@@ -101,6 +101,8 @@ MDS-Onto is structured around three key contextual attributes: domain, subdomain
 
 The `FAIRLinked` package comprises three subpackages—InterfaceMDS, RDFTableConversion, and QBWorkflow—each addressing distinct aspects of FAIRification based on MDS-Onto.
 
+![The three subpackages within FAIRLinked](fig1-fairlinked.png){width=80%, height=80%}
+
 ## Interfacing with MDS-Onto (InterfaceMDS)
 
 The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for retrieving the latest version, searching ontology terms by string, filtering terms by domain, and listing available domains and subdomains. These features make it easier for users to explore and discover relevant vocabulary without manually inspecting extensive ontology files.
@@ -111,7 +113,7 @@ The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by provid
 
 The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into enriched CSVs. Each row of a CSV is transformed into an individual JSON-LD file, ensuring that data is linked with standardized units and ontology-compliant terminology. The workflow also supports iterative updates, allowing researchers to reprocess enhanced datasets into updated JSON-LDs. Compared to the more complex RDF Data Cube approach, this provides a streamlined yet semantically robust path to making datasets FAIR and reusable.
 
-![FAIRLinked's FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](FAIRLinkedCore.png){width=80%, height=80%}
+![FAIRLinked's FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](fig2-fairlinked.png){width=80%, height=80%}
 
 ## RDF Data Cube Workflow (QBWorkflow)
 
