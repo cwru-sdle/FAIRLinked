@@ -1,14 +1,32 @@
 from setuptools import setup, find_packages
+import os
+import re
+
+def get_version():
+    repo_root = os.path.abspath(os.path.dirname(__file__))
+    init_path = os.path.join(repo_root, "FAIRLinked", "__init__.py")
+    with open(init_path, "r") as f:
+        init_content = f.read()
+    match = re.search(r'__version__\s*=\s*[\'"]([^\'"]+)[\'"]', init_content)
+    if match:
+        return match.group(1)
+    raise RuntimeError("Version not found in __init__.py")
 
 setup(
     name='FAIRLinked',
-    version='0.3.0.18',
+    version=get_version(),
     description='Transform materials research data into FAIR-compliant RDF Data. Align your datasets with MDS-Onto and convert them into Linked Data, enhancing interoperability and reusability for seamless data integration. See the README or vignette for more information. This tool is used by the SDLE Research Center at Case Western Reserve University.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     author='Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Yinghui Wu, Erika I. Barcelos, Roger H. French, Laura S. Bruckman',
     author_email='rxf131@case.edu',
     license='BSD-3-Clause',
+    project_urls={
+        'Documentation': 'https://fairlinked.readthedocs.io/en/latest/',
+        'Source': 'https://github.com/cwru-sdle/FAIRLinked',
+        'Tracker': 'https://github.com/cwru-sdle/FAIRLinked/issues',
+        'Homepage': 'https://cwrusdle.bitbucket.io/'
+    },
     packages=find_packages(),
     install_requires=[
         'rdflib>=7.0.0',
