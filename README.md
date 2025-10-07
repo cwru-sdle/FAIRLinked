@@ -75,6 +75,7 @@ import FAIRLinked.InterfaceMDS
 Functions in Interface MDS allow users to interact with MDS-Onto and search for terms relevant to their domains. This includes loading MDS-Onto into an RDFLib Graph, view domains and subdomains, term search, and add new ontology terms to a local copy.
 
 ### To load the latest version of MDS-Onto
+
 ```python
 import FAIRLinked.InterfaceMDS.load_mds_ontology 
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
@@ -91,6 +92,30 @@ import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
 from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_viewer
 
 domain_subdomain_viewer()
+```
+
+### To view domains/subdomains tree in MDS-Onto
+
+To see domains/subdomains hierarchy in MDS-Onto, use `domain_subdomain_directory()`. 
+
+```python
+import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
+from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_directory
+
+domain_subdomain_directory()
+```
+
+This function also allows for the user to generate an actual file directory with sub-ontologies tagged only with a domain/subdomain
+
+```python
+import FAIRLinked.InterfaceMDS.load_mds_ontology 
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
+from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_directory
+
+
+mds_graph = load_mds_ontology_graph()
+domain_subdomain_directory(onto_graph=mds_graph, output_dir='path/to/output/directory')
 ```
 
 ### Search for terms in MDS-Onto
@@ -118,6 +143,12 @@ import FAIRLinked.InterfaceMDS.term_search_general
 from FAIRLinked.InterfaceMDS.term_search_general import term_search_general
 
 term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"])
+```
+
+Additional arguments can be put in to save the search results in a turtle file.
+
+```python
+term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"],ttl_extr=1, ttl_path='path/to/output/file')
 ```
 
 ### Add a new term to Ontology

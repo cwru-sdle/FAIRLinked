@@ -5,16 +5,30 @@
 
 import os
 import sys
+import re
 import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath('../../'))
+
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+init_path = os.path.join(repo_root, "FAIRLinked", "__init__.py")
+
+# Extract __version__ using regex
+with open(init_path, "r") as f:
+    init_content = f.read()
+
+match = re.search(r'__version__\s*=\s*[\'"]([^\'"]+)[\'"]', init_content)
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'FAIRLinked'
-copyright = '2025, Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French'
-author = 'Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French'
-release = '0.3.0.8'
+copyright = '2025, Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French'
+author = 'Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French'
+if match:
+    release = match.group(1)
+else:
+    release = "0.0.0"
+
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
