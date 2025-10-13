@@ -165,3 +165,45 @@ def domain_subdomain_directory(
                 g_sub.serialize(destination=file_path, format="turtle")
                 print(f"✅ Wrote {file_path}")
 
+
+def domain_subdomain_dir_interface():
+    """
+    Interactive CLI for creating a directory of ontology Turtle files based on
+    domains and subdomains.
+
+    - If the user chooses "yes":
+        * Ask for the output directory path.
+        * Ask whether to provide a custom ontology file path or use the default loader.
+        * Load the ontology graph accordingly.
+        * Call domain_subdomain_directory(onto_graph=..., output_dir=...).
+
+    - If the user chooses "no":
+        * Just print the ASCII tree using domain_subdomain_directory() with default args.
+    """
+    make_dir = input(
+        "Would you like to make a directory of ontology files based on domains and subdomains (yes/no): "
+    ).strip().lower()
+
+    if make_dir == "yes":
+        output_dir = input("Enter the output directory path: ").strip()
+        os.makedirs(output_dir, exist_ok=True)
+
+        custom_onto = input(
+            "Would you like to provide a path to an ontology file? (yes/no): "
+        ).strip().lower()
+
+        if custom_onto == "yes":
+            onto_path = input("Enter the path to your ontology file: ").strip()
+            if not os.path.isfile(onto_path):
+                print(f"❌ Error: File not found at {onto_path}")
+                return
+            onto_graph = Graph()
+            onto_graph.parse(onto_path, format="turtle")
+        else:
+            onto_graph = load_mds_ontology_graph()
+
+        domain_subdomain_directory(onto_graph=onto_graph, output_dir=output_dir)
+
+    else:
+        # Just print the ASCII tree
+        domain_subdomain_directory()

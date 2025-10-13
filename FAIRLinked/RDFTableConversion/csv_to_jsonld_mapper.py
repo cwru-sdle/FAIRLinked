@@ -5,7 +5,9 @@ import os
 import difflib
 import rdflib
 from datetime import datetime
+from rdflib import Graph
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
 def normalize(text):
     """
@@ -18,6 +20,7 @@ def normalize(text):
         str: Normalized string.
     """
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
+
 
 
 def extract_terms_from_ontology(ontology_graph):
@@ -34,12 +37,18 @@ def extract_terms_from_ontology(ontology_graph):
     for s in ontology_graph.subjects(RDF.type, OWL.Class):
         # Get both altLabels and rdfs:labels
         labels = list(ontology_graph.objects(s, SKOS.altLabel)) + list(ontology_graph.objects(s, RDFS.label))
+        # Get definitions
+        term_definitions = list(ontology_graph.objects(s, SKOS.definition))
+        definition = str(term_definitions[0]) if term_definitions else ""
+        study_stage = list(ontology_graph.objects(s, MDS.hasStudyStage))
         for label in labels:
             label_str = str(label).strip()
             terms.append({
                 "iri": s,
                 "label": label_str,
-                "normalized": normalize(label_str)
+                "normalized": normalize(label_str),
+                "definition": definition,
+                "study_stage": study_stage
             })
     return terms
 
@@ -73,7 +82,7 @@ def find_best_match(column, ontology_terms):
     return None
 
 
-def json_ld_template_generator(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path):
+def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path):
     """
     Use a CSV file into a JSON-LD template that user can fill out column metadata.
 
@@ -117,11 +126,17 @@ def json_ld_template_generator(csv_path, ontology_graph, output_path, matched_lo
 
     # Process each column and attempt to match it to ontology terms
     for col in columns:
+        if col == "__source_file__":
+            continue
+        
         match = find_best_match(col, ontology_terms)
         iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else col
+        definition = str(match["definition"]) if match else "Definition not available"
+        study_stage = match["study_stage"] if match else "Study stage information not available"
 
         if match:
             matched_log.append(f"{col} => {iri_fragment}")
+
         else:
             unmatched_log.append(col)
 
@@ -129,7 +144,7 @@ def json_ld_template_generator(csv_path, ontology_graph, output_path, matched_lo
             "@id": f"mds:{iri_fragment}",
             "@type": f"mds:{iri_fragment}",
             "skos:altLabel": col,
-            "skos:definition": "",
+            "skos:definition": definition,
             "qudt:value": [{"@value": ""}],
             "qudt:hasUnit": {"@id": ""},
             "qudt:hasQuantityKind": {"@id": ""},
@@ -141,9 +156,7 @@ def json_ld_template_generator(csv_path, ontology_graph, output_path, matched_lo
                 "@value": "placeholder note for user to fill",
                 "@language": "en"
             },
-            "mds:hasStudyStage": {
-                
-            }
+            "mds:hasStudyStage": study_stage
         }
         jsonld["@graph"].append(entry)
 
@@ -161,3 +174,14 @@ def json_ld_template_generator(csv_path, ontology_graph, output_path, matched_lo
     # Write unmatched log (remove duplicates with set)
     with open(unmatched_log_path, "w") as f:
         f.write("\n".join(sorted(set(unmatched_log))))  # BUG FIX: previously had stray '-' before 'fix'
+
+def jsonld_temp_gen_interface(args):
+
+    if args.ontology_path == "default":
+        ontology_graph = load_mds_ontology_graph()
+    else:
+        ontology_graph = Graph()
+        ontology_graph.parse(source=args.ontology_path)
+
+    jsonld_template_generator(csv_path=args.csv_path, ontology_graph=ontology_graph, output_path=args.output_path, matched_log_path=args.log_path, unmatched_log_path=args.log_path)
+    

@@ -13,5 +13,6 @@ FAIRLinked documentation
 
    intro
    installation
+   quick-start
    user-guide
    FAIRLinked

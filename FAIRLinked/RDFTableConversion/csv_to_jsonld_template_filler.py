@@ -10,17 +10,8 @@ import pandas as pd
 from rdflib import Graph, URIRef, Literal, Namespace
 from rdflib.namespace import RDF, SKOS, OWL, RDFS
 from urllib.parse import quote
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
-import os
-import json
-import copy
-import random
-import string
-import warnings
-from datetime import datetime
-from urllib.parse import quote
-import pandas as pd
-from rdflib import Graph, URIRef, Literal, Namespace
 
 def extract_data_from_csv(
     metadata_template,
@@ -34,7 +25,8 @@ def extract_data_from_csv(
 ):
     """
     Converts CSV rows into RDF graphs using a JSON-LD template and optional property mapping,
-    writing JSON-LD files.
+    writing JSON-LD files. This function assumes that the two rows below the header row contains the unit and the proper
+    ontology name.
 
     Parameters
     ----------
@@ -274,3 +266,41 @@ def extract_from_folder(
 
         os.makedirs(output_folder, exist_ok=True)
         extract_data_from_csv(metadata_template, csv_path, row_key_cols, orcid, output_folder, prop_column_pair_dict, ontology_graph, base_uri)
+
+
+def extract_data_from_csv_interface(args):
+    """
+    CLI wrapper for extract_data_from_csv.
+    Loads JSON/CSV/ontology files and calls the core function.
+    """
+
+    # Load metadata template
+    with open(args.metadata_template, "r") as f:
+        metadata_template = json.load(f)
+
+    # Load ontology if given
+    ontology_graph = None
+    if args.ontology_path == "default":
+        ontology_graph = load_mds_ontology_graph()
+    else:
+        ontology_graph = Graph()
+        ontology_graph.parse(args.ontology_path)
+
+
+    # Ensure output folder exists
+    os.makedirs(args.output_folder, exist_ok=True)
+
+    # Call the core function
+    return extract_data_from_csv(
+        metadata_template=metadata_template,
+        csv_file=args.csv_file,
+        row_key_cols=args.row_key_cols,
+        orcid=args.orcid,
+        output_folder=args.output_folder,
+        prop_column_pair_dict=args.prop_col,
+        ontology_graph=ontology_graph,
+        base_uri=args.base_uri
+    )
+
+
+

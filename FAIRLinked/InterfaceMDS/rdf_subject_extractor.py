@@ -89,10 +89,9 @@ def fuzzy_filter_subjects_strict(df, keywords, column="label", max_l_dist=1):
     return pd.DataFrame(matches)
 
 
-# NOTE: This main() function is only for interactive CLI use
-def main():
+def fuzzy_search_interface():
     """
-    Example usage for local testing. Not included in the package version.
+    CLI interface for searching for terms using fuzzy search
     """
     file_path = input("Enter path to RDF (.ttl) file: ").strip()
     if not os.path.exists(file_path):
@@ -109,8 +108,7 @@ def main():
     keywords_input = input("🔍 Enter fuzzy keywords (comma-separated, e.g., temp,pressure): ").strip()
     if keywords_input:
         keywords = [kw.strip() for kw in keywords_input.split(",")]
-        max_dist = input("Enter max Levenshtein distance (default = 1): ").strip()
-        max_dist = int(max_dist) if max_dist.isdigit() else 1
+        max_dist = 1
 
         filtered_df = fuzzy_filter_subjects_strict(df, keywords, max_l_dist=max_dist)
         fuzzy_out = output_csv.replace(".csv", f"_fuzzy_{'_'.join(keywords)}.csv")
@@ -118,5 +116,4 @@ def main():
         print(f"✅ Fuzzy match output saved to: {fuzzy_out}")
 
 
-if __name__ == "__main__":
-    main()
+
