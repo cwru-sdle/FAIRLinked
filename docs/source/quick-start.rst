@@ -31,6 +31,7 @@ Get terms associated with a certain Domain, Subdomain, or Study Stage.
    FAIRLinked filter -t <SEARCH_TYPES> -q <QUERY_TERM> [OPTIONS]
 
 **Arguments**
+
 * ``-q, --query_term``: (**Required**) Enter the domain, subdomain, or study stage.
 * ``-t, --search_types``: (**Required**) Specifies the search criteria. Choices: ``"Domain"``, ``"SubDomain"``, ``"Study Stage"``.
 * ``-op, --ontology_path``: Path to the ontology file. Defaults to ``"default"``.
@@ -92,6 +93,7 @@ Generate a JSON-LD template based on a CSV file.
    FAIRLinked generate-template -cp <CSV_PATH> -out <OUTPUT_PATH> -lp <LOG_PATH> [OPTIONS]
 
 **Arguments**
+
 * ``-cp, --csv_path``: (**Required**) Path to CSV file.
 * ``-out, --output_path``: (**Required**) Path to output JSON-LD file.
 * ``-lp, --log_path``: (**Required**) Path to store files that log labels that could/couldn't be matched to a term in MDS-Onto.
@@ -108,6 +110,7 @@ Create a directory of JSON-LDs from a single CSV file.
    FAIRLinked serialize-data -mdt <TEMPLATE_PATH> -cf <CSV_FILE> -rkc <ROW_KEY_COLS> ...
 
 **Arguments**
+
 * ``-mdt, --metadata_template``: (**Required**) Metadata template (path to JSON file if using CLI).
 * ``-cf, --csv_file``: (**Required**) Path to the CSV file containing the data.
 * ``-rkc, --row_key_cols``: (**Required**) Comma-separated list of column names used to uniquely identify rows (e.g. col1,col2,col3).
@@ -128,6 +131,7 @@ Deserialize a directory of JSON-LDs back into a CSV.
    FAIRLinked deserialize-data -jd <JSONLD_DIRECTORY> -on <OUTPUT_NAME> -od <OUTPUT_DIR>
 
 **Arguments**
+
 * ``-jd, --jsonld_directory``: (**Required**) Directory containing JSON-LD files.
 * ``-on, --output_name``: (**Required**) Base name of output files.
 * ``-od, --output_dir``: (**Required**) Path to directory to save the outputs.
@@ -141,6 +145,7 @@ data-cube-run
 Start RDF Data Cube Workflow.
 
 **Description**
+
 This command launches an interactive workflow to create richly structured, multidimensional datasets that adhere to the `RDF Data Cube vocabulary <https://www.w3.org/TR/vocab-data-cube/>`_.
 
 **Usage**
