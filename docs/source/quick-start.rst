@@ -1,8 +1,9 @@
+===========
 Quick Start
 ===========
 
 General
--------
+=======
 The tool is invoked from the command line using the main script name, ``FAIRLinked``, followed by a command and its specific arguments.
 
 .. code-block:: bash
@@ -17,11 +18,11 @@ To see the help message for any command, use the ``-h`` or ``--help`` flag.
    FAIRLinked generate-template -help
 
 InterfaceMDS Commands
----------------------
+=====================
 These commands are used for interacting with the Materials Data Schema (MDS) ontology.
 
 filter
-^^^^^^
+------
 Get terms associated with a certain Domain, Subdomain, or Study Stage.
 
 **Usage**
@@ -39,7 +40,7 @@ Get terms associated with a certain Domain, Subdomain, or Study Stage.
 * ``-tp, --ttl_path``: If user wants to save search results, provide path to save file. Append file name at the end of the path.
 
 view-domains
-^^^^^^^^^^^^
+------------
 Display unique Domains and SubDomains from the ontology.
 
 **Usage**
@@ -49,7 +50,7 @@ Display unique Domains and SubDomains from the ontology.
    FAIRLinked view-domains
 
 dir-make
-^^^^^^^^
+-------
 View and make directory tree of turtle files based on domains and subdomains.
 
 **Usage**
@@ -59,7 +60,7 @@ View and make directory tree of turtle files based on domains and subdomains.
    FAIRLinked dir-make
 
 add-terms
-^^^^^^^^^
+---------
 Add new terms to an existing ontology file via an interactive session.
 
 **Usage**
@@ -69,7 +70,7 @@ Add new terms to an existing ontology file via an interactive session.
    FAIRLinked add-terms -op <PATH_TO_ONTOLOGY>
 
 term-search
-^^^^^^^^^^^
+----------
 Search for terms by matching term labels using a fuzzy search algorithm.
 
 **Usage**
@@ -79,11 +80,11 @@ Search for terms by matching term labels using a fuzzy search algorithm.
    FAIRLinked term-search
 
 RDFTableConversion Commands
----------------------------
+===========================
 These commands facilitate the conversion of tabular data (CSV) to and from RDF (JSON-LD format).
 
 generate-template
-^^^^^^^^^^^^^^^^^
+-----------------
 Generate a JSON-LD template based on a CSV file.
 
 **Usage**
@@ -100,7 +101,7 @@ Generate a JSON-LD template based on a CSV file.
 * ``-op, --ontology_path``: Path to ontology. To get official MDS-Onto choose 'default'.
 
 serialize-data
-^^^^^^^^^^^^^^
+---------------
 Create a directory of JSON-LDs from a single CSV file.
 
 **Usage**
@@ -121,7 +122,7 @@ Create a directory of JSON-LDs from a single CSV file.
 * ``-base, --base_uri``: Base URI used to construct subject and object URIs.
 
 deserialize-data
-^^^^^^^^^^^^^^^^
+----------------
 Deserialize a directory of JSON-LDs back into a CSV.
 
 **Usage**
@@ -137,11 +138,11 @@ Deserialize a directory of JSON-LDs back into a CSV.
 * ``-od, --output_dir``: (**Required**) Path to directory to save the outputs.
 
 QBWorkflow Commands
--------------------
+=====================
 Commands related to the RDF Data Cube workflow.
 
 data-cube-run
-^^^^^^^^^^^^^
+-------------
 Start RDF Data Cube Workflow.
 
 **Description**
