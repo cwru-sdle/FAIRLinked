@@ -3,7 +3,7 @@ from rdflib import Graph, RDFS, Namespace
 import FAIRLinked.InterfaceMDS.load_mds_ontology
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
-def term_search_general(mds_ontology_graph=None, query_term=None, search_types=None, ttl_extr=0, ttl_path=None):
+def term_search_general(mds_ontology_graph=None, query_term=None, search_types=None, ttl_extr=False, ttl_path=None):
     """
     Search an RDF ontology for subjects with a specified predicate and optional query term.
 
@@ -21,7 +21,7 @@ def term_search_general(mds_ontology_graph=None, query_term=None, search_types=N
         - A list of labels for matching subjects, grouped by search type.
     """
 
-    if ttl_extr != 0 and ttl_path is None:
+    if ttl_extr is True and ttl_path is None:
         raise ValueError("A file path must be provided via ttl_path to save the results when ttl_extr is enabled.")
 
     # Define namespace
@@ -50,7 +50,7 @@ def term_search_general(mds_ontology_graph=None, query_term=None, search_types=N
 
     any_matches = False
 
-    results_graph = Graph() if ttl_extr != 0 else None
+    results_graph = Graph() if ttl_extr is True else None
 
     for search_type in search_types:
         if search_type not in type_to_pred:
@@ -81,6 +81,47 @@ def term_search_general(mds_ontology_graph=None, query_term=None, search_types=N
 
     if not any_matches:
         print("No matches found.")
+
+def filter_interface(args):
+
+    """
+    Term search using Domain, SubDomain, or Study Stage. For complete list of Domains and SubDomains, 
+    run the following commands in bash:
+
+    FAIRLinked view-domains
+    FAIRLinked dir-make. 
+
+    The current list of Study Stages include: 
+    Synthesis, 
+    Formulation, 
+    Materials Processing, 
+    Sample, 
+    Tool, 
+    Recipe, 
+    Result,
+    Analysis,
+    Modelling.
+
+    For more details about Study Stages, please view go see https://cwrusdle.bitbucket.io/.
+
+    """
+    
+    if args.ontology_path == "default":
+        ontology_graph = load_mds_ontology_graph()
+    else:
+        ontology_graph = Graph()
+        ontology_graph.parse(args.ontology_path)
+
+    if args.ttl_extr == "F":
+        args.ttl_extr = False
+    elif args.ttl_extra == "T":
+        args.ttl_extr = True
+    
+    term_search_general(mds_ontology_graph=ontology_graph, 
+                        query_term=args.query_term, 
+                        search_types=args.search_types, 
+                        ttl_extr=args.ttl_extr, 
+                        ttl_path=args.ttl_path)
 
 
 

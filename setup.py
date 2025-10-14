@@ -53,4 +53,9 @@ setup(
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Information Analysis'
     ],
+    entry_points={
+        'console_scripts': [
+            'FAIRLinked=FAIRLinked.cli:main',
+        ],
+    }
 )

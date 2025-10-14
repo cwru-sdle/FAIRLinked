@@ -24,8 +24,10 @@ def extract_row_from_jsonld(data: dict, filename: str):
             continue
 
         value = item.get("qudt:value", "")
+        if isinstance(value, dict) and "@value" in value:
+            value = value.get("@value", "")
         fair_type = item.get("@type", "")
-        unit = item.get("qudt:hasUnit", "")
+        unit = item.get("qudt:hasUnit", "").get("@id", "")
 
         row[alt_label] = value
         fair_types[alt_label] = fair_type

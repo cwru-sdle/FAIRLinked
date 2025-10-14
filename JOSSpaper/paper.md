@@ -62,11 +62,11 @@ editor_options:
 
 The package is organized into three subpackages, each addressing different levels of semantic web expertise and data modeling requirements:
 
-1. `InterfaceMDS` – A library of functions that enables direct interaction with MDS-Onto, allowing users to query, extend, and integrate ontology-driven metadata into their datasets and analytical pipelines.
+1. `InterfaceMDS`: A library of functions that enables direct interaction with MDS-Onto, allowing users to query, extend, and integrate ontology-driven metadata into their datasets and analytical pipelines.
 
-2. `RDFTableConversion` – A streamlined FAIRification workflow for users who prefer a simpler approach that does not require RDF Data Cube. Instead, it leverages a JSON-LD template populated with standard JSON objects derived from table columns. This approach enables users to transform tabular datasets into linked data while maintaining control over metadata content and structure.
+2. `RDFTableConversion`: A streamlined FAIRification workflow for users who prefer a simpler approach that does not require RDF Data Cube. Instead, it leverages a JSON-LD template populated with standard JSON objects derived from table columns. This approach enables users to transform tabular datasets into linked data while maintaining control over metadata content and structure.
 
-3. `QBWorkflow` – A comprehensive FAIRification workflow designed for users familiar with the [RDF Data Cube](https://www.w3.org/TR/vocab-data-cube/) vocabulary. This workflow supports the creation of richly structured, multidimensional datasets that adhere to linked data best practices and can be easily queried, combined, and analyzed.
+3. `QBWorkflow`: A comprehensive FAIRification workflow designed for users familiar with the [RDF Data Cube](https://www.w3.org/TR/vocab-data-cube/) vocabulary. This workflow supports the creation of richly structured, multidimensional datasets that adhere to linked data best practices and can be easily queried, combined, and analyzed.
 
 By offering both advanced and simplified pathways for converting data into semantically rich, machine-readable formats, `FAIRLinked` lowers the barrier to adopting FAIR principles in the materials science community. Its design allows researchers to choose the workflow that best matches their intended use cases, thereby promoting greater data reuse.
 
