@@ -14,7 +14,7 @@ To see the help message for any command, use the ``-h`` or ``--help`` flag.
 .. code-block:: bash
 
    FAIRLinked filter -h
-   FAIRLinked generate-template --help
+   FAIRLinked generate-template -help
 
 InterfaceMDS Commands
 ---------------------
@@ -25,6 +25,7 @@ filter
 Get terms associated with a certain Domain, Subdomain, or Study Stage.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked filter -t <SEARCH_TYPES> -q <QUERY_TERM> [OPTIONS]
@@ -41,6 +42,7 @@ view-domains
 Display unique Domains and SubDomains from the ontology.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked view-domains
@@ -50,6 +52,7 @@ dir-make
 View and make directory tree of turtle files based on domains and subdomains.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked dir-make
@@ -59,6 +62,7 @@ add-terms
 Add new terms to an existing ontology file via an interactive session.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked add-terms -op <PATH_TO_ONTOLOGY>
@@ -68,6 +72,7 @@ term-search
 Search for terms by matching term labels using a fuzzy search algorithm.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked term-search
@@ -81,6 +86,7 @@ generate-template
 Generate a JSON-LD template based on a CSV file.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked generate-template -cp <CSV_PATH> -out <OUTPUT_PATH> -lp <LOG_PATH> [OPTIONS]
@@ -96,6 +102,7 @@ serialize-data
 Create a directory of JSON-LDs from a single CSV file.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked serialize-data -mdt <TEMPLATE_PATH> -cf <CSV_FILE> -rkc <ROW_KEY_COLS> ...
@@ -115,6 +122,7 @@ deserialize-data
 Deserialize a directory of JSON-LDs back into a CSV.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked deserialize-data -jd <JSONLD_DIRECTORY> -on <OUTPUT_NAME> -od <OUTPUT_DIR>
@@ -136,6 +144,7 @@ Start RDF Data Cube Workflow.
 This command launches an interactive workflow to create richly structured, multidimensional datasets that adhere to the `RDF Data Cube vocabulary <https://www.w3.org/TR/vocab-data-cube/>`_.
 
 **Usage**
+
 .. code-block:: bash
 
    FAIRLinked data-cube-run
