@@ -65,14 +65,14 @@ def main():
         "view-domains",
         help="Display unique Domains and SubDomains"
     )
-    viewer_parser.set_defaults(func=domain_subdomain_viewer)
+    viewer_parser.set_defaults(func=lambda args: domain_subdomain_viewer())
 
     # Domain and subdomain directory viewer
     domain_dir_view = subparsers.add_parser(
         "dir-make",
         help="View and make directory tree of turtle files based on domains and subdomains"
     )
-    domain_dir_view.set_defaults(func=domain_subdomain_dir_interface)
+    domain_dir_view.set_defaults(func=lambda args: domain_subdomain_dir_interface())
 
     # Add term to ontology
     onto_add_parser = subparsers.add_parser(
@@ -87,7 +87,7 @@ def main():
         "term-search",
         help="Search for terms by matching term labels"
     )
-    string_search_parser.set_defaults(func=fuzzy_search_interface)
+    string_search_parser.set_defaults(func=lambda args: fuzzy_search_interface())
 
 
     # --------------------
@@ -196,7 +196,7 @@ def main():
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    data_cube_workflow_parser.set_defaults(func=rdf_data_cube_workflow_start)
+    data_cube_workflow_parser.set_defaults(func=lambda args: rdf_data_cube_workflow_start())
 
 
     # --------------------
