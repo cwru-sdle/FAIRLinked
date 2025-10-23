@@ -55,7 +55,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'FAIRLinked=FAIRLinked.cli:main',
+            'FAIRLinked=FAIRLinked.cli.__main__:main',
         ],
     }
 )
