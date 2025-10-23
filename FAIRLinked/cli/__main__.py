@@ -45,7 +45,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     filter_parser.add_argument("-op", "--ontology_path", default="default", help="Path to ontology file")
-    filter_parser.add_argument("-q", "--query_term", required=True, help="Enter the domain, subdomain, or study stage")
+    filter_parser.add_argument("-q", "--query_term", required=True, help="Enter the name of the domain, subdomain, or study stage")
     filter_parser.add_argument(
         "-t", "--search_types", nargs="+",
         choices=["Domain", "SubDomain", "Study Stage"], required=True, help="Specifies the search criteria"
