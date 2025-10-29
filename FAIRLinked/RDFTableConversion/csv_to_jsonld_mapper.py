@@ -5,8 +5,8 @@ import os
 import difflib
 import rdflib
 from datetime import datetime
-from rdflib import Graph
-from rdflib.namespace import RDF, RDFS, OWL, SKOS
+from rdflib import Graph, Namespace, URIRef
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, split_uri
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
 def normalize(text):
@@ -22,7 +22,6 @@ def normalize(text):
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
 
 
-
 def extract_terms_from_ontology(ontology_graph):
     """
     Extract terms from an RDF graph representing an OWL ontology.
@@ -33,6 +32,7 @@ def extract_terms_from_ontology(ontology_graph):
     Returns:
         list[dict]: A list of dictionaries containing term IRIs, original labels, and normalized labels.
     """
+    MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
     terms = []
     for s in ontology_graph.subjects(RDF.type, OWL.Class):
         # Get both altLabels and rdfs:labels
@@ -44,7 +44,7 @@ def extract_terms_from_ontology(ontology_graph):
         for label in labels:
             label_str = str(label).strip()
             terms.append({
-                "iri": s,
+                "iri": str(s),
                 "label": label_str,
                 "normalized": normalize(label_str),
                 "definition": definition,
@@ -118,7 +118,7 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         },
         "@id": "mds:dataset",
         "dcterms:created": {
-            "@value": datetime.today().strftime('%Y-%m-%d'),
+            "@value": datetime.now().astimezone().isoformat(),
             "@type": "xsd:dateTime"
         },
         "@graph": []
@@ -130,9 +130,10 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
             continue
         
         match = find_best_match(col, ontology_terms)
-        iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else col
+        iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else normalize(col)
+        iri = match["iri"] if match else f"mds:{iri_fragment}"
         definition = str(match["definition"]) if match else "Definition not available"
-        study_stage = match["study_stage"] if match else "Study stage information not available"
+        study_stage = match["study_stage"] if match else ["Study stage information not available"]
 
         if match:
             matched_log.append(f"{col} => {iri_fragment}")
@@ -140,16 +141,17 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         else:
             unmatched_log.append(col)
 
+
         entry = {
-            "@id": f"mds:{iri_fragment}",
-            "@type": f"mds:{iri_fragment}",
+            "@id": f"{iri}",
+            "@type": f"{iri}",
             "skos:altLabel": col,
             "skos:definition": definition,
             "qudt:value": [{"@value": ""}],
             "qudt:hasUnit": {"@id": ""},
             "qudt:hasQuantityKind": {"@id": ""},
             "prov:generatedAtTime": {
-                "@value": "",
+                "@value": datetime.now().astimezone().isoformat(),
                 "@type": "xsd:dateTime"
             },
             "skos:note": {
@@ -162,6 +164,8 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
 
     # Ensure output directories exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(os.path.dirname(matched_log_path), exist_ok=True)
+    os.makedirs(os.path.dirname(unmatched_log_path), exist_ok=True)
 
     # Write JSON-LD
     with open(output_path, "w") as f:
@@ -183,5 +187,8 @@ def jsonld_temp_gen_interface(args):
         ontology_graph = Graph()
         ontology_graph.parse(source=args.ontology_path)
 
-    jsonld_template_generator(csv_path=args.csv_path, ontology_graph=ontology_graph, output_path=args.output_path, matched_log_path=args.log_path, unmatched_log_path=args.log_path)
+    matched_path = os.path.join(args.log_path, "matched.txt")
+    unmatched_path = os.path.join(args.log_path, "unmatched.txt")
+
+    jsonld_template_generator(csv_path=args.csv_path, ontology_graph=ontology_graph, output_path=args.output_path, matched_log_path=matched_path, unmatched_log_path=unmatched_path)
     
