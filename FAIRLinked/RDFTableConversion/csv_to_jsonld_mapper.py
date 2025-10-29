@@ -118,7 +118,7 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         },
         "@id": "mds:dataset",
         "dcterms:created": {
-            "@value": datetime.today().strftime('%Y-%m-%d'),
+            "@value": datetime.now().astimezone().isoformat(),
             "@type": "xsd:dateTime"
         },
         "@graph": []
@@ -141,6 +141,7 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         else:
             unmatched_log.append(col)
 
+
         entry = {
             "@id": f"{iri}",
             "@type": f"{iri}",
@@ -150,7 +151,7 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
             "qudt:hasUnit": {"@id": ""},
             "qudt:hasQuantityKind": {"@id": ""},
             "prov:generatedAtTime": {
-                "@value": "",
+                "@value": datetime.now().astimezone().isoformat(),
                 "@type": "xsd:dateTime"
             },
             "skos:note": {
@@ -163,14 +164,12 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
 
     # Ensure output directories exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    os.makedirs(os.path.dirname(matched_log), exist_ok=True)
-    os.makedirs(os.path.dirname(unmatched_log), exist_ok=True)
+    os.makedirs(os.path.dirname(matched_log_path), exist_ok=True)
+    os.makedirs(os.path.dirname(unmatched_log_path), exist_ok=True)
 
-    jsonld_string = json.dumps(jsonld, indent=2)
     # Write JSON-LD
-    template_graph = Graph()
-    template_graph.parse(data=jsonld_string, format="json-ld")
-    template_graph.serialize(destination=output_path, format="json-ld", auto_compact=True)
+    with open(output_path, "w") as f:
+        json.dump(jsonld, f, indent=2)
 
     # Write matched log
     with open(matched_log_path, "w") as f:
