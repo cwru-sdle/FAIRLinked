@@ -5,7 +5,7 @@ import os
 import difflib
 import rdflib
 from datetime import datetime
-from rdflib import Graph
+from rdflib import Graph, Namespace
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
@@ -33,6 +33,7 @@ def extract_terms_from_ontology(ontology_graph):
     Returns:
         list[dict]: A list of dictionaries containing term IRIs, original labels, and normalized labels.
     """
+    MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
     terms = []
     for s in ontology_graph.subjects(RDF.type, OWL.Class):
         # Get both altLabels and rdfs:labels
@@ -162,6 +163,8 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
 
     # Ensure output directories exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(os.path.dirname(matched_log), exist_ok=True)
+    os.makedirs(os.path.dirname(unmatched_log), exist_ok=True)
 
     # Write JSON-LD
     with open(output_path, "w") as f:
@@ -183,5 +186,8 @@ def jsonld_temp_gen_interface(args):
         ontology_graph = Graph()
         ontology_graph.parse(source=args.ontology_path)
 
-    jsonld_template_generator(csv_path=args.csv_path, ontology_graph=ontology_graph, output_path=args.output_path, matched_log_path=args.log_path, unmatched_log_path=args.log_path)
+    matched_path = os.path.join(args.log_path, "matched.txt")
+    unmatched_path = os.path.join(args.log_path, "unmatched.txt")
+
+    jsonld_template_generator(csv_path=args.csv_path, ontology_graph=ontology_graph, output_path=args.output_path, matched_log_path=matched_path, unmatched_log_path=unmatched_path)
     
