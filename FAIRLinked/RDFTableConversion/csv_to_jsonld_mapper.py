@@ -5,8 +5,8 @@ import os
 import difflib
 import rdflib
 from datetime import datetime
-from rdflib import Graph, Namespace
-from rdflib.namespace import RDF, RDFS, OWL, SKOS
+from rdflib import Graph, Namespace, URIRef
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, split_uri
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
 def normalize(text):
@@ -20,7 +20,6 @@ def normalize(text):
         str: Normalized string.
     """
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
-
 
 
 def extract_terms_from_ontology(ontology_graph):
@@ -45,7 +44,7 @@ def extract_terms_from_ontology(ontology_graph):
         for label in labels:
             label_str = str(label).strip()
             terms.append({
-                "iri": s,
+                "iri": str(s),
                 "label": label_str,
                 "normalized": normalize(label_str),
                 "definition": definition,
@@ -131,9 +130,10 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
             continue
         
         match = find_best_match(col, ontology_terms)
-        iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else col
+        iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else normalize(col)
+        iri = match["iri"] if match else f"mds:{iri_fragment}"
         definition = str(match["definition"]) if match else "Definition not available"
-        study_stage = match["study_stage"] if match else "Study stage information not available"
+        study_stage = match["study_stage"] if match else ["Study stage information not available"]
 
         if match:
             matched_log.append(f"{col} => {iri_fragment}")
@@ -142,8 +142,8 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
             unmatched_log.append(col)
 
         entry = {
-            "@id": f"mds:{iri_fragment}",
-            "@type": f"mds:{iri_fragment}",
+            "@id": f"{iri}",
+            "@type": f"{iri}",
             "skos:altLabel": col,
             "skos:definition": definition,
             "qudt:value": [{"@value": ""}],
@@ -166,9 +166,11 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
     os.makedirs(os.path.dirname(matched_log), exist_ok=True)
     os.makedirs(os.path.dirname(unmatched_log), exist_ok=True)
 
+    jsonld_string = json.dumps(jsonld, indent=2)
     # Write JSON-LD
-    with open(output_path, "w") as f:
-        json.dump(jsonld, f, indent=2)
+    template_graph = Graph()
+    template_graph.parse(data=jsonld_string, format="json-ld")
+    template_graph.serialize(destination=output_path, format="json-ld", auto_compact=True)
 
     # Write matched log
     with open(matched_log_path, "w") as f:
