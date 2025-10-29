@@ -35,6 +35,7 @@ def extract_terms_from_ontology(ontology_graph):
     MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
     terms = []
     for s in ontology_graph.subjects(RDF.type, OWL.Class):
+        
         # Get both altLabels and rdfs:labels
         labels = list(ontology_graph.objects(s, SKOS.altLabel)) + list(ontology_graph.objects(s, RDFS.label))
         # Get definitions
@@ -131,7 +132,6 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         
         match = find_best_match(col, ontology_terms)
         iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else normalize(col)
-        iri = match["iri"] if match else f"mds:{iri_fragment}"
         definition = str(match["definition"]) if match else "Definition not available"
         study_stage = match["study_stage"] if match else ["Study stage information not available"]
 
@@ -143,8 +143,8 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
 
 
         entry = {
-            "@id": f"{iri}",
-            "@type": f"{iri}",
+            "@id": f"mds:{iri_fragment}",
+            "@type": f"mds:{iri_fragment}",
             "skos:altLabel": col,
             "skos:definition": definition,
             "qudt:value": [{"@value": ""}],
