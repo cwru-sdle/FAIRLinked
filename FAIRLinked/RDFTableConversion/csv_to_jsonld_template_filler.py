@@ -13,6 +13,7 @@ from rdflib import Graph, URIRef, Literal, Namespace, XSD
 from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+import FAIRLinked.helper_data
 import importlib.resources as pkg_resources
 import traceback
 import hashlib
@@ -109,10 +110,6 @@ def extract_data_from_csv(
     else:
         prop_metadata_dict = {}
 
-    #add license if given one
-    if (license):
-        write_license_triple(output_folder, base_uri, license)
-
     sskey = {
         "Synthesis": "SYN", 
         "Formulation": "FOR", 
@@ -125,7 +122,7 @@ def extract_data_from_csv(
         "Modeling": "MOD" }
 
     rowpredicate = URIRef("https://cwrusdle.bitbucket.io/mds/row")
-    licensepredicate = URIRef("http://purl.org/dc/terms/license")
+
     
     for idx, row in df.iloc[3:].iterrows():
 
@@ -191,6 +188,29 @@ def extract_data_from_csv(
             g.parse(data=json.dumps(jsonld_data), format="json-ld")
             QUDT = Namespace("http://qudt.org/schema/qudt/")
             g.bind("qudt", QUDT)
+            g.bind("dcterms", DCTERMS)
+            #check license
+            if(not license):
+                license_uri = ""
+            elif not license.startswith("http"):
+                # Load SPDX license list
+                with pkg_resources.open_text("FAIRLinked.helper_data", "licenseinfo.json") as f:
+                    spdx_data = json.load(f)
+
+                valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
+
+                # Check if the provided short ID is valid
+                if license not in valid_ids:
+                    raise ValueError(
+                        f"Invalid SPDX license ID '{license}'.\n"
+                        f"Please use one from https://spdx.org/licenses/."
+                    )
+
+                license_uri = f"https://spdx.org/licenses/{license}.html"
+
+            else:
+                # Full URI provided; assume it's valid
+                license_uri = license
 
             #add in triples from csv values
             for alt_label, subj_uri in subject_lookup.items():
@@ -198,8 +218,7 @@ def extract_data_from_csv(
                     g.remove((subj_uri, QUDT.value, None))
                     g.add((subj_uri, QUDT.value, Literal(row[alt_label], datatype=XSD.string)))
                     g.add((subj_uri, rowpredicate, Literal(row_key[:-1]) ))
-                    if(license ==None): license = Literal("")
-                    g.add((subj_uri, licensepredicate, license))
+                    g.add((subj_uri, DCTERMS.license, URIRef(license_uri)))
 
             # Add object/datatype properties if given
             if prop_column_pair_dict:

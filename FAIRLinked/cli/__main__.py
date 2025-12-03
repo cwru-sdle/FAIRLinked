@@ -162,7 +162,7 @@ def main():
     data_extract_parser.add_argument("-l",
         "--license",
         default =None,
-        help="License used"
+        help="License used, find valid licenses at https://spdx.org/licenses/ "
     )
     data_extract_parser.set_defaults(func=extract_data_from_csv_interface)
 
