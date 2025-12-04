@@ -18,7 +18,7 @@ setup(
     description='Transform materials research data into FAIR-compliant RDF Data. Align your datasets with MDS-Onto and convert them into Linked Data, enhancing interoperability and reusability for seamless data integration. See the README or vignette for more information. This tool is used by the SDLE Research Center at Case Western Reserve University.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    author='Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Kai Zheng, Benjamin Pierce, Quynh D. Tran, Ozan Dernek, Yinghui Wu, Erika I. Barcelos, Roger H. French, Laura S. Bruckman',
+    author='Van D. Tran, Brandon Lee, Henry Dirks, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Quynh D. Tran, Ozan Dernek, Yinghui Wu, Erika I. Barcelos, Roger H. French, Laura S. Bruckman',
     author_email='rxf131@case.edu',
     license='BSD-3-Clause',
     project_urls={
