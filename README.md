@@ -62,7 +62,7 @@ This document provides instructions for using the `FAIRLinked` command-line tool
 
 ## General Usage
 
-The tool is invoked from the command line using the main script name (assumed here to be `FAIRLinked`), followed by a command and its specific arguments.
+The tool is invoked from the command line using the main script name, followed by a command and its specific arguments.
 
 ```bash
 FAIRLinked [COMMAND] [OPTIONS]
@@ -417,12 +417,12 @@ Functions in this subpackage allow to generate a JSON-LD metadata template from 
 import rdflib
 from rdflib import Graph
 import FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper
-from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import json_ld_template_generator
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import jsonld_template_generator
 
 mds_graph = Graph()
 mds_graph.parse("path/to/ontology/file")
 
-json_ld_template_generator(csv_path="path/to/data/csv", 
+jsonld_template_generator(csv_path="path/to/data/csv", 
                            ontology_graph=mds_graph, 
                            output_path="path/to/output/json-ld/template", 
                            matched_log_path="path/to/output/matched/terms", 

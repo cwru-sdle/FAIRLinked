@@ -48,6 +48,7 @@ def extract_terms_from_ontology(ontology_graph):
     
     terms = []
     for s in ontology_graph.subjects(RDF.type, OWL.Class):
+        
         # Get both altLabels and rdfs:labels
         labels = list(ontology_graph.objects(s, SKOS.altLabel)) + list(ontology_graph.objects(s, RDFS.label))
         # Get definitions
