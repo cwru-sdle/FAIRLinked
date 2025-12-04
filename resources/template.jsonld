@@ -1,0 +1,178 @@
+{
+  "@context": {
+    "qudt": "http://qudt.org/schema/qudt/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "xsd": "http://www.example.org/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "unit": "https://qudt.org/vocab/unit/",
+    "cco": "https://www.commoncoreontologies.org/"
+  },
+  "@graph": [
+    {
+      "@id": "mds:XraySample",
+      "@type": "mds:XraySample",
+      "skos:altLabel": "Sample",
+      "skos:definition": "A specimen used for X-ray based experiments.",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:AU"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-04T13:48:47.934813-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "further reading required",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:ChemicalFormula",
+      "@type": "mds:ChemicalFormula",
+      "skos:altLabel": "chemical_formula",
+      "skos:definition": "Chemical composition of the material.",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-04T13:48:50.926022-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "mds:ProcessingMethod",
+      "@type": "mds:ProcessingMethod",
+      "skos:altLabel": "processing_method",
+      "skos:definition": "The manufacturing method by which the sample was created.",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-04T13:48:54.375198-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "cco:ont00000607",
+      "@type": "cco:ont00000607",
+      "skos:altLabel": "sample_depth",
+      "skos:definition": "Definition not available",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-04T13:48:55.351919-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:SampleID",
+      "@type": "mds:SampleID",
+      "skos:altLabel": "sample_id",
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-04T13:49:00.911300-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "cco:ont00000738",
+      "@type": "cco:ont00000738",
+      "skos:altLabel": "sample_length",
+      "skos:definition": "Definition not available",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-04T13:49:02.252307-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Formulation"
+    },
+    {
+      "@id": "cco:ont00000324",
+      "@type": "cco:ont00000324",
+      "skos:altLabel": "sample_width",
+      "skos:definition": "Definition not available",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-04T13:49:11.394771-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Modeling"
+    }
+  ]
+}

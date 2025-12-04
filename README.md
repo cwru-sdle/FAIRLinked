@@ -196,6 +196,27 @@ FAIRLinked generate-template -cp <CSV_PATH> -out <OUTPUT_PATH> -lp <LOG_PATH> [O
 ```bash
 FAIRLinked generate-template -cp "/data/experiments.csv" -out "/metadata/template.json" -lp "/logs/" -op "default"
 ```
+Find an example template.jsonld in /resources
+
+**Note**
+Please make sure to follow the proper formating guidlines for input CSV file. 
+ * Each column name should be the "common" or alternative name for this object
+ * The following three rows should be reserved for the **type**, **units**, and **study stage** in that order
+ * if values for these are not avaible, the space should be left blank
+ * data for each sample can then begin on the 5th row
+
+ Please see the following images for reference 
+ ![Full Table](resources/images/fulltable.png)
+
+ Minimum Viable Data
+![Sparse Table](resources/images/mintable.png)
+
+During the template generating process, the user may be prompted for data for different columns. When no units are detected, the user will be prompted for the type of unit, and then given a list of valid units to choose from. 
+![Sparse Table](resources/images/kind.png)
+![Sparse Table](resources/images/unit.png)
+When no study stage is detected, the user will similarly be given a list of study stages to choose from.
+![Sparse Table](resources/images/studystage.png)
+The user will automatically be prompted for an optional notes for each column.
 
 ### `serialize-data`
 
@@ -228,6 +249,8 @@ FAIRLinked serialize-data \
     -orc "0000-0001-2345-6789" \
     -of "/output/jsonld_files/"
 ```
+
+find example filled out jsonlds in /resources/outdir
 
 **Example with `-pc` argument:**
 
@@ -266,6 +289,11 @@ FAIRLinked deserialize-data \
     -on "reconstructed_data" \
     -od "/data/reconstructed/"
 ```
+
+An example can be found in /resources/output
+
+**Note** 
+The output CSV can be used to generate a template, or can me modified and then turned into a new template
 
 -----
 
