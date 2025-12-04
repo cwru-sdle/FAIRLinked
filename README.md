@@ -50,9 +50,9 @@ pip install FAIRLinked
 
 ---
 
-## ✨ New in v0.3.1
+## ✨ New in v0.3.2
 
-Version 0.3.1 now includes a command line interface for accessing functions in FAIRLinked.
+Version 0.3.2 now includes a command line interface for accessing functions in FAIRLinked.
 
 -----
 
