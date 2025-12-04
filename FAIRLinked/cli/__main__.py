@@ -128,7 +128,7 @@ def main():
     data_extract_parser.add_argument("-rkc",
         "--row_key_cols",
         type=comma_separated_list,
-        help="Comma-separated list of column names used to uniquely identify rows (e.g. col1,col2,col3)"
+        help="Choose column used to uniquely identify rows, default will generate keys based off all columns"
     )
     data_extract_parser.add_argument("-orc",
         "--orcid",
@@ -162,7 +162,7 @@ def main():
     data_extract_parser.add_argument("-l",
         "--license",
         default =None,
-        help="License used, find valid licenses at https://spdx.org/licenses/ "
+        help="License used, find valid licenses at https://spdx.org/licenses/"
     )
     data_extract_parser.set_defaults(func=extract_data_from_csv_interface)
 

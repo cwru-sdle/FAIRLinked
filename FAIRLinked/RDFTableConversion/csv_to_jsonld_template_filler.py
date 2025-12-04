@@ -45,10 +45,10 @@ def hash6(s):
 def extract_data_from_csv(
     metadata_template,
     csv_file,
-    row_key_cols,
     orcid,
     output_folder,
-    prop_column_pair_dict=None,  # optional
+    row_key_cols=None,            # optional
+    prop_column_pair_dict=None,   # optional
     ontology_graph=None,          # optional
     base_uri="https://cwrusdle.bitbucket.io/mds/",
     license=None #optional
@@ -133,25 +133,35 @@ def extract_data_from_csv(
             subject_lookup = {}  # Maps skos:altLabel → generated @id
 
             # generate row key
-            keys = {}
-            for item in template_copy:
-                if "skos:altLabel" not in item or not item["skos:altLabel"]:
-                    raise ValueError("Missing skos:altLabel in template")
-                col = item["skos:altLabel"]
-                studystage = item["mds:hasStudyStage"]
-                val = df.at[idx,col]
+            c = [item["skos:altLabel"] for item in template_copy ]
+            if(row_key_cols is None or not any(x in c for x in row_key_cols) ):
+                keys = {}
+                for item in template_copy:
+                    if "skos:altLabel" not in item or not item["skos:altLabel"]:
+                        raise ValueError("Missing skos:altLabel in template")
+                    col = item["skos:altLabel"]
+                    studystage = item["mds:hasStudyStage"]
+                    val = df.at[idx,col]
 
-                if studystage not in keys:
-                    keys[studystage] = [val]
-                else:
-                    keys[studystage].append(val)
-            row_key = ""
-            for key in keys:
-                try:
-                    num = str(hash6("".join([str(x) for x in keys[key] if not pd.isna(x)])))
-                    row_key = row_key + sskey[key] + num + "_"
-                except:
-                    traceback.print_exc()
+                    if studystage not in keys:
+                        keys[studystage] = [val]
+                    else:
+                        keys[studystage].append(val)
+                row_key = ""
+                for key in keys:
+                    try:
+                        num = str(hash6("".join([str(x) for x in keys[key] if not pd.isna(x)])))
+                        row_key = row_key + sskey[key] + num + "_"
+                    except:
+                        print(keys[key])
+                        print(type(keys[key]))
+                        print("failure")
+                        print(key)
+                        traceback.print_exc()
+            else:
+                row_key = ""
+                for x in set(c) & set(row_key_cols):
+                    row_key = row_key + df.at[idx,x] + "_"
             
             timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             full_row_key = f"{row_key}{orcid}-{timestamp}"
@@ -166,7 +176,7 @@ def extract_data_from_csv(
                     raise ValueError("Missing skos:altLabel in template")
 
                 prefix, localname = item["@type"].split(":")
-                subject_uri = f"{context[prefix]}{localname}.{full_row_key}" if prefix else f"{localname}.{full_row_key}"
+                subject_uri = f"{context[prefix]}{localname}.{row_key}" if prefix else f"{localname}.{row_key}"
                 item["@id"] = subject_uri
                 subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
