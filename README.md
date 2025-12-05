@@ -238,6 +238,7 @@ FAIRLinked serialize-data -mdt <TEMPLATE_PATH> -cf <CSV_PATH> -rkc <ROW_KEY_COLS
   * `-pc, --prop_col`: A Python dictionary literal defining relationships between columns.
   * `-op, --ontology_path`: Path to the ontology file. Required if `-pc` is provided.
   * `-base, --base_uri`: Base URI used to construct subject and object URIs.
+  * ``-l, --license``: License used, find valid licenses at https://spdx.org/licenses/.
 
 **Example:**
 

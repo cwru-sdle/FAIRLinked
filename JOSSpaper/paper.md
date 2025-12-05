@@ -17,6 +17,10 @@ authors:
 - name: Ritika Lamba
   affiliation: 2, 3
   orcid: "0009-0007-8483-019X"
+- name: Brandon Lee
+  affiliation: 2, 3
+- name: Henry Dirks
+  affiliation: 3, 4
 - name: Quynh D. Tran
   affiliation: 1, 3
   orcid: "0009-0006-4025-1834"
@@ -50,6 +54,8 @@ affiliations:
 - name: Materials Data Science for Stockpile Stewardship Center of Excellence, Cleveland,
     OH, 44106, USA
   index: 3
+- name: Department of Physics, Case Western Reserve University, Cleveland, OH, 44106, USA
+  index: 4
 editor_options: 
   markdown: 
     wrap: sentence
@@ -64,18 +70,18 @@ editor_options:
 
 Modern materials science research generate data from a wide range of experimental techniques (e.g. sychrotron X-ray diffraction, IV measurements, Suns-Voc, pyrometry, spectroscopy, degradation measurements, etc.) spanning multiple application domains like photovoltaics, advanced manufacturing, and electronic components. These experiments produce measurements of various material properties under a multitude of environmental conditions.
 
-The heterogeneity of these data sources introduces the well-known “3V” challenges of big data: volume, velocity, and variety [@laney3DDataManagement2001]. Materials science datasets are also frequently multimodal, consisting of numerical tables, images, time-series measurements, and other formats. Additionally, different research groups often use inconsistent terminologies, abbreviations, or naming conventions for the same quantities, instruments, or experimental procedures. This inconsistency creates substantial barriers to integrating datasets across laboratories and domains, thereby reducing interoperability and increasing the effort required for data reuse [@bradleyDevelopmentAutomatedFramework2025].
+The heterogeneity of these data sources introduces the well-known “3V” challenges of big data: volume, velocity, and variety [@laney3DDataManagement2001]. Materials science datasets can also be multimodal, consisting of numerical tables, images, time-series measurements, and other formats. Additionally, different research groups often use inconsistent terminologies, abbreviations, or naming conventions for the same quantities, instruments, or experimental procedures. This inconsistency creates substantial barriers to integrating datasets across laboratories and domains, thereby reducing interoperability and increasing the effort required for data reuse [@bradleyDevelopmentAutomatedFramework2025].
 
-To minimize the effort of data reuse, these datasets must be machine-actionable. The FAIR principles, which stands for Findable, Accessible, Interoperable, and Reusable, offer a widely recognized framework for achieving this objective [@rajamohanFAIRAIReadyEmpowering2025]. Rather than prescribing specific technical standards, these principles define the qualities a dataset should possess to minimize human intervention and enable automated processing. One widely adopted approach to realize FAIR is through the Resource Description Framework (RDF), which represents knowledge as subject–predicate–object triples within a graph structure [@allenmangSemanticWebWorking2020]. RDF facilitates semantic interoperability by linking data to shared vocabularies and ontologies, enabling better integration, querying, and reuse across diverse experimental sources and terminological variations.
+To minimize the effort of data reuse, these datasets must be machine-actionable. The FAIR principles, which stands for Findable, Accessible, Interoperable, and Reusable, offer a widely recognized framework for achieving this objective [@rajamohanFAIRAIReadyEmpowering2025]. Rather than prescribing specific technical standards, these principles define the qualities a dataset should possess to minimize human intervention and enable automated processing. One widely adopted approach to realize FAIR is through the Resource Description Framework (RDF), which represents knowledge as subject–predicate–object triples within a graph structure [@allenmangSemanticWebWorking2020]. RDF facilitates semantic interoperability by linking data to shared vocabularies and ontologies, enabling better integration and reuse across diverse experimental sources and terminological variations.
 
 There exists a notable lack of dedicated software packages designed specifically to support materials research scientists in FAIRifying their data according to these guidelines. `FAIRLinked` is created to be a dedicated package that enables both lightweight and RDF Data Cube-based FAIRification in materials data science by providing practical workflows and tools that transform terminologically inconsistent materials data into RDF-based, machine-actionable formats fully compliant with the FAIR principles.
 
 
 # Materials Data Science Ontology (MDS-Onto)
 
-The Materials Data Science Ontology (MDS-Onto) was developed to support the FAIRification of materials science data by aligning with the principles of Findability, Accessibility, Interoperability, and Reusability [@rajamohanMaterialsDataScience2025]. Materials science research produces data from diverse facilities, experimental techniques, and analysis workflows, resulting in highly variable vocabulary and inconsistent terminology. Differences in naming conventions and the omission of critical metadata, such as instrument details, pose challenges for data sharing and reuse. [MDS-Onto](https://cwrusdle.bitbucket.io/) addresses these issues by providing a standardized semantic framework that improves clarity, ensures contextual completeness of shared datasets, and facilitates interoperability across research groups. This common data model advances the goal of machine-actionable materials science data.
+The Materials Data Science Ontology (MDS-Onto) was developed to support the FAIRification of materials science data by providing consistent vocabularies and abbreviations for a wide range of experimental contexts [@rajamohanMaterialsDataScience2025]. Materials science research produces data from diverse facilities, experimental techniques, and analysis workflows, resulting in highly variable vocabulary and inconsistent terminology. Differences in naming conventions and the omission of critical metadata, such as instrument details, pose challenges for data sharing and reuse. [MDS-Onto](https://cwrusdle.bitbucket.io/) addresses these issues by providing a standardized semantic framework that improves clarity, ensures contextual completeness of shared datasets, and facilitates interoperability across research groups. This common data model advances the goal of machine-actionable materials science data.
 
-Terms in MDS-Onto are categorized using three attributes: domain, subdomain, and study stage. Domains and subdomains correspond to topical areas within the SDLE Center and collaborators, while study stages represent generic procedural steps in a study protocol. By embedding ontology terms with these attributes, MDS-Onto enables targeted term retrieval, allowing users to filter vocabulary based on research needs. For instance, a researcher focusing on photovoltaic cells can easily access only the terms tagged with the “PV-Cell” subdomain. This structured organization improves discoverability, streamlines dataset annotation, and ensures researchers can quickly identify the most relevant vocabulary for their work.
+Terms in MDS-Onto are categorized using three attributes: domain, subdomain, and study stage. Domains and subdomains categorize different types of data within materials science, while study stages represent generic procedural steps in a study protocol. By embedding ontology terms with these attributes, MDS-Onto enables targeted term retrieval, allowing users to filter vocabulary based on research needs. For instance, a researcher focusing on photovoltaic cells can easily access only the terms tagged with the “PV-Cell” subdomain. This structured organization improves discoverability and ensures researchers can quickly identify the most relevant vocabulary for their work.
 
 # Key Features
 
@@ -91,7 +97,7 @@ The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by provid
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with FAIR-aligned metadata. Each row of a CSV is transformed into an individual JSON-LD file, ensuring that data is linked with standardized QUDT units [@QUDTOnto] and ontology-compliant terminology. The workflow also supports iterative updates, allowing researchers to reprocess enhanced datasets into updated JSON-LDs. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
+The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with FAIR-aligned metadata. Each row of a CSV is transformed into an individual JSON-LD file, ensuring that data is linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology. The workflow also supports iterative updates, allowing researchers to reprocess enhanced datasets into updated JSON-LDs. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
 
 ![FAIRLinked's FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](fig2-fairlinked.png){width=80%, height=80%}
 
