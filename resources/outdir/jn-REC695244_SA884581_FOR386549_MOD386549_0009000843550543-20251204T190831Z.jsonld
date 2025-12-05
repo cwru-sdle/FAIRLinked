@@ -1,0 +1,178 @@
+{
+  "@context": {
+    "cco": "https://www.commoncoreontologies.org/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "unit": "https://qudt.org/vocab/unit/",
+    "xsd": "http://www.example.org/"
+  },
+  "@graph": [
+    {
+      "@id": "cco:ont00000607.REC695244_SA884581_FOR386549_MOD386549",
+      "@type": "cco:ont00000607",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC695244_SA884581_FOR386549_MOD386549",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.594479Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": null,
+      "skos:altLabel": "sample_depth",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ProcessingMethod.REC695244_SA884581_FOR386549_MOD386549",
+      "@type": "mds:ProcessingMethod",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC695244_SA884581_FOR386549_MOD386549",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.594476Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "qudt:value": null,
+      "skos:altLabel": "processing_method",
+      "skos:definition": "The manufacturing method by which the sample was created.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "cco:ont00000324.REC695244_SA884581_FOR386549_MOD386549",
+      "@type": "cco:ont00000324",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Modeling",
+      "mds:row": "REC695244_SA884581_FOR386549_MOD386549",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.594487Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": null,
+      "skos:altLabel": "sample_width",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ChemicalFormula.REC695244_SA884581_FOR386549_MOD386549",
+      "@type": "mds:ChemicalFormula",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Sample",
+      "mds:row": "REC695244_SA884581_FOR386549_MOD386549",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.594473Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "Ceria calibrant",
+      "skos:altLabel": "chemical_formula",
+      "skos:definition": "Chemical composition of the material.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:SampleID.REC695244_SA884581_FOR386549_MOD386549",
+      "@type": "mds:SampleID",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Sample",
+      "mds:row": "REC695244_SA884581_FOR386549_MOD386549",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.594482Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "qudt:value": "CeO2",
+      "skos:altLabel": "sample_id",
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "cco:ont00000738.REC695244_SA884581_FOR386549_MOD386549",
+      "@type": "cco:ont00000738",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Formulation",
+      "mds:row": "REC695244_SA884581_FOR386549_MOD386549",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.594485Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": null,
+      "skos:altLabel": "sample_length",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:XraySample.REC695244_SA884581_FOR386549_MOD386549",
+      "@type": "mds:XraySample",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC695244_SA884581_FOR386549_MOD386549",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.594463Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:AU"
+      },
+      "qudt:value": "CeO2",
+      "skos:altLabel": "Sample",
+      "skos:definition": "A specimen used for X-ray based experiments.",
+      "skos:note": {
+        "@language": "en",
+        "@value": "further reading required"
+      }
+    }
+  ]
+}

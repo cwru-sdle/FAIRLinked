@@ -1,0 +1,178 @@
+{
+  "@context": {
+    "cco": "https://www.commoncoreontologies.org/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "unit": "https://qudt.org/vocab/unit/",
+    "xsd": "http://www.example.org/"
+  },
+  "@graph": [
+    {
+      "@id": "mds:ProcessingMethod.REC621755_SA384821_FOR182060_MOD751747",
+      "@type": "mds:ProcessingMethod",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC621755_SA384821_FOR182060_MOD751747",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.557604Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "qudt:value": "Laser Powder Bed Fusion",
+      "skos:altLabel": "processing_method",
+      "skos:definition": "The manufacturing method by which the sample was created.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:SampleID.REC621755_SA384821_FOR182060_MOD751747",
+      "@type": "mds:SampleID",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Sample",
+      "mds:row": "REC621755_SA384821_FOR182060_MOD751747",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.557609Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "qudt:value": "Ti64-PB1",
+      "skos:altLabel": "sample_id",
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ChemicalFormula.REC621755_SA384821_FOR182060_MOD751747",
+      "@type": "mds:ChemicalFormula",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Sample",
+      "mds:row": "REC621755_SA384821_FOR182060_MOD751747",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.557600Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "Ti6Al4V",
+      "skos:altLabel": "chemical_formula",
+      "skos:definition": "Chemical composition of the material.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "cco:ont00000324.REC621755_SA384821_FOR182060_MOD751747",
+      "@type": "cco:ont00000324",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Modeling",
+      "mds:row": "REC621755_SA384821_FOR182060_MOD751747",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.557619Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "2.82",
+      "skos:altLabel": "sample_width",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "cco:ont00000607.REC621755_SA384821_FOR182060_MOD751747",
+      "@type": "cco:ont00000607",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC621755_SA384821_FOR182060_MOD751747",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.557606Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "0.83",
+      "skos:altLabel": "sample_depth",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:XraySample.REC621755_SA384821_FOR182060_MOD751747",
+      "@type": "mds:XraySample",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC621755_SA384821_FOR182060_MOD751747",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.557590Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:AU"
+      },
+      "qudt:value": "PB1",
+      "skos:altLabel": "Sample",
+      "skos:definition": "A specimen used for X-ray based experiments.",
+      "skos:note": {
+        "@language": "en",
+        "@value": "further reading required"
+      }
+    },
+    {
+      "@id": "cco:ont00000738.REC621755_SA384821_FOR182060_MOD751747",
+      "@type": "cco:ont00000738",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Formulation",
+      "mds:row": "REC621755_SA384821_FOR182060_MOD751747",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.557612Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "3.81",
+      "skos:altLabel": "sample_length",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    }
+  ]
+}

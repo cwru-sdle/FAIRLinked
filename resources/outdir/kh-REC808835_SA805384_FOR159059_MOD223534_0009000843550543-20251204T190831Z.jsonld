@@ -1,0 +1,178 @@
+{
+  "@context": {
+    "cco": "https://www.commoncoreontologies.org/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "unit": "https://qudt.org/vocab/unit/",
+    "xsd": "http://www.example.org/"
+  },
+  "@graph": [
+    {
+      "@id": "cco:ont00000607.REC808835_SA805384_FOR159059_MOD223534",
+      "@type": "cco:ont00000607",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC808835_SA805384_FOR159059_MOD223534",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.503343Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "0.87",
+      "skos:altLabel": "sample_depth",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:SampleID.REC808835_SA805384_FOR159059_MOD223534",
+      "@type": "mds:SampleID",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Sample",
+      "mds:row": "REC808835_SA805384_FOR159059_MOD223534",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.503346Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "qudt:value": "Ti64-EBM1",
+      "skos:altLabel": "sample_id",
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ChemicalFormula.REC808835_SA805384_FOR159059_MOD223534",
+      "@type": "mds:ChemicalFormula",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Sample",
+      "mds:row": "REC808835_SA805384_FOR159059_MOD223534",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.503336Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "Ti6Al4V",
+      "skos:altLabel": "chemical_formula",
+      "skos:definition": "Chemical composition of the material.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ProcessingMethod.REC808835_SA805384_FOR159059_MOD223534",
+      "@type": "mds:ProcessingMethod",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC808835_SA805384_FOR159059_MOD223534",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.503340Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:"
+      },
+      "qudt:value": "Electron Beam Melting",
+      "skos:altLabel": "processing_method",
+      "skos:definition": "The manufacturing method by which the sample was created.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:XraySample.REC808835_SA805384_FOR159059_MOD223534",
+      "@type": "mds:XraySample",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Recipe",
+      "mds:row": "REC808835_SA805384_FOR159059_MOD223534",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.503326Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:AU"
+      },
+      "qudt:value": "EBM1",
+      "skos:altLabel": "Sample",
+      "skos:definition": "A specimen used for X-ray based experiments.",
+      "skos:note": {
+        "@language": "en",
+        "@value": "further reading required"
+      }
+    },
+    {
+      "@id": "cco:ont00000324.REC808835_SA805384_FOR159059_MOD223534",
+      "@type": "cco:ont00000324",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Modeling",
+      "mds:row": "REC808835_SA805384_FOR159059_MOD223534",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.503352Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "2.86",
+      "skos:altLabel": "sample_width",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "cco:ont00000738.REC808835_SA805384_FOR159059_MOD223534",
+      "@type": "cco:ont00000738",
+      "dcterms:license": {
+        "@id": ""
+      },
+      "mds:hasStudyStage": "Formulation",
+      "mds:row": "REC808835_SA805384_FOR159059_MOD223534",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-04T19:08:31.503349Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "qudt:value": "3.97",
+      "skos:altLabel": "sample_length",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    }
+  ]
+}
