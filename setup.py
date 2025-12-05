@@ -36,7 +36,8 @@ setup(
         'pandas>=1.0.0',
         'cemento>=0.6.1',
         'fuzzysearch>=0.8.0',
-        'tqdm>=4.0.0'
+        'tqdm>=4.0.0',
+        'pyld>=2.0.3'
     ],
     extras_require={
         'dev': [
