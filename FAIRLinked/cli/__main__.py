@@ -45,7 +45,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     filter_parser.add_argument("-op", "--ontology_path", default="default", help="Path to ontology file")
-    filter_parser.add_argument("-q", "--query_term", required=True, help="Enter the name of the domain, subdomain, or study stage")
+    filter_parser.add_argument("-q", "--query_term", help="Term to search for")
     filter_parser.add_argument(
         "-t", "--search_types", nargs="+",
         choices=["Domain", "SubDomain", "Study Stage"], required=True, help="Specifies the search criteria"
@@ -128,8 +128,7 @@ def main():
     data_extract_parser.add_argument("-rkc",
         "--row_key_cols",
         type=comma_separated_list,
-        required=True,
-        help="Comma-separated list of column names used to uniquely identify rows (e.g. col1,col2,col3)"
+        help="Choose column used to uniquely identify rows, default will generate keys based off all columns"
     )
     data_extract_parser.add_argument("-orc",
         "--orcid",
@@ -151,12 +150,19 @@ def main():
     )
     data_extract_parser.add_argument("-op",
         "--ontology_path",
+        default="default",
         help="Path to ontology. Must be provided if 'prop_col' is provided. To get official MDS-Onto choose 'default'"
         )
     data_extract_parser.add_argument("-base",
         "--base_uri",
         default="https://cwrusdle.bitbucket.io/mds/",
         help="Base URI used to construct subject and object URIs"
+    )
+
+    data_extract_parser.add_argument("-l",
+        "--license",
+        default =None,
+        help="License used, find valid licenses at https://spdx.org/licenses/"
     )
     data_extract_parser.set_defaults(func=extract_data_from_csv_interface)
 
@@ -180,7 +186,12 @@ def main():
         required=True,
         help="Path to directory to save the outputs"
     )
-    deserializer_parser.set_defaults(func=lambda args: jsonld_directory_to_csv(args.jsonld_directory, args.output_name, args.output_dir))
+    deserializer_parser.add_argument("-rk",
+        "--primary_row_key",
+        required=False,
+        help="Optional value for primary key, values will be generated if not specified"
+    )
+    deserializer_parser.set_defaults(func=lambda args: jsonld_directory_to_csv(args.jsonld_directory, args.output_name, args.output_dir,args.primary_row_key))
 
     # --------------------
     # QBWorkflow commands
