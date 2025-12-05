@@ -206,16 +206,16 @@ Please make sure to follow the proper formating guidlines for input CSV file.
  * data for each sample can then begin on the 5th row
 
  Please see the following images for reference 
- ![Full Table](resources/images/fulltable.png)
+ ![Full Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/fulltable.png)
 
  Minimum Viable Data
-![Sparse Table](resources/images/mintable.png)
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/mintable.png)
 
 During the template generating process, the user may be prompted for data for different columns. When no units are detected, the user will be prompted for the type of unit, and then given a list of valid units to choose from. 
-![Sparse Table](resources/images/kind.png)
-![Sparse Table](resources/images/unit.png)
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/kind.png)
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/unit.png)
 When no study stage is detected, the user will similarly be given a list of study stages to choose from.
-![Sparse Table](resources/images/studystage.png)
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/studystage.png)
 The user will automatically be prompted for an optional notes for each column.
 
 ### `serialize-data`
