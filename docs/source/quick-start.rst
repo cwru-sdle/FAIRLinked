@@ -120,6 +120,7 @@ Create a directory of JSON-LDs from a single CSV file.
 * ``-pc, --prop_col``: Python dictionary literal to define relationships between columns.
 * ``-op, --ontology_path``: Path to ontology. Must be provided if 'prop_col' is provided.
 * ``-base, --base_uri``: Base URI used to construct subject and object URIs.
+* ``-l, --license``: License used, find valid licenses at https://spdx.org/licenses/.
 
 deserialize-data
 ----------------

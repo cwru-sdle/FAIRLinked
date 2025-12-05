@@ -146,12 +146,12 @@ Functions in this subpackage allow you to:
 .. code-block:: python
 
    from rdflib import Graph
-   from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import json_ld_template_generator
+   from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import jsonld_template_generator
 
    mds_graph = Graph()
    mds_graph.parse("path/to/ontology/file")
 
-   json_ld_template_generator(csv_path="path/to/data.csv", 
+   jsonld_template_generator(csv_path="path/to/data.csv", 
                               ontology_graph=mds_graph, 
                               output_path="path/to/output/template.jsonld", 
                               matched_log_path="path/to/output/matched.log", 
@@ -176,6 +176,8 @@ Functions in this subpackage allow you to:
 
 
 ## Create JSON-LDs with relationships
+
+In the example below, "relationship_label" should be the rdfs:label value, the full IRI, or the CURIE  associated with the property.
 
 .. code-block:: python
 
