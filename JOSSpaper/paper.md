@@ -99,11 +99,13 @@ The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by provid
 
 The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with FAIR-aligned metadata. Each row of a CSV is transformed into an individual JSON-LD file, ensuring that data is linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology. The workflow also supports iterative updates, allowing researchers to reprocess enhanced datasets into updated JSON-LDs. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
 
-![FAIRLinked's FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](fig2-fairlinked.png){width=80%, height=80%}
+![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](fig2-fairlinked.png){width=80%, height=80%}
 
 ## RDF Data Cube Workflow (QBWorkflow)
 
 The  `QBWorkflow` subpackage utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template to help users structure the data to fit with RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can then be turned into CSV, Apache Arrow, or Parquet files for further analysis. This workflow ensures complex, high-dimensional datasets are properly annotated with the right metadata for reuse and machine-actionability.
+
+![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](RDFDataCubeTemplate.png){width=80%, height=80%}
 
 
 # Code Availability
