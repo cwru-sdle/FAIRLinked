@@ -88,6 +88,9 @@ def extract_data_from_csv(
     base_uri : str, optional
         Base URI used to construct subject and object URIs.
 
+    license : str, optional
+        License to be used for the dataset.
+
     Returns
     -------
     List[rdflib.Graph]
