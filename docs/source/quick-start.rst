@@ -102,6 +102,7 @@ Generate a JSON-LD template based on a CSV file.
 
 serialize-data
 ---------------
+
 Create a directory of JSON-LDs from a single CSV file.
 
 **Usage**
@@ -123,8 +124,9 @@ Create a directory of JSON-LDs from a single CSV file.
 * ``-l, --license``: License used, find valid licenses at https://spdx.org/licenses/.
 
 .. note::
+
    Please make sure to follow the proper formatting guidelines for the input CSV file.
-   
+
    * Each column name should be the "common" or alternative name for this object
    * The following three rows should be reserved for the **type**, **units**, and **study stage** in that order
    * If values for these are not available, the space should be left blank
@@ -157,6 +159,8 @@ Create a directory of JSON-LDs from a single CSV file.
    .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/studystage.png
       :alt: Study Stage
       :align: center
+
+
 
 deserialize-data
 ----------------
