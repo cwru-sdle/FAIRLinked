@@ -175,6 +175,46 @@ Functions in this subpackage allow you to:
                          output_folder="path/to/output/json-lds")
 
 
+.. note::
+   Please make sure to follow the proper formatting guidelines for the input CSV file.
+   
+   * Each column name should be the "common" or alternative name for this object
+   * The following three rows should be reserved for the **type**, **units**, and **study stage** in that order
+   * If values for these are not available, the space should be left blank
+   * Data for each sample can then begin on the 5th row
+
+   Please see the following images for reference:
+
+   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/fulltable.png
+      :alt: Full Table
+      :align: center
+
+   Minimum Viable Data:
+
+   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/mintable.png
+      :alt: Sparse Table
+      :align: center
+
+   During the template generating process, the user may be prompted for data for different columns. When no units are detected, the user will be prompted for the type of unit, and then given a list of valid units to choose from.
+
+   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/kind.png
+      :alt: Kind
+      :align: center
+
+   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/unit.png
+      :alt: Unit
+      :align: center
+
+   When no study stage is detected, the user will similarly be given a list of study stages to choose from.
+
+   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/studystage.png
+      :alt: Study Stage
+      :align: center
+
+
+
+
+
 ## Create JSON-LDs with relationships
 
 In the example below, "relationship_label" should be the rdfs:label value, the full IRI, or the CURIE  associated with the property.
