@@ -91,13 +91,13 @@ The `FAIRLinked` package comprises of three subpackages: `InterfaceMDS`, `RDFTab
 
 ## Interfacing with MDS-Onto (InterfaceMDS)
 
-The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for retrieving the latest version, searching ontology terms by string, filtering terms by domain, and listing available domains and subdomains. These features make it easier for users to explore and discover relevant vocabulary without manually inspecting extensive ontology files.
+The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for retrieving the latest version of MDS-Onto, searching ontology terms by string, filtering terms by domain, and listing available domains and subdomains. These features make it easier for users to explore and discover relevant vocabulary without manually inspecting the ontology file.
 
 ![FAIRLinked contains a variety of functions for interacting with MDS-Onto to enable easy FAIRification of materials science data. \label{fig:InterfaceMDS}](InterfaceMDS-JOSS.png){width=80%, height=80%}
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with FAIR-aligned metadata. Each row of a CSV is transformed into an individual JSON-LD file, ensuring that data is linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology. The workflow also supports iterative updates, allowing researchers to reprocess enhanced datasets into updated JSON-LDs. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
+The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with FAIR-aligned metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
 
 ![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](fig2-fairlinked.png){width=80%, height=80%}
 

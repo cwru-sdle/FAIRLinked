@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from pyld import jsonld
 import copy
 import random
@@ -9,10 +10,11 @@ from datetime import datetime
 import uuid
 import pandas as pd
 import numpy as np
-from rdflib import Graph, URIRef, Literal, Namespace, XSD
+from rdflib import Graph, URIRef, Literal, Namespace, XSD, BNode
 from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import normalize
 import FAIRLinked.helper_data
 import importlib.resources as pkg_resources
 import traceback
@@ -85,6 +87,9 @@ def extract_data_from_csv(
 
     base_uri : str, optional
         Base URI used to construct subject and object URIs.
+
+    license : str, optional
+        License to be used for the dataset.
 
     Returns
     -------
@@ -161,7 +166,7 @@ def extract_data_from_csv(
             else:
                 row_key = ""
                 for x in set(c) & set(row_key_cols):
-                    row_key = row_key + df.at[idx,x] + "_"
+                    row_key = row_key + normalize(str(df.at[idx,x])) + "_"
             
             timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             full_row_key = f"{row_key}{orcid}-{timestamp}"
@@ -201,7 +206,8 @@ def extract_data_from_csv(
             g.bind("dcterms", DCTERMS)
             #check license
             if(not license):
-                license_uri = ""
+                bnode = BNode()
+                license_uri = bnode
             elif not license.startswith("http"):
                 # Load SPDX license list
                 with pkg_resources.open_text("FAIRLinked.helper_data", "licenseinfo.json") as f:
@@ -217,10 +223,11 @@ def extract_data_from_csv(
                     )
 
                 license_uri = f"https://spdx.org/licenses/{license}.html"
+                license_uri = URIRef(license_uri)
 
             else:
                 # Full URI provided; assume it's valid
-                license_uri = license
+                license_uri = URIRef(license)
 
             #add in triples from csv values
             for alt_label, subj_uri in subject_lookup.items():
@@ -228,7 +235,7 @@ def extract_data_from_csv(
                     g.remove((subj_uri, QUDT.value, None))
                     g.add((subj_uri, QUDT.value, Literal(row[alt_label], datatype=XSD.string)))
                     g.add((subj_uri, rowpredicate, Literal(row_key[:-1]) ))
-                    g.add((subj_uri, DCTERMS.license, URIRef(license_uri)))
+                    g.add((subj_uri, DCTERMS.license, license_uri))
 
             # Add object/datatype properties if given
             if prop_column_pair_dict:
