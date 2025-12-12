@@ -21,11 +21,11 @@ Documentations of how to use functions in FAIRLinked can be found [here](https:/
 ## ✍️ Authors
 
 * **Van D. Tran**
-* **Ritika Lamba**
-* **Balashanmuga Priyan Rajamohan**
+* **Brandon Lee**
+* Ritika Lamba
+* Henry Dirks
+* Balashanmuga Priyan Rajamohan
 * Gabriel Ponon
-* Kai Zheng
-* Benjamin Pierce
 * Quynh D. Tran
 * Ozan Dernek
 * Yinghui Wu
