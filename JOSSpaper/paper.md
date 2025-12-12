@@ -79,7 +79,7 @@ There exists a notable lack of dedicated software packages designed specifically
 
 # Materials Data Science Ontology (MDS-Onto)
 
-The Materials Data Science Ontology (MDS-Onto) was developed to support the FAIRification of materials science data by providing consistent vocabularies and abbreviations for a wide range of experimental contexts [@rajamohanMaterialsDataScience2025]. Materials science research produces data from diverse facilities, experimental techniques, and analysis workflows, resulting in highly variable vocabulary and inconsistent terminology. Differences in naming conventions and the omission of critical metadata, such as instrument details, pose challenges for data sharing and reuse. [MDS-Onto](https://cwrusdle.bitbucket.io/) addresses these issues by providing a standardized semantic framework that improves clarity, ensures contextual completeness of shared datasets, and facilitates interoperability across research groups. This common data model advances the goal of machine-actionable materials science data.
+The Materials Data Science Ontology (MDS-Onto) was developed to support the FAIRification of materials science data by providing consistent vocabularies and abbreviations for a wide range of experimental contexts [@rajamohanMaterialsDataScience2025]. Materials science research produces data from diverse facilities, experimental techniques, and analysis workflows, resulting in highly variable vocabulary and inconsistent terminology. Differences in naming conventions and the omission of critical metadata, such as instrument details, pose challenges for data sharing and reuse. [MDS-Onto](https://cwrusdle.bitbucket.io/) addresses these issues by providing a standardized semantic framework that improves clarity, ensures contextual completeness of shared datasets, and facilitates interoperability across research groups. This common data model advances the goal of machine-actionable materials data science.
 
 Terms in MDS-Onto are categorized using three attributes: domain, subdomain, and study stage. Domains and subdomains categorize different types of data within materials science, while study stages represent generic procedural steps in a study protocol. By embedding ontology terms with these attributes, MDS-Onto enables targeted term retrieval, allowing users to filter vocabulary based on research needs. For instance, a researcher focusing on photovoltaic cells can easily access only the terms tagged with the “PV-Cell” subdomain. This structured organization improves discoverability and ensures researchers can quickly identify the most relevant vocabulary for their work.
 
@@ -91,13 +91,13 @@ The `FAIRLinked` package comprises of three subpackages: `InterfaceMDS`, `RDFTab
 
 ## Interfacing with MDS-Onto (InterfaceMDS)
 
-The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for retrieving the latest version of MDS-Onto, searching ontology terms by string, filtering terms by domain, and listing available domains and subdomains. These features make it easier for users to explore and discover relevant vocabulary without manually inspecting the ontology file.
+The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for retrieving the latest version of MDS-Onto, searching ontology terms by string, filtering terms by domain, listing available domains and subdomains, and adding new terms to a local ontology file. These features make it easier for users to explore and discover relevant vocabulary without manually inspecting the ontology file.
 
 ![FAIRLinked contains a variety of functions for interacting with MDS-Onto to enable easy FAIRification of materials science data. \label{fig:InterfaceMDS}](InterfaceMDS-JOSS.png){width=80%, height=80%}
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with FAIR-aligned metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
+The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
 
 ![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](fig2-fairlinked.png){width=80%, height=80%}
 
@@ -110,7 +110,7 @@ The  `QBWorkflow` subpackage utilizes RDF Data Cube vocabulary to capture the st
 
 # Code Availability
 
-The source code for `FAIRLinked` can be found [here](https://pypi.org/project/FAIRLinked/) or in our [GitHub repository](https://github.com/cwru-sdle/FAIRLinked). 
+The source code for `FAIRLinked` can be found [here](https://pypi.org/project/FAIRLinked/) or in the [GitHub repository](https://github.com/cwru-sdle/FAIRLinked). 
 
 
 # Acknowledgement
