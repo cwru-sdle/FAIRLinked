@@ -23,7 +23,7 @@ def normalize(text):
     Returns:
         str: Normalized string.
     """
-    return re.sub(r'[^a-zA-Z0-9]', '', text)
+    return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
 
 def get_local_name(uri):
         uri_str = str(uri)
@@ -200,17 +200,19 @@ def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
                 case "unitless":
                     unit = "UNITLESS"
                 case "":
-                    unit = ""
+                    unit = "UNITLESS"
         else:
             kinds = extract_quantity_kinds()
             ty = userinput
-            while ty not in kinds:
-                ty = normalize(input("Please enter the type of quantity this is: "))
+            while ty not in kinds and ty:
+                ty = normalize(input("Please enter the type of quantity this is or hit 'enter' to skip: "))
 
-            print("Valid Units: ",kinds[ty])
-            unit = "kkkkkkkkkkkkkkkkkkkk"
-            while ( unit not in kinds[ty]):
-                unit = input("Please enter valid units: ")
+            if not ty:
+                unit = "UNITLESS"
+            else:
+                print("Valid Units: ",kinds[ty])
+                while ( unit not in kinds[ty]):
+                    unit = input("Please enter valid units: ")
     
 
 
@@ -218,9 +220,7 @@ def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
         "Synthesis", "Formulation", "Material Processing","Sample", 
         "Tool", "Recipe", "Result", "Analysis", "Modeling" ]
 
-    norm_study_stages = [
-        "synthesis", "formulation", "materialsprocessing", "sample", "tool", 
-        "recipe", "result", "analysis", "modeling" ]
+    norm_study_stages = [normalize(ss) for ss in valid_study_stages]
 
     if(normalize(study_stage) not in norm_study_stages):
         print("Please enter a valid study stage from options below: ")
