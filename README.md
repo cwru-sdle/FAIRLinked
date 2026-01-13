@@ -232,7 +232,8 @@ FAIRLinked serialize-data -mdt <TEMPLATE_PATH> -cf <CSV_PATH> -rkc <ROW_KEY_COLS
 
   * `-mdt, --metadata_template`: (Required) Path to the completed JSON-LD metadata template file.
   * `-cf, --csv_file`: (Required) Path to the CSV file containing the data.
-  * `-rkc, --row_key_cols`: (Required) Comma-separated list of column names that uniquely identify rows (e.g., `"col1,col2,col3"`).
+  * `-rkc, --row_key_cols`: (Optional) Comma-separated list of column names that uniquely identify rows (e.g., `"col1,col2,col3"`).
+  * `-ic, --id_cols`: (Optional) Choose columns used to uniquely identify a specific entity, such as a sample, a sample set, tool etc...
   * `-orc, --orcid`: (Required) ORCID identifier of the researcher (e.g., `"0000-0001-2345-6789"`).
   * `-of, --output_folder`: (Required) Directory where the generated JSON-LD files will be saved.
   * `-pc, --prop_col`: A Python dictionary literal defining relationships between columns.
@@ -260,6 +261,7 @@ FAIRLinked serialize-data \
     -mdt "/metadata/template.json" \
     -cf "/data/experiments.csv" \
     -rkc "SampleID" \
+    -ic "SampleID","MeasurementID" \
     -orc "0000-0001-2345-6789" \
     -of "/output/jsonld_files/" \
     -op "default" \
@@ -474,6 +476,7 @@ with open("path/to/metadata/template", "r") as f:
 extract_data_from_csv(metadata_template=metadata_template, 
                       csv_file="path/to/data/csv",
                       row_key_cols=["sample_id"],
+                      id_cols=["sample_id", "measurement_id"],
                       orcid="0000-0000-0000-0000", 
                       output_folder="path/to/output/folder/json-lds")
 ```
@@ -498,6 +501,7 @@ prop_col_pair_dict = {"name of relationship specified by rdfs:label": [("column_
 extract_data_from_csv(metadata_template=metadata_template, 
                       csv_file="path/to/csv/data",
                       row_key_cols=["column_1", "column_3", "column_7"],
+                      id_cols=["column_1", "column_7"],
                       orcid="0000-0000-0000-0000", 
                       output_folder="path/to/output",
                       prop_column_pair_dict=prop_col_pair_dict,

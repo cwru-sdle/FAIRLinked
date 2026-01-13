@@ -50,6 +50,7 @@ def extract_data_from_csv(
     orcid,
     output_folder,
     row_key_cols=None,            # optional
+    id_cols=None,                 # optional
     prop_column_pair_dict=None,   # optional
     ontology_graph=None,          # optional
     base_uri="https://cwrusdle.bitbucket.io/mds/",
@@ -70,6 +71,9 @@ def extract_data_from_csv(
 
     row_key_cols : list[str]
         Columns to uniquely identify each row.
+
+    id_cols : list[str]
+        Columns that contain unique entity identifier independent of row.
 
     orcid : str
         ORCID identifier (dashes removed automatically).
@@ -181,7 +185,11 @@ def extract_data_from_csv(
                     raise ValueError("Missing skos:altLabel in template")
 
                 prefix, localname = item["@type"].split(":")
-                subject_uri = f"{context[prefix]}{localname}.{row_key}" if prefix else f"{localname}.{row_key}"
+                if id_cols is not None and item["skos:altLabel"] in id_cols:
+                    entity_identifier = row.get(item["skos:altLabel"])
+                    subject_uri = f"{context[prefix]}{localname}.{entity_identifier}"
+                else:
+                    subject_uri = f"{context[prefix]}{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
                 item["@id"] = subject_uri
                 subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
@@ -480,7 +488,9 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
 def extract_from_folder(
     csv_folder, 
     metadata_template, 
-    row_key_cols, orcid, 
+    row_key_cols, 
+    id_cols,
+    orcid, 
     output_base_folder, 
     prop_column_pair_dict=None, 
     ontology_graph=None,
@@ -501,6 +511,9 @@ def extract_from_folder(
 
     row_key_cols : list[str]
         List of CSV column names used to construct a unique key for each row.
+
+    id_cols : list[str]
+        Columns that contain unique entity identifier independent of row.
 
     orcid : str
         ORCID iD of the user (dashes will be removed automatically).
@@ -551,7 +564,7 @@ def extract_from_folder(
 
         os.makedirs(output_folder, exist_ok=True)
         
-        extract_data_from_csv(metadata_template, csv_path, row_key_cols, orcid, output_folder, prop_column_pair_dict, ontology_graph, base_uri)
+        extract_data_from_csv(metadata_template, csv_path, row_key_cols, id_cols, orcid, output_folder, prop_column_pair_dict, ontology_graph, base_uri)
 
 
 def extract_data_from_csv_interface(args):
@@ -579,6 +592,7 @@ def extract_data_from_csv_interface(args):
         metadata_template=metadata_template,
         csv_file=args.csv_file,
         row_key_cols=args.row_key_cols,
+        id_cols = args.id_cols,
         orcid=args.orcid,
         output_folder=args.output_folder,
         prop_column_pair_dict=args.prop_col,

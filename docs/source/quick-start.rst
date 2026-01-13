@@ -115,7 +115,8 @@ Create a directory of JSON-LDs from a single CSV file.
 
 * ``-mdt, --metadata_template``: (**Required**) Metadata template (path to JSON file if using CLI).
 * ``-cf, --csv_file``: (**Required**) Path to the CSV file containing the data.
-* ``-rkc, --row_key_cols``: (**Required**) Comma-separated list of column names used to uniquely identify rows (e.g. col1,col2,col3).
+* ``-rkc, --row_key_cols``: Comma-separated list of column names used to uniquely identify rows (e.g. col1,col2,col3).
+* ``-ic, --id_cols``: Choose columns used to uniquely identify a specific entity, such as a sample, a sample set, tool etc...
 * ``-orc, --orcid``: (**Required**) ORCID identifier of the researcher.
 * ``-of, --output_folder``: (**Required**) Directory where JSON-LD files will be saved.
 * ``-pc, --prop_col``: Python dictionary literal to define relationships between columns.

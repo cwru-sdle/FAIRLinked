@@ -130,6 +130,11 @@ def main():
         type=comma_separated_list,
         help="Choose column used to uniquely identify rows, default will generate keys based off all columns"
     )
+    data_extract_parser.add_argument("-ic",
+        "--id-cols",
+        type = comma_separated_list,
+        help = "Choose columns used to uniquely identify a specific entity, such as a sample, a sample set, tool, etc..."
+    )
     data_extract_parser.add_argument("-orc",
         "--orcid",
         required=True,
