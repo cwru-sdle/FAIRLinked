@@ -171,6 +171,7 @@ Functions in this subpackage allow you to:
    extract_data_from_csv(metadata_template=metadata_template, 
                          csv_file="path/to/data.csv",
                          row_key_cols=["sample_id"],
+                         id_cols=["sample_id", "measurement_id"],
                          orcid="0000-0000-0000-0000", 
                          output_folder="path/to/output/json-lds")
 
@@ -237,6 +238,7 @@ In the example below, "relationship_label" should be the rdfs:label value, the f
    extract_data_from_csv(metadata_template=metadata_template, 
                          csv_file="path/to/data.csv",
                          row_key_cols=["column_1", "column_3"],
+                         id_cols=["column_1", "column_2"],
                          orcid="0000-0000-0000-0000", 
                          output_folder="path/to/output/json-lds",
                          prop_column_pair_dict=prop_col_pair_dict,
