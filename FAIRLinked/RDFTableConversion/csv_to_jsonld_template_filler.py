@@ -50,6 +50,7 @@ def extract_data_from_csv(
     orcid,
     output_folder,
     row_key_cols=None,            # optional
+    id_cols=None,                 # optional
     prop_column_pair_dict=None,   # optional
     ontology_graph=None,          # optional
     base_uri="https://cwrusdle.bitbucket.io/mds/",
@@ -181,7 +182,11 @@ def extract_data_from_csv(
                     raise ValueError("Missing skos:altLabel in template")
 
                 prefix, localname = item["@type"].split(":")
-                subject_uri = f"{context[prefix]}{localname}.{row_key}" if prefix else f"{localname}.{row_key}"
+                if item["skos:altLabel"] in id_cols:
+                    entity_identifier = row.get(item["skos:altLabel"])
+                    subject_uri = f"{context[prefix]}{localname}.{entity_identifier}"
+                else:
+                    subject_uri = f"{context[prefix]}{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
                 item["@id"] = subject_uri
                 subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
@@ -579,6 +584,7 @@ def extract_data_from_csv_interface(args):
         metadata_template=metadata_template,
         csv_file=args.csv_file,
         row_key_cols=args.row_key_cols,
+        id_cols = args.id_cols,
         orcid=args.orcid,
         output_folder=args.output_folder,
         prop_column_pair_dict=args.prop_col,

@@ -22,7 +22,7 @@ match = re.search(r'__version__\s*=\s*[\'"]([^\'"]+)[\'"]', init_content)
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'FAIRLinked'
-copyright = '2025, Van D. Tran, Ritika Lamba, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French'
+copyright = '2025, SDLE Research Center'
 author = 'Van D. Tran, Brandon Lee, Ritika Lamba, Henry Dirks, Balashanmuga Priyan Rajamohan, Gabriel Ponon, Quynh D. Tran, Ozan Dernek, Erika I. Barcelos, Roger H. French'
 if match:
     release = match.group(1)
