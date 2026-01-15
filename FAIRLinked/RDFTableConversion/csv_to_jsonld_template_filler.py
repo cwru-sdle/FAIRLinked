@@ -128,7 +128,8 @@ def extract_data_from_csv(
         "Recipe": "REC", 
         "Result": "RSLT", 
         "Analysis": "AN", 
-        "Modeling": "MOD" }
+        "Modeling": "MOD",
+        "": "UNK"}
 
     rowpredicate = URIRef("https://cwrusdle.bitbucket.io/mds/row")
 
@@ -187,9 +188,9 @@ def extract_data_from_csv(
                 prefix, localname = item["@type"].split(":")
                 if id_cols is not None and item["skos:altLabel"] in id_cols:
                     entity_identifier = row.get(item["skos:altLabel"])
-                    subject_uri = f"{context[prefix]}{localname}.{entity_identifier}"
+                    subject_uri = f"mds:{localname}.{entity_identifier}"
                 else:
-                    subject_uri = f"{context[prefix]}{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
+                    subject_uri = f"mds:{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
                 item["@id"] = subject_uri
                 subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
@@ -487,10 +488,10 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
 
 def extract_from_folder(
     csv_folder, 
-    metadata_template, 
+    metadata_template,
+    orcid,  
     row_key_cols, 
     id_cols,
-    orcid, 
     output_base_folder, 
     prop_column_pair_dict=None, 
     ontology_graph=None,
@@ -551,11 +552,14 @@ def extract_from_folder(
 
         csv_path = os.path.join(csv_folder, filename)
 
-        types_used = [
-            entry["@type"].split(":")[-1]
-            for entry in metadata_template.get("@graph", [])
-            if "@type" in entry and entry.get("skos:altLabel") in row_key_cols
-        ]
+        if row_key_cols:
+            types_used = [
+                entry["@type"].split(":")[-1]
+                for entry in metadata_template.get("@graph", [])
+                if "@type" in entry and entry.get("skos:altLabel") in row_key_cols
+            ]
+        else:
+            types_used = []
 
         type_suffix = "-".join(set(types_used)) or "Unknown"
         uid = str(uuid.uuid4())[:8]
@@ -564,7 +568,17 @@ def extract_from_folder(
 
         os.makedirs(output_folder, exist_ok=True)
         
-        extract_data_from_csv(metadata_template, csv_path, row_key_cols, id_cols, orcid, output_folder, prop_column_pair_dict, ontology_graph, base_uri)
+        extract_data_from_csv(
+            metadata_template=metadata_template, 
+            csv_file=csv_path,
+            orcid=orcid,
+            row_key_cols=row_key_cols, 
+            id_cols=id_cols, 
+            output_folder=output_folder, 
+            prop_column_pair_dict=prop_column_pair_dict, 
+            ontology_graph=ontology_graph, 
+            base_uri=base_uri,
+            license=license)
 
 
 def extract_data_from_csv_interface(args):
@@ -591,9 +605,9 @@ def extract_data_from_csv_interface(args):
     return extract_data_from_csv(
         metadata_template=metadata_template,
         csv_file=args.csv_file,
+        orcid=args.orcid,
         row_key_cols=args.row_key_cols,
         id_cols = args.id_cols,
-        orcid=args.orcid,
         output_folder=args.output_folder,
         prop_column_pair_dict=args.prop_col,
         ontology_graph=ontology_graph,

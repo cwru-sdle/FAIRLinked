@@ -155,7 +155,8 @@ Functions in this subpackage allow you to:
                               ontology_graph=mds_graph, 
                               output_path="path/to/output/template.jsonld", 
                               matched_log_path="path/to/output/matched.log", 
-                              unmatched_log_path="path/to/output/unmatched.log")
+                              unmatched_log_path="path/to/output/unmatched.log",
+                              skip_prompts=False)
 
 
 ## Create JSON-LDs from CSVs

@@ -99,6 +99,7 @@ Generate a JSON-LD template based on a CSV file.
 * ``-out, --output_path``: (**Required**) Path to output JSON-LD file.
 * ``-lp, --log_path``: (**Required**) Path to store files that log labels that could/couldn't be matched to a term in MDS-Onto.
 * ``-op, --ontology_path``: Path to ontology. To get official MDS-Onto choose 'default'.
+* ``-sp, --skip_prompts``: Skip the metadata prompts (flag; no value needed)
 
 serialize-data
 ---------------
