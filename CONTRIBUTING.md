@@ -1,0 +1,1 @@
+We welcome your ideas! If you find a bug, have an idea for a new feature, or see something that could be improved, please open an issue. Your suggestions help us make this project better for everyone. The GitHub page is only for public-facing purpose, development is done only by members of SDLE Research Center.
