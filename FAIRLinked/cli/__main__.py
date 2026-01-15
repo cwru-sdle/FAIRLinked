@@ -44,7 +44,7 @@ def main():
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    filter_parser.add_argument("-op", "--ontology_path", default="default", help="Path to ontology file")
+    filter_parser.add_argument("-op", "--ontology_path", default="default", help="(Optional) Path to ontology file")
     filter_parser.add_argument("-q", "--query_term", help="Term to search for")
     filter_parser.add_argument(
         "-t", "--search_types", nargs="+",
@@ -53,7 +53,7 @@ def main():
     filter_parser.add_argument("-te", "--ttl_extr",
         choices=["T", "F"],
         default="F",
-        help="Specifies whether user wants to save search results. Enter T or F"
+        help="(Optional) Specifies whether user wants to save search results. Enter T or F"
     )
     filter_parser.add_argument("-tp", "--ttl_path", 
         help="If user wants to save search results, provide path to save file. Append file name at the end of the path"
@@ -104,10 +104,20 @@ def main():
         definitions, and explanatory notes. For column labels that can be matched to a term in MDS-Onto, definition will be filled out.
         """
     )
-    jsonld_temp_gen_parser.add_argument("-cp", "--csv_path", required=True, help="Path to CSV file")
-    jsonld_temp_gen_parser.add_argument("-op", "--ontology_path", help="Path to ontology. To get official MDS-Onto choose 'default'")
-    jsonld_temp_gen_parser.add_argument("-out", "--output_path", required=True, help="Path to output JSON-LD file")
-    jsonld_temp_gen_parser.add_argument("-lp", "--log_path", required=True, help="Path to store files that log labels that could/couldn't be matched to a term in MDS-Onto")
+    jsonld_temp_gen_parser.add_argument("-cp", "--csv_path", required=True, help="(Required) Path to CSV file")
+    jsonld_temp_gen_parser.add_argument(
+        "-op", 
+        "--ontology_path", 
+        help="(Optional) Path to ontology. To get official MDS-Onto choose 'default'", 
+        default="default",
+        metavar="PATH|default")
+    jsonld_temp_gen_parser.add_argument("-out", "--output_path", required=True, help="(Required) Path to output JSON-LD file")
+    jsonld_temp_gen_parser.add_argument("-lp", "--log_path", required=True, help="(Required) Path to store files that log labels that could/couldn't be matched to a term in MDS-Onto")
+    jsonld_temp_gen_parser.add_argument(
+        "-sp", "--skip_prompts",
+        help="Skip the metadata prompts.",
+        action="store_true"
+    )
     jsonld_temp_gen_parser.set_defaults(func=jsonld_temp_gen_interface)
 
     # Create directory of JSON-LDs from CSV
@@ -118,37 +128,37 @@ def main():
     data_extract_parser.add_argument("-mdt",
         "--metadata_template",
         required=True,
-        help="Metadata template (path to JSON file if using CLI)"
+        help="(Required) Metadata template (path to JSON file if using CLI)"
     )
     data_extract_parser.add_argument("-cf",
         "--csv_file",
         required=True,
-        help="Path to the CSV file containing the data"
+        help="(Required) Path to the CSV file containing the data"
     )
     data_extract_parser.add_argument("-rkc",
         "--row_key_cols",
         type=comma_separated_list,
-        help="Choose column used to uniquely identify rows, default will generate keys based off all columns"
+        help="(Optional) Choose column used to uniquely identify rows, default will generate keys based off all columns"
     )
     data_extract_parser.add_argument("-ic",
-        "--id-cols",
+        "--id_cols",
         type = comma_separated_list,
-        help = "Choose columns used to uniquely identify a specific entity, such as a sample, a sample set, tool, etc..."
+        help = "(Optional) Choose columns used to uniquely identify a specific entity, such as a sample, a sample set, tool, etc..."
     )
     data_extract_parser.add_argument("-orc",
         "--orcid",
         required=True,
-        help="ORCID identifier of the researcher"
+        help="(Required) ORCID identifier of the researcher"
     )
     data_extract_parser.add_argument("-of",
         "--output_folder",
         required=True,
-        help="Directory where JSON-LD files will be saved"
+        help="(Required) Directory where JSON-LD files will be saved"
     )
     data_extract_parser.add_argument("-pc",
         "--prop_col",
         type=ast.literal_eval,
-        help="""
+        help="""(Optional)
         Python dictionary literal: enter a dictionary with keys as labels of OWL properties and values are lists of 2-tuples.
         Enter a string in the form of "{"rel_1": [(col_1, col_2), (col_3, col_4)], "rel_2":[(col_3, col_6)]}"
         """
@@ -156,18 +166,18 @@ def main():
     data_extract_parser.add_argument("-op",
         "--ontology_path",
         default="default",
-        help="Path to ontology. Must be provided if 'prop_col' is provided. To get official MDS-Onto choose 'default'"
+        help="(Optional) Path to ontology. Must be provided if 'prop_col' is provided. To get official MDS-Onto choose 'default'"
         )
     data_extract_parser.add_argument("-base",
         "--base_uri",
         default="https://cwrusdle.bitbucket.io/mds/",
-        help="Base URI used to construct subject and object URIs"
+        help="(Optional) Base URI used to construct subject and object URIs"
     )
 
     data_extract_parser.add_argument("-l",
         "--license",
         default =None,
-        help="License used, find valid licenses at https://spdx.org/licenses/"
+        help="(Optional) License used, find valid licenses at https://spdx.org/licenses/"
     )
     data_extract_parser.set_defaults(func=extract_data_from_csv_interface)
 
@@ -179,17 +189,17 @@ def main():
     deserializer_parser.add_argument("-jd",
         "--jsonld_directory",
         required=True,
-        help="Directory containing JSON-LD files"
+        help="(Required) Directory containing JSON-LD files"
     )
     deserializer_parser.add_argument("-on", 
         "--output_name",
         required=True,
-        help="Base name of output files"
+        help="(Required) Base name of output files"
     )
     deserializer_parser.add_argument("-od",
         "--output_dir",
         required=True,
-        help="Path to directory to save the outputs"
+        help="(Required) Path to directory to save the outputs"
     )
     deserializer_parser.add_argument("-rk",
         "--primary_row_key",

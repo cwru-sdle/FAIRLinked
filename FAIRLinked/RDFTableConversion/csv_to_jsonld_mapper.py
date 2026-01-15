@@ -218,28 +218,28 @@ def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
 
     valid_study_stages = [
         "Synthesis", "Formulation", "Material Processing","Sample", 
-        "Tool", "Recipe", "Result", "Analysis", "Modeling" ]
+        "Tool", "Recipe", "Result", "Analysis", "Modeling", ""]
 
     norm_study_stages = [normalize(ss) for ss in valid_study_stages]
 
+
     if(normalize(study_stage) not in norm_study_stages):
-        print("Please enter a valid study stage from options below: ")
+        print("Please enter a valid study stage from options below or press 'Enter' to skip: ")
         for ss in valid_study_stages:
             print(ss)
-        study_stage = input("Please enter valid study stage: ")
+        study_stage = input("Please enter valid study stage or press 'Enter' to skip: ")
     while(normalize(study_stage) not in norm_study_stages):
-        study_stage = input("Please enter valid study stage: ")
-        
+        study_stage = input("Please enter valid study stage or press 'Enter' to skip: ")
     study_stage = valid_study_stages[norm_study_stages.index(normalize(study_stage))]
 
-    notes = input("Please enter notes: ")
+    notes = input("Please enter notes or press 'Enter' to skip: ")
 
     return unit, study_stage, notes
 
 def get_license():
     return input("Please enter license")
 
-def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path):
+def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path, skip_prompts=False):
     """
     Use a CSV file into a JSON-LD template that user can fill out column metadata.
 
@@ -249,6 +249,7 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         output_path (str): Path to write the resulting JSON-LD file.
         matched_log_path (str): Path to write the log of columns that matched the ontology.
         unmatched_log_path (str): Path to write the log of columns that can't be found in the ontology.
+        skip_prompts (bool): Allow users to skip metadata prompts
     """
     df = pd.read_csv(csv_path)
     columns = list(df.columns)
@@ -338,7 +339,14 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         import importlib.util
 
         
-        unit, study, notes = prompt_for_missing_fields(iri_fragment,un, study_stage,ontology_graph,units)
+        if not skip_prompts:
+            unit, study, notes = prompt_for_missing_fields(iri_fragment,un, study_stage, ontology_graph, units)
+        else:
+            unit = "UNITLESS"
+            study = study_stage if study_stage not in [
+                "", "Study stage information not available"
+            ] else ""
+            notes = ""
         
 
         if(binding == ""):
@@ -397,13 +405,17 @@ def jsonld_temp_gen_interface(args):
     print(args.ontology_path)
     if args.ontology_path == "default":
         ontology_graph = Graph()
-        ontology_graph = load_mds_ontology_graph()
-        
+        ontology_graph = load_mds_ontology_graph()       
     else:
         ontology_graph = Graph()
         ontology_graph.parse(source=args.ontology_path)
 
     matched_path = os.path.join(args.log_path, "matched.txt")
     unmatched_path = os.path.join(args.log_path, "unmatched.txt")
-    jsonld_template_generator(csv_path=args.csv_path, ontology_graph=ontology_graph, output_path=args.output_path, matched_log_path=matched_path, unmatched_log_path=unmatched_path)
+    jsonld_template_generator(csv_path=args.csv_path, 
+                            ontology_graph=ontology_graph, 
+                            output_path=args.output_path, 
+                            matched_log_path=matched_path, 
+                            unmatched_log_path=unmatched_path, 
+                            skip_prompts=args.skip_prompts)
     

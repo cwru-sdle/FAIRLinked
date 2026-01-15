@@ -109,7 +109,7 @@ def filter_interface(args):
     Recipe, 
     Result,
     Analysis,
-    Modelling.
+    Modeling.
 
     For more details about Study Stages, please view go see https://cwrusdle.bitbucket.io/.
 

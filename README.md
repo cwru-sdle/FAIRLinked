@@ -190,6 +190,7 @@ FAIRLinked generate-template -cp <CSV_PATH> -out <OUTPUT_PATH> -lp <LOG_PATH> [O
   * `-out, --output_path`: (Required) Path to save the output JSON-LD template file.
   * `-lp, --log_path`: (Required) Path to a directory to store log files detailing which labels were matched.
   * `-op, --ontology_path`: Path to the ontology file. Use `"default"` for the official MDS-Onto.
+  * `-sp, --skip_prompts`: Skip the metadata prompts (flag; no value needed)
 
 **Example:**
 
@@ -199,10 +200,10 @@ FAIRLinked generate-template -cp "/data/experiments.csv" -out "/metadata/templat
 Find an example template.jsonld in /resources
 
 **Note**
-Please make sure to follow the proper formating guidlines for input CSV file. 
+Please make sure to follow the proper formatting guidelines for input CSV file. 
  * Each column name should be the "common" or alternative name for this object
  * The following three rows should be reserved for the **type**, **units**, and **study stage** in that order
- * if values for these are not avaible, the space should be left blank
+ * if values for these are not available, the space should be left blank
  * data for each sample can then begin on the 5th row
 
  Please see the following images for reference 
@@ -296,7 +297,7 @@ FAIRLinked deserialize-data \
 An example can be found in /resources/output
 
 **Note** 
-The output CSV can be used to generate a template, or can me modified and then turned into a new template
+The output CSV can be used to generate a template, or can be modified and then turned into a new template
 
 -----
 
@@ -478,7 +479,8 @@ extract_data_from_csv(metadata_template=metadata_template,
                       row_key_cols=["sample_id"],
                       id_cols=["sample_id", "measurement_id"],
                       orcid="0000-0000-0000-0000", 
-                      output_folder="path/to/output/folder/json-lds")
+                      output_folder="path/to/output/folder/json-lds",
+                      skip_prompts=False)
 ```
 
 ### Create JSON-LDs with relationships between data instances
@@ -505,7 +507,8 @@ extract_data_from_csv(metadata_template=metadata_template,
                       orcid="0000-0000-0000-0000", 
                       output_folder="path/to/output",
                       prop_column_pair_dict=prop_col_pair_dict,
-                      ontology_graph=mds_graph)
+                      ontology_graph=mds_graph,
+                      skip_prompts=False)
 ```
 
 ### Turn JSON-LD directory back to CSV
