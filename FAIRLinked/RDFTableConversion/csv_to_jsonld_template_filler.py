@@ -43,7 +43,6 @@ def hash6(s):
     return six_digit
 
 
-
 def extract_data_from_csv(
     metadata_template,
     csv_file,
@@ -187,7 +186,9 @@ def extract_data_from_csv(
 
                 prefix, localname = item["@type"].split(":")
                 if id_cols is not None and item["skos:altLabel"] in id_cols:
-                    entity_identifier = row.get(item["skos:altLabel"])
+                    raw_identifier = str(row.get(item["skos:altLabel"]),"")
+                    clean_val = raw_identifier.replace(" ", "_")
+                    entity_identifier = re.sub(r'[^a-zA-Z0-9_\-\.]', '', clean_val)
                     subject_uri = f"mds:{localname}.{entity_identifier}"
                 else:
                     subject_uri = f"mds:{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
@@ -242,7 +243,10 @@ def extract_data_from_csv(
             for alt_label, subj_uri in subject_lookup.items():
                 if alt_label in row:
                     g.remove((subj_uri, QUDT.value, None))
-                    g.add((subj_uri, QUDT.value, Literal(row[alt_label], datatype=XSD.string)))
+                    if row[alt_label]:
+                        g.add((subj_uri, QUDT.value, Literal(row[alt_label], datatype=XSD.string)))
+                    else:
+                        continue
                     g.add((subj_uri, rowpredicate, Literal(row_key[:-1]) ))
                     g.add((subj_uri, DCTERMS.license, license_uri))
 

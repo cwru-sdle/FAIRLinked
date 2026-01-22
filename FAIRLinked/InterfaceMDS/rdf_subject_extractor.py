@@ -89,31 +89,65 @@ def fuzzy_filter_subjects_strict(df, keywords, column="label", max_l_dist=1):
     return pd.DataFrame(matches)
 
 
+
+
+def get_adaptive_distance(keyword):
+    """Determines allowed typos based on keyword length."""
+    length = len(keyword)
+    if length <= 2: return 0
+    elif length <= 5: return 1
+    else: return 2
+
 def fuzzy_search_interface():
     """
-    CLI interface for searching for terms using fuzzy search
+    CLI interface compatible with extract_subject_details and fuzzy_filter_subjects_strict.
     """
-    file_path = input("Enter path to RDF (.ttl) file: ").strip()
-    if not os.path.exists(file_path):
-        print(f"❌ File not found: {file_path}")
+    output_dir = input("Enter path to directory: ")
+    if not os.path.exists(output_dir):
+        print(f"❌ Directory not found: {output_dir}")
         return
 
     graph = load_mds_ontology_graph()
     df = extract_subject_details(graph)
 
-    output_csv = file_path.replace(".ttl", "_subjects.csv")
-    df.to_csv(output_csv, index=False)
-    print(f"\n📁 Full output saved to: {output_csv}")
+    keywords_input = input("🔍 Enter keywords (comma-separated): ").strip()
+    if not keywords_input:
+        return
 
-    keywords_input = input("🔍 Enter fuzzy keywords (comma-separated, e.g., temp,pressure): ").strip()
-    if keywords_input:
-        keywords = [kw.strip() for kw in keywords_input.split(",")]
-        max_dist = 1
+    keywords = [kw.strip() for kw in keywords_input.split(",") if kw.strip()]
+    all_results = []
 
-        filtered_df = fuzzy_filter_subjects_strict(df, keywords, max_l_dist=max_dist)
-        fuzzy_out = output_csv.replace(".csv", f"_fuzzy_{'_'.join(keywords)}.csv")
-        filtered_df.to_csv(fuzzy_out, index=False)
-        print(f"✅ Fuzzy match output saved to: {fuzzy_out}")
+    print("\n--- Processing Search ---")
+    for kw in keywords:
+        dist = get_adaptive_distance(kw)
+        match_df = fuzzy_filter_subjects_strict(df, [kw], column="label", max_l_dist=dist).copy()
+        
+        if not match_df.empty:
+            match_df['searched_keyword'] = kw
+            all_results.append(match_df)
+
+    if all_results:
+        final_df = pd.concat(all_results).drop_duplicates(subset=['subject_id'])
+
+        print(f"\n✨ Found {len(final_df)} unique matches:")
+        
+        # --- FIXED SECTION: ONLY SHOW LABEL AND KEYWORD ---
+        cols_to_show = ['searched_keyword', 'label'] 
+        available_cols = [c for c in cols_to_show if c in final_df.columns]
+        
+        # Using a simple to_string() to avoid the red underline error
+        print(final_df[available_cols].to_string(index=False))
+        print("-" * 40)
+
+        # Save to CSV (full data including subject_id and info will still be in the file)
+        safe_kw_str = "_".join(keywords)[:50] 
+        filename = f"fuzzy_search_{safe_kw_str}.csv"
+        fuzzy_out = os.path.join(output_dir, filename)
+        
+        final_df.to_csv(fuzzy_out, index=False)
+        print(f"✅ Full details (including URIs) saved to: {fuzzy_out}")
+    else:
+        print("No matches found.")
 
 
 
