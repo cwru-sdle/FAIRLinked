@@ -85,7 +85,7 @@ def main():
     # Fuzzy string search
     string_search_parser = subparsers.add_parser(
         "term-search",
-        help="Search for terms by matching term labels"
+        help="Search for terms by matching term labels. This function always uses latest version of MDS-Onto to search"
     )
     string_search_parser.set_defaults(func=lambda args: fuzzy_search_interface())
 
