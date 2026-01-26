@@ -115,18 +115,18 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 \begin{table}[h]
 \centering
 \footnotesize
-\caption{User metadata requirements for the QBWorkflow RDF Data Cube template as shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}.}
+\caption{User metadata requirements for the QBWorkflow RDF Data Cube template. Terms have been abbreviated to fit page margins.}
 \label{tbl:qb_template}
-\begin{tabularx}{\textwidth}{|l|*{8}{>{\centering\arraybackslash}X|}}
+\begin{tabular}{|l|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|}
 \hline
-\textbf{Metadata Category} & \textbf{ExperimentId} & \textbf{LogFile} & \textbf{ImageSequence} & \textbf{StackNumber} & \textbf{DetectorLength} & \textbf{Wavelength} & \textbf{Energy} & \textbf{PixelSize} \\ \hline
+\textbf{Category} & \textbf{ExpId} & \textbf{LogFile} & \textbf{ImgSeq} & \textbf{StkNum} & \textbf{DetLen} & \textbf{Wave} & \textbf{Energy} & \textbf{PixSize} \\ \hline
 \textbf{Study Stage} & & Result & Result & Result & Recipe & Recipe & Recipe & Recipe \\ \hline
 \textbf{Alt. Label} & \dots & \dots & \dots & \dots & \dots & \dots & \dots & \dots \\ \hline
 \textbf{Unit (QUDT)} & unit:UNL & unit:UNL & unit:UNL & unit:UNL & ??? & ??? & ??? & ??? \\ \hline
 \textbf{Is Measure?} & NO & NO & NO & NO & YES & YES & YES & YES \\ \hline
-\textbf{Existing URI} & mds:ExpId & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & mds:Energy & \_\_\_ \\ \hline
-\textbf{Variables} & \textbf{ExperimentId} & \textbf{LogFile} & \textbf{ImageSequence} & \textbf{StackNumber} & \textbf{DetectorLength} & \textbf{Wavelength} & \textbf{Energy} & \textbf{PixelSize} \\ \hline
-\end{tabularx}
+\textbf{Existing URI} & mds:ExpId & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & mds:Eng & \_\_\_ \\ \hline
+\textbf{Variables} & \textbf{ExpId} & \textbf{LogFile} & \textbf{ImgSeq} & \textbf{StkNum} & \textbf{DetLen} & \textbf{Wave} & \textbf{Energy} & \textbf{PixSize} \\ \hline
+\end{tabular}
 \end{table}
 
 
