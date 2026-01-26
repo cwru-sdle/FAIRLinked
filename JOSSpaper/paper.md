@@ -86,18 +86,18 @@ Terms in MDS-Onto are categorized using three attributes: domain, subdomain, and
 # Key Features
 
 The `FAIRLinked` package comprises of three subpackages: `InterfaceMDS`, `RDFTableConversion`, and `QBWorkflow`, each addressing distinct aspects of FAIRification based on MDS-Onto.
-- `InterfaceMDS`: Searching, filtering and adding terms to MDS-Onto.
-- `RDFTableConversion`: Create FAIR Linked data (JSON-LD).
-- `QBWorkflow`: Create FAIR Linked data compliant with the RDF Data Cube Vocabulary.
+* `InterfaceMDS`: Searching, filtering and adding terms to MDS-Onto.
+* `RDFTableConversion`: Create FAIR Linked data (JSON-LD).
+* `QBWorkflow`: Create FAIR Linked data compliant with the RDF Data Cube Vocabulary.
 
 ## Interfacing with MDS-Onto (InterfaceMDS)
 
 The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for:
- - Retrieving the latest version of MDS-Onto, 
- - Searching ontology terms by string, 
- - Filtering terms by domain, 
- - Listing available domains and subdomains, and 
- - Adding new terms to a local ontology file. 
+ * Retrieving the latest version of MDS-Onto, 
+ * Searching ontology terms by string, 
+ * Filtering terms by domain, 
+ * Listing available domains and subdomains, and 
+ * Adding new terms to a local ontology file. 
  These features make it easier for users to explore and discover relevant vocabulary without manually inspecting the ontology file.
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
