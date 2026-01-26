@@ -10,8 +10,8 @@ output:
   pdf_document:
     latex_engine: lualatex
 header-includes:
-  - \usepackage{tabularx}
-  - \usepackage{array}
+- \usepackage{tabularx}
+- \usepackage{array}
   html_document:
     df_print: paged
 authors:
