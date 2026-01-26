@@ -64,13 +64,13 @@ editor_options:
 
 # Summary
 
-`FAIRLinked` is a software package created to support the FAIRification of materials science data, ensuring proper alignment with FAIR principles: Findable, Accessible, Interoperable, and Reusable [@wilkinsonFAIRGuidingPrinciples2016a]. It is built to be compatible with MDS-Onto, an ontology designed to capture the semantics of various types of materials data, enabling integration and sharing across different research workflows [@rajamohanMaterialsDataScience2025]. The package is subdivided into three subpackages: `InterfaceMDS`, `RDFTableConversion`, and `QBWorkflow`. The first subpackage, `InterfaceMDS` allows users to search for terms using either string search or various filters, explore different domains and subdomains, and add terms to MDS-Onto. `RDFTableConversion` is used for serialization and deserialization of data from CSV into JSON-LDs and vice versa in a way that capture the semantics of the data using MDS-Onto. Lastly, `QBWorkflow` is a serialization and deserialization workflow that incorporate [RDF Data Cube](https://www.w3.org/TR/vocab-data-cube/) vocabulary, useful for working with multidimensional datasets. By offering these packages, `FAIRLinked` lowers the barrier of creating FAIR, machine-actionable data for researchers in the materials science community.
+`FAIRLinked` is a software package created to support the FAIRification of materials science data, ensuring proper alignment with FAIR principles: Findable, Accessible, Interoperable, and Reusable [@wilkinsonFAIRGuidingPrinciples2016a]. It is built to be compatible with MDS-Onto, an ontology designed to capture the semantics of various types of materials data, enabling integration and sharing across different research workflows [@rajamohanMaterialsDataScience2025]. The package is subdivided into three subpackages: `InterfaceMDS`, `RDFTableConversion`, and `QBWorkflow`. The first subpackage, `InterfaceMDS` allows users to search for terms using either string search or various filters, explore different domains and subdomains, and add terms to MDS-Onto. `RDFTableConversion` is used for serialization and deserialization of data from CSV into JSON-LDs and vice versa in a way that capture the semantics of the data using MDS-Onto. Lastly, `QBWorkflow` is a serialization and deserialization workflow that incorporates [RDF Data Cube](https://www.w3.org/TR/vocab-data-cube/) vocabulary, useful for working with multidimensional datasets. By offering these packages, `FAIRLinked` lowers the barrier of creating FAIR, machine-actionable data for researchers in the materials science community.
 
 # Statement of Need
 
-Modern materials science research generate data from a wide range of experimental techniques (e.g. sychrotron X-ray diffraction, IV measurements, Suns-Voc, pyrometry, spectroscopy, degradation measurements) spanning multiple application domains like photovoltaics, advanced manufacturing, and electronic components. These experiments produce measurements of various material properties under a multitude of environmental conditions.
+Modern materials science research generates data from a wide range of experimental techniques (e.g. synchrotron X-ray diffraction, IV measurements, Suns-Voc, pyrometry, spectroscopy, degradation measurements) spanning multiple application domains like photovoltaics, advanced manufacturing, and electronic components. These experiments produce measurements of various material properties under a multitude of environmental conditions.
 
-The heterogeneity of these data sources introduces the well-known “3V” challenges of big data: volume, velocity, and variety [@laney3DDataManagement2001]. Materials science datasets can also be multimodal, consisting of numerical tables, images, time-series measurements, and other formats. Additionally, different research groups often use inconsistent terminologies, abbreviations, or naming conventions for the same quantities, instruments, or experimental procedures. This inconsistency creates substantial barriers to integrating datasets across laboratories and domains, thereby reducing interoperability and increasing the effort required for reuse of data [@dernekPerspectiveSynchrotronData2025; @tranDesigningDataCentricStudy2025].
+The heterogeneity of these data sources introduces the well-known “3V” challenges of big data: volume, velocity, and variety [@laney3DDataManagement2001]. Materials science datasets can also be multimodal, consisting of numerical tables, images, time-series measurements, and other formats. Additionally, different research groups often use inconsistent terminologies, abbreviations, or naming conventions for the same quantities, instruments, or experimental procedures. This inconsistency creates substantial barriers to integrating datasets across laboratories and domains, thereby reducing interoperability and increasing the effort required to reuse data [@dernekPerspectiveSynchrotronData2025; @tranDesigningDataCentricStudy2025].
 
 To minimize the effort of historical materials data reuse, these datasets must be machine-actionable. The FAIR principles, which stands for Findable, Accessible, Interoperable, and Reusable, offer a widely recognized framework for achieving this objective [@huertaFAIRAIInterdisciplinary2023c; @hernandezDataIntegrationFramework2024; @brinsonCommunityActionFAIR2024; @schefflerFAIRDataEnabling2022]. Rather than prescribing specific technical standards, these principles define the qualities a dataset should possess to minimize human intervention and enable automated processing. One widely adopted approach to realize FAIR is through the Resource Description Framework (RDF), which represents knowledge as subject–predicate–object triples within a graph structure [@allenmangSemanticWebWorking2020]. RDF facilitates semantic interoperability by linking data to shared vocabularies and ontologies, enabling better integration and reuse across diverse experimental sources and terminological variations.
 
@@ -112,9 +112,26 @@ The `RDFTableConversion` subpackage implements the core FAIRification workflow b
 
 ## RDF Data Cube Workflow (QBWorkflow)
 
-For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` over `RDFTableConversion` is allowing users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template to help users structure the data to fit with RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can be turned into CSV, Apache Arrow, or Parquet files for further analysis using `QBWorkflow`. This wofrkflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable and machine-readable metadata.
+For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` over `RDFTableConversion` is allowing users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template as detailed in Table \ref{tbl:qb_template} and shown in Figure \ref{FAIRLinked RDF Data Cube Workflow} to help users structure the data to fit the RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can be turned into CSV, Apache Arrow, or Parquet files for further analysis using `QBWorkflow`. This workflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable units and statistical contexts using QUDT and RDF Data Cube that are machine-readable.
 
-![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate.png){width=80%, height=80%}
+| Metadata Category | ExperimentId | LogFile | ImageSequence | StackNumber | DetectorLength | Wavelength | Energy | PixelSize |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Study Stage** | | Result | Result | Result | Recipe | Recipe | Recipe | Recipe |
+| **Alternative Label** | **...** | **...** | **...** | **...** | **...** | **...** | **...** | **...** |
+| **Unit (QUDT)** | `unit:UNITLESS` | `unit:UNITLESS` | `unit:UNITLESS` | `unit:UNITLESS` | **???** | **???** | **???** | **???** |
+| **Is Measure?** | NO | NO | NO | NO | YES | YES | YES | YES |
+| **Existing URI** | `mds:ExperimentId` | **___** | **___** | **___** | **___** | **___** | `mds:Energy` | **___** |
+| **Variables** | **ExperimentId** | **LogFile** | **ImageSequence** | **StackNumber** | **DetectorLength** | **Wavelength** | **Energy** | **PixelSize** |
+| | 1 | | | | | | | |
+| | 2 | | | | | | | |
+
+Table: User metadata requirements for the QBWorkflow RDF Data Cube template shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}. {#tbl:qb_template}
+
+# Appendix
+
+![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate600.png)
+
+![User provides the namespaces used in the Namespace Template \label{FAIRLinked RDF Data Cube Namespace Template}](QBWorkflowNamespaceTemplate600.png)
 
 
 # Code Availability
@@ -124,10 +141,7 @@ The source code for `FAIRLinked` can be retrieved [from PyPi](https://pypi.org/p
 
 # Acknowledgement
 
-The development and research of the `FAIRLinked` package was made possible through generous support from multiple sources.
-This work was supported by the U.S.
-Department of Energy's Office of Energy Efficiency and Renewable Energy (EERE) under the Solar Energy Technologies Office (SETO) through Agreement Numbers DE-EE0009353 and DE-EE0009347.
-Additional support was provided by the Department of Energy (National Nuclear Security Administration) under Award Number DE-NA0004104 and Contract Number B647887 and from the U.S. National Science Foundation under Award Number 2133576.
+This work was supported by the U.S. Department of Energy's Office of Energy Efficiency and Renewable Energy (EERE) under the Solar Energy Technologies Office (SETO) through Agreement Numbers DE-EE0009353 and DE-EE0009347. Additional support was provided by the Department of Energy (National Nuclear Security Administration) under Award Number DE-NA0004104 and Contract Number B647887 and from the U.S. National Science Foundation under Award Number 2133576.
 
 The authors would like to sincerely thank these organizations for their financial assistance as well as all of the individuals who participated in the project.
 
