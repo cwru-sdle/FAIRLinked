@@ -7,7 +7,8 @@ tags:
 - Materials Data Science
 date: "02 December 2025"
 output:
-  pdf_document: default
+  pdf_document:
+    extra_dependencies: ["tabularx", "array"]
   html_document:
     df_print: paged
 authors:
@@ -119,18 +120,16 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 \footnotesize
 \caption{User metadata requirements for the QBWorkflow RDF Data Cube template as shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}.}
 \label{tbl:qb_template}
-
-| Metadata Category | ExperimentId | LogFile | ImageSequence | StackNumber | DetectorLength | Wavelength | Energy | PixelSize |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Study Stage** | | Result | Result | Result | Recipe | Recipe | Recipe | Recipe |
-| **Alternative Label** | **...** | **...** | **...** | **...** | **...** | **...** | **...** | **...** |
-| **Unit (QUDT)** | `unit:UNITLESS` | `unit:UNITLESS` | `unit:UNITLESS` | `unit:UNITLESS` | **???** | **???** | **???** | **???** |
-| **Is Measure?** | NO | NO | NO | NO | YES | YES | YES | YES |
-| **Existing URI** | `mds:ExperimentId` | **___** | **___** | **___** | **___** | **___** | `mds:Energy` | **___** |
-| **Variables** | **ExperimentId** | **LogFile** | **ImageSequence** | **StackNumber** | **DetectorLength** | **Wavelength** | **Energy** | **PixelSize** |
-| | 1 | | | | | | | |
-| | 2 | | | | | | | |
-
+\begin{tabularx}{\textwidth}{|l|*{8}{>{\centering\arraybackslash}X|}}
+\hline
+\textbf{Metadata Category} & \textbf{ExperimentId} & \textbf{LogFile} & \textbf{ImageSequence} & \textbf{StackNumber} & \textbf{DetectorLength} & \textbf{Wavelength} & \textbf{Energy} & \textbf{PixelSize} \\ \hline
+\textbf{Study Stage} & & Result & Result & Result & Recipe & Recipe & Recipe & Recipe \\ \hline
+\textbf{Alt. Label} & \dots & \dots & \dots & \dots & \dots & \dots & \dots & \dots \\ \hline
+\textbf{Unit (QUDT)} & unit:UNL & unit:UNL & unit:UNL & unit:UNL & ??? & ??? & ??? & ??? \\ \hline
+\textbf{Is Measure?} & NO & NO & NO & NO & YES & YES & YES & YES \\ \hline
+\textbf{Existing URI} & mds:ExpId & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & mds:Energy & \_\_\_ \\ \hline
+\textbf{Variables} & \textbf{ExperimentId} & \textbf{LogFile} & \textbf{ImageSequence} & \textbf{StackNumber} & \textbf{DetectorLength} & \textbf{Wavelength} & \textbf{Energy} & \textbf{PixelSize} \\ \hline
+\end{tabularx}
 \end{table}
 
 
