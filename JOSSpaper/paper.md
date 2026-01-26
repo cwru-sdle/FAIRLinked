@@ -8,7 +8,10 @@ tags:
 date: "02 December 2025"
 output:
   pdf_document:
-    extra_dependencies: ["tabularx", "array"]
+    latex_engine: lualatex
+header-includes:
+  - \usepackage{tabularx}
+  - \usepackage{array}
   html_document:
     df_print: paged
 authors:
