@@ -68,13 +68,13 @@ editor_options:
 
 # Statement of Need
 
-Modern materials science research generate data from a wide range of experimental techniques (e.g. sychrotron X-ray diffraction, IV measurements, Suns-Voc, pyrometry, spectroscopy, degradation measurements, etc.) spanning multiple application domains like photovoltaics, advanced manufacturing, and electronic components. These experiments produce measurements of various material properties under a multitude of environmental conditions.
+Modern materials science research generate data from a wide range of experimental techniques (e.g. sychrotron X-ray diffraction, IV measurements, Suns-Voc, pyrometry, spectroscopy, degradation measurements) spanning multiple application domains like photovoltaics, advanced manufacturing, and electronic components. These experiments produce measurements of various material properties under a multitude of environmental conditions.
 
 The heterogeneity of these data sources introduces the well-known “3V” challenges of big data: volume, velocity, and variety [@laney3DDataManagement2001]. Materials science datasets can also be multimodal, consisting of numerical tables, images, time-series measurements, and other formats. Additionally, different research groups often use inconsistent terminologies, abbreviations, or naming conventions for the same quantities, instruments, or experimental procedures. This inconsistency creates substantial barriers to integrating datasets across laboratories and domains, thereby reducing interoperability and increasing the effort required for reuse of data [@dernekPerspectiveSynchrotronData2025; @tranDesigningDataCentricStudy2025].
 
 To minimize the effort of historical materials data reuse, these datasets must be machine-actionable. The FAIR principles, which stands for Findable, Accessible, Interoperable, and Reusable, offer a widely recognized framework for achieving this objective [@huertaFAIRAIInterdisciplinary2023c; @hernandezDataIntegrationFramework2024; @brinsonCommunityActionFAIR2024; @schefflerFAIRDataEnabling2022]. Rather than prescribing specific technical standards, these principles define the qualities a dataset should possess to minimize human intervention and enable automated processing. One widely adopted approach to realize FAIR is through the Resource Description Framework (RDF), which represents knowledge as subject–predicate–object triples within a graph structure [@allenmangSemanticWebWorking2020]. RDF facilitates semantic interoperability by linking data to shared vocabularies and ontologies, enabling better integration and reuse across diverse experimental sources and terminological variations.
 
-There exists a notable lack of dedicated software packages designed specifically to support materials research scientists in FAIRifying their data according to these guidelines. There are multiple tools designed to transform tabular data into linked data like [Virtuoso](https://vos.openlinksw.com/owiki/wiki/VOS) and [morph-kgc](https://pypi.org/project/morph-kgc/), but they require understanding R2RML Mapping Language [@dasR2RMLRDBRDF2012]. Using this mapping language requires a good understanding of relational databases, making it difficult for many materials researchers to use these packages. `FAIRLinked` is created to be a dedicated simple package that enables both lightweight and RDF Data Cube-based FAIRification in materials data science by providing practical workflows and tools that transform terminologically inconsistent materials data into RDF-based, machine-actionable formats fully compliant with the FAIR principles.
+There exists a notable lack of dedicated software packages designed specifically to support materials research scientists in FAIRifying their data according to these guidelines. There are multiple tools designed to transform tabular data into linked data like `Virtuoso` [@Virtuoso2025] and `morph-kgc` [@arenas-guerreroMorphKGCScalableKnowledge2024], but they require using R2RML Mapping Language [@dasR2RMLRDBRDF2012]. This mapping language requires a good understanding of both relational databases and RDF data model, making it difficult for many materials researchers to use these packages. `FAIRLinked` is created to be a dedicated simple package that enables both lightweight and RDF Data Cube-based FAIRification in materials data science by providing practical workflows and tools that transform terminologically inconsistent materials data into RDF-based, machine-actionable formats fully compliant with the FAIR principles.
 
 
 # Materials Data Science Ontology (MDS-Onto)
@@ -86,31 +86,36 @@ Terms in MDS-Onto are categorized using three attributes: domain, subdomain, and
 # Key Features
 
 The `FAIRLinked` package comprises of three subpackages: `InterfaceMDS`, `RDFTableConversion`, and `QBWorkflow`, each addressing distinct aspects of FAIRification based on MDS-Onto.
-
-![The three subpackages within FAIRLinked](fig1-fairlinked.png){width=80%, height=80%}
+- `InterfaceMDS`: Searching, filtering and adding terms to MDS-Onto.
+- `RDFTableConversion`: Create FAIR Linked data (JSON-LD).
+- `QBWorkflow`: Create FAIR Linked data compliant with the RDF Data Cube Vocabulary.
 
 ## Interfacing with MDS-Onto (InterfaceMDS)
 
-The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for retrieving the latest version of MDS-Onto, searching ontology terms by string, filtering terms by domain, listing available domains and subdomains, and adding new terms to a local ontology file. These features make it easier for users to explore and discover relevant vocabulary without manually inspecting the ontology file.
-
-![FAIRLinked contains a variety of functions for interacting with MDS-Onto to enable easy FAIRification of materials science data. \label{fig:InterfaceMDS}](InterfaceMDS-JOSS.png){width=80%, height=80%}
+The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by providing functions for:
+ - Retrieving the latest version of MDS-Onto, 
+ - Searching ontology terms by string, 
+ - Filtering terms by domain, 
+ - Listing available domains and subdomains, and 
+ - Adding new terms to a local ontology file. 
+ These features make it easier for users to explore and discover relevant vocabulary without manually inspecting the ontology file.
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable.
+The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable but does not provide as much statistical contexts as `QBWorkflow`.
 
-![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](fig2-fairlinked.png){width=80%, height=80%}
+![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](RDFTableConversion-Workflow.png){width=80%, height=80%}
 
 ## RDF Data Cube Workflow (QBWorkflow)
 
-The  `QBWorkflow` subpackage utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template to help users structure the data to fit with RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can then be turned into CSV, Apache Arrow, or Parquet files for further analysis. This workflow ensures complex, high-dimensional datasets are properly annotated with the right metadata for reuse and machine-actionability.
+For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` over `RDFTableConversion` is allowing users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template to help users structure the data to fit with RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can be turned into CSV, Apache Arrow, or Parquet files for further analysis using `QBWorkflow`. This wofrkflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable and machine-readable metadata.
 
-![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](RDFDataCubeTemplate.png){width=90%, height=90%}
+![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate.png){width=80%, height=80%}
 
 
 # Code Availability
 
-The source code for `FAIRLinked` can be found [here](https://pypi.org/project/FAIRLinked/) or in the [GitHub repository](https://github.com/cwru-sdle/FAIRLinked). 
+The source code for `FAIRLinked` can be retrieved [from PyPi](https://pypi.org/project/FAIRLinked/) or in the [GitHub repository](https://github.com/cwru-sdle/FAIRLinked). 
 
 
 # Acknowledgement
