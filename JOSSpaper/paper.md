@@ -114,6 +114,12 @@ The `RDFTableConversion` subpackage implements the core FAIRification workflow b
 
 For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` over `RDFTableConversion` is allowing users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template as detailed in Table \ref{tbl:qb_template} and shown in Figure \ref{FAIRLinked RDF Data Cube Workflow} to help users structure the data to fit the RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can be turned into CSV, Apache Arrow, or Parquet files for further analysis using `QBWorkflow`. This workflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable units and statistical contexts using QUDT and RDF Data Cube that are machine-readable.
 
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{User metadata requirements for the QBWorkflow RDF Data Cube template as shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}.}
+\label{tbl:qb_template}
+
 | Metadata Category | ExperimentId | LogFile | ImageSequence | StackNumber | DetectorLength | Wavelength | Energy | PixelSize |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Study Stage** | | Result | Result | Result | Recipe | Recipe | Recipe | Recipe |
@@ -125,7 +131,8 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 | | 1 | | | | | | | |
 | | 2 | | | | | | | |
 
-Table: User metadata requirements for the QBWorkflow RDF Data Cube template shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}. {#tbl:qb_template}
+\end{table}
+
 
 # Appendix
 
