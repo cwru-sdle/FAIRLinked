@@ -63,7 +63,7 @@ affiliations:
 
 # Summary
 
-`FAIRLinked` is a software package created to support the FAIRification of materials science data, ensuring proper alignment with FAIR principles: Findable, Accessible, Interoperable, and Reusable [@wilkinsonFAIRGuidingPrinciples2016a]. It is built to be compatible with MDS-Onto, an ontology designed to capture the semantics of various types of materials data, enabling integration and sharing across different research workflows [@rajamohanMaterialsDataScience2025]. The package is subdivided into three subpackages: `InterfaceMDS`, `RDFTableConversion`, and `QBWorkflow`. The first subpackage, `InterfaceMDS` allows users to search for terms using either string search or various filters, explore different domains and subdomains, and add terms to MDS-Onto. `RDFTableConversion` is used for serialization and deserialization of data from CSV into JSON-LDs and vice versa in a way that capture the semantics of the data using MDS-Onto. Lastly, `QBWorkflow` is a serialization and deserialization workflow that incorporates [RDF Data Cube](https://www.w3.org/TR/vocab-data-cube/) vocabulary, useful for working with multidimensional datasets. By offering these packages, `FAIRLinked` lowers the barrier of creating FAIR, machine-actionable data for researchers in the materials science community.
+`FAIRLinked` is a software package created to support the FAIRification of materials science data, ensuring proper alignment with FAIR principles: Findable, Accessible, Interoperable, and Reusable [@wilkinsonFAIRGuidingPrinciples2016a]. It is built to be compatible with MDS-Onto, an ontology designed to capture the semantics of various types of materials data, enabling integration and sharing across different research workflows [@rajamohanMaterialsDataScience2025]. The package is subdivided into three subpackages: `InterfaceMDS`, `RDFTableConversion`, and `QBWorkflow`. The first subpackage, `InterfaceMDS` allows users to search for terms using either string search or various filters, explore different domains and subdomains, and add terms to MDS-Onto. `RDFTableConversion` is used for serialization and deserialization of data from CSV into JSON-LDs and vice versa in a way that capture the semantics of the data using MDS-Onto. Lastly, `QBWorkflow` is a serialization and deserialization workflow that incorporates [RDF Data Cube](https://www.w3.org/TR/vocab-data-cube/) vocabulary, useful for working with multidimensional datasets. By offering these packages, `FAIRLinked` lowers the barrier of creating FAIR, machine-readable data for researchers in the materials science community.
 
 # Statement of Need
 
@@ -105,13 +105,13 @@ The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by provid
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable but does not provide as much statistical contexts as `QBWorkflow`.
+The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata as shown in \ref{full_table}. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable but does not provide as much statistical contexts as `QBWorkflow`.
 
 ![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](RDFTableConversion-Workflow.png){width=80%, height=80%}
 
 ## RDF Data Cube Workflow (QBWorkflow)
 
-For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` over `RDFTableConversion` is allowing users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template as detailed in Table \ref{tbl:qb_template} and shown in Figure \ref{FAIRLinked RDF Data Cube Workflow} to help users structure the data to fit the RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can be turned into CSV, Apache Arrow, or Parquet files for further analysis using `QBWorkflow`. This workflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable units and statistical contexts using QUDT and RDF Data Cube that are machine-readable.
+For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` over `RDFTableConversion` is allowing users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template as detailed in Table \ref{tbl:qb_template} and shown in Figure \ref{FAIRLinked RDF Data Cube Workflow} to help users structure the data to fit the RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can be turned into CSV, Apache Arrow, or Parquet files for further analysis using `QBWorkflow`. This workflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable and machine-readable units and statistical contexts using QUDT and RDF Data Cube vocabularies.
 
 \begin{table}[h]
 \centering
@@ -133,9 +133,15 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 
 # Appendix
 
+![Minimal CSV required for `RDFTableConversion`. Users should include 3 blank rows to make room for column metadata. \label{min_table}](mintable600.png)
+
+![Deserialized CSV with metadata included. \label{full_table}](fulltable600.png)
+
 ![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate600.png)
 
 ![User provides the namespaces used in the Namespace Template \label{FAIRLinked RDF Data Cube Namespace Template}](QBWorkflowNamespaceTemplate600.png)
+
+
 
 
 # Code Availability
