@@ -115,7 +115,7 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 
 \begin{table}[h]
 \centering
-\caption{User metadata requirements for the QBWorkflow RDF Data Cube template as shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}. Terms have been abbreviated to fit page margins.}
+\caption{User metadata requirements for the QBWorkflow RDF Data Cube template as shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}. Terms have been abbreviated to fit page margins. Here `unit:UNL` stands for `unit:UNITLESS`}
 \label{tbl:qb_template}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|}
