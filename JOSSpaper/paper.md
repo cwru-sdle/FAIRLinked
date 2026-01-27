@@ -120,7 +120,6 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|}
 \hline
-\textbf{Category} & \textbf{ExpId} & \textbf{LogFile} & \textbf{ImgSeq} & \textbf{StkNum} & \textbf{DetLen} & \textbf{Wave} & \textbf{Energy} & \textbf{PixSize} \\ \hline
 \textbf{Study Stage} & & Result & Result & Result & Recipe & Recipe & Recipe & Recipe \\ \hline
 \textbf{Alt. Label} & \dots & \dots & \dots & \dots & \dots & \dots & \dots & \dots \\ \hline
 \textbf{Unit (QUDT)} & unit:UNL & unit:UNL & unit:UNL & unit:UNL & ??? & ??? & ??? & ??? \\ \hline
