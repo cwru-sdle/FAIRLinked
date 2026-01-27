@@ -137,7 +137,7 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 
 ![Deserialized CSV with metadata included. \label{full_table}](fulltable600.png){width=150%, height=150%}
 
-![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate600.png)
+![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate600.png){width=150%, height=150%}
 
 ![User provides the namespaces used in the Namespace Template \label{FAIRLinked RDF Data Cube Namespace Template}](QBWorkflowNamespaceTemplate600.png)
 
