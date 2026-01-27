@@ -133,9 +133,9 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 
 # Appendix
 
-![Minimal CSV required for `RDFTableConversion`. Users should include 3 blank rows to make room for column metadata. \label{min_table}](mintable600.png)
+![Minimal CSV required for `RDFTableConversion`. Users should include 3 blank rows to make room for column metadata. \label{min_table}](mintable600.png){width=150%, height=150%}
 
-![Deserialized CSV with metadata included. \label{full_table}](fulltable600.png)
+![Deserialized CSV with metadata included. \label{full_table}](fulltable600.png){width=150%, height=150%}
 
 ![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate600.png)
 
