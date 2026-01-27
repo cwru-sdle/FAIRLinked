@@ -170,7 +170,7 @@ def extract_data_from_csv(
             else:
                 row_key = ""
                 for x in set(c) & set(row_key_cols):
-                    row_key = row_key + normalize(str(df.at[idx,x])) + "_"
+                    row_key = row_key + str(df.at[idx,x]).strip() + "_"
             
             timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             full_row_key = f"{row_key}{orcid}-{timestamp}"
@@ -186,9 +186,10 @@ def extract_data_from_csv(
 
                 prefix, localname = item["@type"].split(":")
                 if id_cols is not None and item["skos:altLabel"] in id_cols:
-                    raw_identifier = str(row.get(item["skos:altLabel"]),"")
-                    clean_val = raw_identifier.replace(" ", "_")
-                    entity_identifier = re.sub(r'[^a-zA-Z0-9_\-\.]', '', clean_val)
+                    raw_identifier = row.get(item["skos:altLabel"])
+                    if not raw_identifier:
+                        raise ValueError(f"Cannot find entity identifier in row {idx}")
+                    entity_identifier = re.sub(r'[^a-zA-Z0-9_\-\.]', '', raw_identifier)
                     subject_uri = f"mds:{localname}.{entity_identifier}"
                 else:
                     subject_uri = f"mds:{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
@@ -243,10 +244,10 @@ def extract_data_from_csv(
             for alt_label, subj_uri in subject_lookup.items():
                 if alt_label in row:
                     g.remove((subj_uri, QUDT.value, None))
-                    if row[alt_label]:
+                    if pd.notna(row[alt_label]) and row[alt_label] != "":
                         g.add((subj_uri, QUDT.value, Literal(row[alt_label], datatype=XSD.string)))
                     else:
-                        continue
+                        print(f"Skipping NA value for {alt_label} on row {idx} with row key {row_key}")
                     g.add((subj_uri, rowpredicate, Literal(row_key[:-1]) ))
                     g.add((subj_uri, DCTERMS.license, license_uri))
 
