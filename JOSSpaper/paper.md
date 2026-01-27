@@ -14,6 +14,7 @@ output:
 header-includes:
   - \usepackage{tabularx}
   - \usepackage{array}
+  - \usepackage{graphicx}
 authors:
   - name: Van D. Tran
     affiliation: "1, 3"
@@ -114,10 +115,10 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 
 \begin{table}[h]
 \centering
-\footnotesize
-\caption{User metadata requirements for the QBWorkflow RDF Data Cube template. Terms have been abbreviated to fit page margins.}
+\caption{User metadata requirements for the QBWorkflow RDF Data Cube template as shown in Figure \ref{FAIRLinked RDF Data Cube Workflow}. Terms have been abbreviated to fit page margins.}
 \label{tbl:qb_template}
-\begin{tabular}{|l|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|p{1.3cm}|}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|}
 \hline
 \textbf{Category} & \textbf{ExpId} & \textbf{LogFile} & \textbf{ImgSeq} & \textbf{StkNum} & \textbf{DetLen} & \textbf{Wave} & \textbf{Energy} & \textbf{PixSize} \\ \hline
 \textbf{Study Stage} & & Result & Result & Result & Recipe & Recipe & Recipe & Recipe \\ \hline
@@ -126,7 +127,8 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 \textbf{Is Measure?} & NO & NO & NO & NO & YES & YES & YES & YES \\ \hline
 \textbf{Existing URI} & mds:ExpId & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & \_\_\_ & mds:Eng & \_\_\_ \\ \hline
 \textbf{Variables} & \textbf{ExpId} & \textbf{LogFile} & \textbf{ImgSeq} & \textbf{StkNum} & \textbf{DetLen} & \textbf{Wave} & \textbf{Energy} & \textbf{PixSize} \\ \hline
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 
