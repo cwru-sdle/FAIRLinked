@@ -223,7 +223,7 @@ def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
     norm_study_stages = [normalize(ss) for ss in valid_study_stages]
 
 
-    if(normalize(study_stage) not in norm_study_stages):
+    if( not study_stage or normalize(study_stage) not in norm_study_stages):
         print("Please enter a valid study stage from options below or press 'Enter' to skip: ")
         for ss in valid_study_stages:
             print(ss)

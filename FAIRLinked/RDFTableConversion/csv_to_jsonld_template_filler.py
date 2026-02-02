@@ -235,10 +235,16 @@ def extract_data_from_csv(
 
                 license_uri = f"https://spdx.org/licenses/{license}.html"
                 license_uri = URIRef(license_uri)
+                write_license_triple(output_folder, base_uri, license_uri)
 
             else:
                 # Full URI provided; assume it's valid
                 license_uri = URIRef(license)
+                
+                write_license_triple(output_folder, base_uri, license_uri)
+
+            #separate jsonld not needed
+            #write_license_triple(output_folder, base_uri, license_uri)
 
             #add in triples from csv values
             for alt_label, subj_uri in subject_lookup.items():
@@ -446,7 +452,8 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
     if not license_id.startswith("http"):
         # Load SPDX license list
         
-        with pkg_resources.files(fairlinked.data).joinpath("fairlinked/packages/FAIRLinkedPy/FAIRLinked/helper_data/licenseinfo.json").open("r", encoding="utf-8") as f:
+
+        with open("FAIRLinked/helper_data/licenseinfo.json", "r") as f:
             spdx_data = json.load(f)
 
         valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
