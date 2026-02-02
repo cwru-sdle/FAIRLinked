@@ -111,7 +111,7 @@ The `RDFTableConversion` subpackage implements the core FAIRification workflow b
 
 ## RDF Data Cube Workflow (QBWorkflow)
 
-For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` over `RDFTableConversion` is allowing users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template as detailed in Table \ref{tbl:qb_template} and shown in Figure \ref{FAIRLinked RDF Data Cube Workflow} to help users structure the data to fit the RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can then be turned into CSV, Apache Arrow, or Parquet files using `QBWorkflow` for further analysis. This workflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable and machine-readable units and statistical contexts using QUDT and RDF Data Cube vocabularies.
+For users who wish to add richer metadata to their dataset, FAIRLinked provides the  `QBWorkflow` subpackage which utilizes RDF Data Cube vocabulary to capture the structure of multidimensional data into a linked data format [@RDFDataCube]. The main advantage of `QBWorkflow` allows users to declare whether a variable is a _dimension_ or _measure_, which gives specific statistical contexts defined by Statistical and Metadata Exchange (SDMX) standards [@SDMXUserGuides]. Through interactive guidance, `QBWorkflow` prompts users for the necessary metadata, generates an Excel template as detailed in Table \ref{tbl:qb_template} and shown in Figure \ref{FAIRLinked RDF Data Cube Workflow} to help users structure the data to fit the RDF Data Cube vocabulary, and then converts Excel template into JSON-LD files. These files can then be turned into CSV, Apache Arrow, or Parquet files using `QBWorkflow` for further analysis. This workflow ensures complex, high-dimensional datasets are properly annotated with semantically interoperable and machine-readable units and statistical contexts using QUDT and RDF Data Cube vocabularies.
 
 \begin{table}[h]
 \centering
@@ -151,7 +151,7 @@ The source code for `FAIRLinked` can be retrieved [from PyPi](https://pypi.org/p
 
 # Acknowledgement
 
-This work was supported by the U.S. Department of Energy's Office of Energy Efficiency and Renewable Energy (EERE) under the Solar Energy Technologies Office (SETO) through Agreement Numbers DE-EE0009353 and DE-EE0009347. Additional support was provided by the Department of Energy (National Nuclear Security Administration) under Award Number DE-NA0004104 and Contract Number B647887 and from the U.S. National Science Foundation under Award Number 2133576.
+This work was supported by the Department of Energy (National Nuclear Security Administration) under Award Number DE-NA0004104 and Contract Number B647887 and from the U.S. National Science Foundation under Award Number 2133576.
 
 The authors would like to sincerely thank these organizations for their financial assistance as well as all of the individuals who participated in the project.
 
