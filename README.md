@@ -458,7 +458,8 @@ jsonld_template_generator(csv_path="path/to/data/csv",
                            ontology_graph=mds_graph, 
                            output_path="path/to/output/json-ld/template", 
                            matched_log_path="path/to/output/matched/terms", 
-                           unmatched_log_path="path/to/output/unmatched/terms")
+                           unmatched_log_path="path/to/output/unmatched/terms",
+                           skip_prompts=False)
 
 ```
 
@@ -479,8 +480,7 @@ extract_data_from_csv(metadata_template=metadata_template,
                       row_key_cols=["sample_id"],
                       id_cols=["sample_id", "measurement_id"],
                       orcid="0000-0000-0000-0000", 
-                      output_folder="path/to/output/folder/json-lds",
-                      skip_prompts=False)
+                      output_folder="path/to/output/folder/json-lds")
 ```
 
 ### Create JSON-LDs with relationships between data instances
@@ -507,8 +507,7 @@ extract_data_from_csv(metadata_template=metadata_template,
                       orcid="0000-0000-0000-0000", 
                       output_folder="path/to/output",
                       prop_column_pair_dict=prop_col_pair_dict,
-                      ontology_graph=mds_graph,
-                      skip_prompts=False)
+                      ontology_graph=mds_graph)
 ```
 
 ### Turn JSON-LD directory back to CSV
