@@ -27,7 +27,7 @@ from FAIRLinked.QBWorkflow.rdf_transformer import convert_row_by_row, prepare_na
 
 
 """
-Comprehensive pytest suite for testing RDF transformer conversion methods.
+ pytest suite for testing RDF transformer conversion methods.
 
 Tests cover:
 1. convert_row_by_row() - Each row becomes a separate RDF dataset
@@ -82,6 +82,14 @@ def simple_test_dataframe():
         'Pressure': [101.3, 102.5, 103.1],
         'Material': ['Iron', 'Copper', 'Zinc'],
     })
+
+
+
+@pytest.fixture
+def xrd_dataframe():
+    """Create a simple test DataFrame for basic functionality tests."""
+    pd.read_excel('test/test_data/QB_test_data/xrd_data_demo.xlsx')
+
 
 
 @pytest.fixture
@@ -234,6 +242,39 @@ class TestConvertRowByRow:
                 assert all(c in '0123456789abcdef' for c in hash_value.lower()), \
                     "Hash should only contain hex characters"
 
+"""
+    def test_experimental_data(self, xrd_dataframe, simple_metadata, 
+                                    namespace_map, temp_output_dir, mock_user_input):
+
+        ns_map = prepare_namespaces(namespace_map, 'mds')
+        
+
+        convert_row_by_row(
+            df=xrd_dataframe,
+            variable_metadata=simple_metadata,
+            ns_map=ns_map,
+            user_chosen_prefix='mds',
+            orcid='0000-0001-2345-6789',
+            root_folder_path=temp_output_dir,
+            overall_timestamp='20250128120000'
+        )
+        
+        # Verify subfolders
+        assert os.path.exists(os.path.join(temp_output_dir, 'ttl'))
+        assert os.path.exists(os.path.join(temp_output_dir, 'jsonld'))
+        assert os.path.exists(os.path.join(temp_output_dir, 'hash'))
+        
+        # Count files
+        ttl_files = list(Path(temp_output_dir, 'ttl').glob('*.ttl'))
+        jsonld_files = list(Path(temp_output_dir, 'jsonld').glob('*.jsonld'))
+        hash_files = list(Path(temp_output_dir, 'hash').glob('*.sha256'))
+        
+        assert len(ttl_files) == 3, "Should create 3 TTL files (one per row)"
+        assert len(jsonld_files) == 3, "Should create 3 JSON-LD files"
+        assert len(hash_files) == 3, "Should create 3 hash files"
+
+
+"""
 
 
 # =============================================================================
