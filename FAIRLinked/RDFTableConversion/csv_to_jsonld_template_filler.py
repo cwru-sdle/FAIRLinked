@@ -14,12 +14,14 @@ from rdflib import Graph, URIRef, Literal, Namespace, XSD, BNode
 from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import normalize
+from .csv_to_jsonld_mapper import normalize
 import FAIRLinked.helper_data
 import importlib.resources as pkg_resources
 import traceback
 import hashlib
 import requests
+import logging
+logger = logging.getLogger(__name__)
 
 def hash6(s):
     """
@@ -55,6 +57,9 @@ def extract_data_from_csv(
     base_uri="https://cwrusdle.bitbucket.io/mds/",
     license=None #optional
 ):
+    #raise Exception("called exeception")
+    print("reached tested function")
+
     """
     Converts CSV rows into RDF graphs using a JSON-LD template and optional property mapping,
     writing JSON-LD files. This function assumes that the two rows below the header row contains the unit and the proper
@@ -104,13 +109,16 @@ def extract_data_from_csv(
     if(response):
         pass         
     else:
-        raise Exception("enter valid orcid")
+        print(f"orcid {orcid} is not valid")
+        raise Exception("enter valid orcid ", orcid)
    
     df = pd.read_csv(csv_file)
     results = []
     orcid = orcid.replace("-", "")
     context = metadata_template.get("@context", {})
     graph_template = metadata_template.get("@graph", [])
+
+
     if prop_column_pair_dict:
         if ontology_graph is None:
             raise ValueError("ontology_graph must be provided if prop_column_pair_dict is used")
@@ -134,6 +142,7 @@ def extract_data_from_csv(
 
     
     for idx, row in df.iloc[3:].iterrows():
+
 
         try:
 
@@ -215,13 +224,18 @@ def extract_data_from_csv(
             QUDT = Namespace("http://qudt.org/schema/qudt/")
             g.bind("qudt", QUDT)
             g.bind("dcterms", DCTERMS)
+            print("about to check license")
             #check license
             if(not license):
+                print("no license ?")
                 bnode = BNode()
                 license_uri = bnode
             elif not license.startswith("http"):
+                print("ive been hit, license does not start with http")
                 # Load SPDX license list
-                with pkg_resources.open_text("FAIRLinked.helper_data", "licenseinfo.json") as f:
+
+
+                with open("FAIRLinked/helper_data/licenseinfo.json") as f:
                     spdx_data = json.load(f)
 
                 valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
@@ -238,6 +252,7 @@ def extract_data_from_csv(
                 write_license_triple(output_folder, base_uri, license_uri)
 
             else:
+                print("full provided")
                 # Full URI provided; assume it's valid
                 license_uri = URIRef(license)
                 
@@ -448,6 +463,7 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
 
     """
 
+    print(license_id)
     # --- 1️⃣ Validate and convert SPDX short ID to full URI ---
     if not license_id.startswith("http"):
         # Load SPDX license list
