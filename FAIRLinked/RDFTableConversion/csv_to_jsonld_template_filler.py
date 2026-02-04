@@ -21,7 +21,6 @@ import traceback
 import hashlib
 import requests
 import logging
-logger = logging.getLogger(__name__)
 
 def hash6(s):
     """
@@ -58,7 +57,6 @@ def extract_data_from_csv(
     license=None #optional
 ):
     #raise Exception("called exeception")
-    print("reached tested function")
 
     """
     Converts CSV rows into RDF graphs using a JSON-LD template and optional property mapping,
@@ -109,7 +107,6 @@ def extract_data_from_csv(
     if(response):
         pass         
     else:
-        print(f"orcid {orcid} is not valid")
         raise Exception("enter valid orcid ", orcid)
    
     df = pd.read_csv(csv_file)
@@ -171,10 +168,6 @@ def extract_data_from_csv(
                         num = str(hash6("".join([str(x) for x in keys[key] if not pd.isna(x)])))
                         row_key = row_key + sskey[key] + num + "_"
                     except:
-                        print(keys[key])
-                        print(type(keys[key]))
-                        print("failure")
-                        print(key)
                         traceback.print_exc()
             else:
                 row_key = ""
@@ -224,14 +217,11 @@ def extract_data_from_csv(
             QUDT = Namespace("http://qudt.org/schema/qudt/")
             g.bind("qudt", QUDT)
             g.bind("dcterms", DCTERMS)
-            print("about to check license")
             #check license
             if(not license):
-                print("no license ?")
                 bnode = BNode()
                 license_uri = bnode
             elif not license.startswith("http"):
-                print("ive been hit, license does not start with http")
                 # Load SPDX license list
 
 
@@ -252,7 +242,6 @@ def extract_data_from_csv(
                 write_license_triple(output_folder, base_uri, license_uri)
 
             else:
-                print("full provided")
                 # Full URI provided; assume it's valid
                 license_uri = URIRef(license)
                 
@@ -317,7 +306,6 @@ def extract_data_from_csv(
 
         except Exception as e:
             warnings.warn(f"Error processing row {idx} with key {row_key if 'row_key' in locals() else 'N/A'}: {e}")
-            traceback.print_exc()
 
     return results
 
@@ -463,7 +451,6 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
 
     """
 
-    print(license_id)
     # --- 1️⃣ Validate and convert SPDX short ID to full URI ---
     if not license_id.startswith("http"):
         # Load SPDX license list
