@@ -1,0 +1,186 @@
+{
+  "@context": {
+    "dcterms": "http://purl.org/dc/terms/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "unit": "https://qudt.org/vocab/unit/",
+    "xsd": "http://www.example.org/"
+  },
+  "@graph": [
+    {
+      "@id": "mds:ProcessingMethod.REC695244_SA884581_TL386549",
+      "@type": "mds:ProcessingMethod",
+      "mds:hasStudyStage": "Recipe",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-02-04T20:56:52.203104Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "processing_method",
+      "skos:definition": "The manufacturing method by which the sample was created.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:XraySample.REC695244_SA884581_TL386549",
+      "dcterms:license": {
+        "@id": "_:N5f3e29ada2c942f4999fec41f8682f0a"
+      },
+      "mds:row": "REC695244_SA884581_TL386549",
+      "qudt:value": "CeO2"
+    },
+    {
+      "@id": "_:N5f3e29ada2c942f4999fec41f8682f0a"
+    },
+    {
+      "@id": "mds:ChemicalFormula.REC695244_SA884581_TL386549",
+      "dcterms:license": {
+        "@id": "_:N5f3e29ada2c942f4999fec41f8682f0a"
+      },
+      "mds:row": "REC695244_SA884581_TL386549",
+      "qudt:value": "Ceria calibrant"
+    },
+    {
+      "@id": "mds:ChemicalFormula.REC695244_SA884581_TL386549",
+      "@type": "mds:ChemicalFormula",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-02-04T20:56:52.203092Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "chemical_formula",
+      "skos:definition": "Chemical composition of the material.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:SampleID.REC695244_SA884581_TL386549",
+      "dcterms:license": {
+        "@id": "_:N5f3e29ada2c942f4999fec41f8682f0a"
+      },
+      "mds:row": "REC695244_SA884581_TL386549"
+    },
+    {
+      "@id": "mds:samplelength.REC695244_SA884581_TL386549",
+      "dcterms:license": {
+        "@id": "_:N5f3e29ada2c942f4999fec41f8682f0a"
+      },
+      "mds:row": "REC695244_SA884581_TL386549"
+    },
+    {
+      "@id": "mds:XraySample.REC695244_SA884581_TL386549",
+      "@type": "mds:XraySample",
+      "mds:hasStudyStage": "Recipe",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-02-04T20:56:52.203074Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:M"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "Sample",
+      "skos:definition": "A specimen used for X-ray based experiments.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:SampleSet.REC695244_SA884581_TL386549",
+      "dcterms:license": {
+        "@id": "_:N5f3e29ada2c942f4999fec41f8682f0a"
+      },
+      "mds:row": "REC695244_SA884581_TL386549"
+    },
+    {
+      "@id": "mds:SampleSet.REC695244_SA884581_TL386549",
+      "@type": "mds:SampleSet",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-02-04T20:56:52.203115Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "sample_depth",
+      "skos:definition": "A sample set is a set of study objects sharing some characteristics.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:samplelength.REC695244_SA884581_TL386549",
+      "@type": "mds:samplelength",
+      "mds:hasStudyStage": "Tool",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-02-04T20:56:52.203136Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "sample_length",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:SampleID.REC695244_SA884581_TL386549",
+      "@type": "mds:SampleID",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": [
+        {
+          "@type": "xsd:dateTime",
+          "@value": "2026-02-04T20:56:52.203126Z"
+        },
+        {
+          "@type": "xsd:dateTime",
+          "@value": "2026-02-04T20:56:52.203147Z"
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": [
+        "sample_id",
+        "sample_width"
+      ],
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ProcessingMethod.REC695244_SA884581_TL386549",
+      "dcterms:license": {
+        "@id": "_:N5f3e29ada2c942f4999fec41f8682f0a"
+      },
+      "mds:row": "REC695244_SA884581_TL386549"
+    }
+  ]
+}
