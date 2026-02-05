@@ -118,7 +118,7 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
     # Reorder columns alphabetically, placing __source_file__ at the end
     cols = [col for col in df.columns if col != "__source_file__"]
     cols.sort()
-    final_cols = cols #+ ["__source_file__"]
+    final_cols = cols + ["__source_file__"]
 
     df = df[final_cols]
     fair_df = fair_df[final_cols]

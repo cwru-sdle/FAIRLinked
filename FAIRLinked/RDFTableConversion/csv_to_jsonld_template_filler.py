@@ -14,12 +14,13 @@ from rdflib import Graph, URIRef, Literal, Namespace, XSD, BNode
 from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import normalize
+from .csv_to_jsonld_mapper import normalize
 import FAIRLinked.helper_data
 import importlib.resources as pkg_resources
 import traceback
 import hashlib
 import requests
+import logging
 
 def hash6(s):
     """
@@ -55,6 +56,8 @@ def extract_data_from_csv(
     base_uri="https://cwrusdle.bitbucket.io/mds/",
     license=None #optional
 ):
+    #raise Exception("called exeception")
+
     """
     Converts CSV rows into RDF graphs using a JSON-LD template and optional property mapping,
     writing JSON-LD files. This function assumes that the two rows below the header row contains the unit and the proper
@@ -104,13 +107,15 @@ def extract_data_from_csv(
     if(response):
         pass         
     else:
-        raise Exception("enter valid orcid")
+        raise Exception("enter valid orcid ", orcid)
    
     df = pd.read_csv(csv_file)
     results = []
     orcid = orcid.replace("-", "")
     context = metadata_template.get("@context", {})
     graph_template = metadata_template.get("@graph", [])
+
+
     if prop_column_pair_dict:
         if ontology_graph is None:
             raise ValueError("ontology_graph must be provided if prop_column_pair_dict is used")
@@ -134,6 +139,7 @@ def extract_data_from_csv(
 
     
     for idx, row in df.iloc[3:].iterrows():
+
 
         try:
 
@@ -162,10 +168,6 @@ def extract_data_from_csv(
                         num = str(hash6("".join([str(x) for x in keys[key] if not pd.isna(x)])))
                         row_key = row_key + sskey[key] + num + "_"
                     except:
-                        print(keys[key])
-                        print(type(keys[key]))
-                        print("failure")
-                        print(key)
                         traceback.print_exc()
             else:
                 row_key = ""
@@ -221,7 +223,9 @@ def extract_data_from_csv(
                 license_uri = bnode
             elif not license.startswith("http"):
                 # Load SPDX license list
-                with pkg_resources.open_text("FAIRLinked.helper_data", "licenseinfo.json") as f:
+
+
+                with open("FAIRLinked/helper_data/licenseinfo.json") as f:
                     spdx_data = json.load(f)
 
                 valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
@@ -302,7 +306,6 @@ def extract_data_from_csv(
 
         except Exception as e:
             warnings.warn(f"Error processing row {idx} with key {row_key if 'row_key' in locals() else 'N/A'}: {e}")
-            traceback.print_exc()
 
     return results
 
