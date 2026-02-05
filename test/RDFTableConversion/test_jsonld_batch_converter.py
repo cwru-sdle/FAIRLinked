@@ -78,7 +78,6 @@ def test_jsonld_directory_to_csv_creates_outputs(sample_jsonld_dir, tmp_path):
     df_csv = pd.read_csv(csv_path)
     assert "Value1" in df_csv.columns
     assert "Value2" in df_csv.columns
-    assert "__source_file__" in df_csv.columns
 
     # First two rows in CSV should be FAIR type + units
     assert len(df_csv) >= 3

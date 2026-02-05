@@ -1,0 +1,6 @@
+Sample => XraySample
+chemical_formula => ChemicalFormula
+processing_method => ProcessingMethod
+sample_depth => SampleSet
+sample_id => SampleID
+sample_width => SampleID
