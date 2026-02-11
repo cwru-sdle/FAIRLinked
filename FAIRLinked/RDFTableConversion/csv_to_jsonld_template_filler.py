@@ -298,6 +298,12 @@ def extract_data_from_csv(
                         elif prop_type == "Datatype Property":
                             g.add((subj_uri, pred_uri, Literal(obj_val)))
             
+
+            for s, p, o in g:
+                if str(p) == "http://qudt.org/schema/qudt/value" and len(o) ==0:
+                    print(f"debug removing empty {s}, {p}, {o}")
+                    g.remove((s, p, o))
+
             # Save the RDF graph to file
             random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
             output_file = os.path.join(output_folder, f"{random_suffix}-{full_row_key}.jsonld")
