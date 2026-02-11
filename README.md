@@ -50,6 +50,89 @@ pip install FAIRLinked
 
 ---
 
+## ⏰ Quick Start
+
+To start serializing with FAIRLinked, we first make a template using `jsonld_template_generator` from `FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper`. In your CSV, make sure to have some (possibly empty or partially filled) rows reserved for metadata about your variable. 
+
+**Note**
+Please make sure to follow the proper formatting guidelines for input CSV file. 
+ * Each column name should be the "common" or alternative name for this object
+ * The following three rows should be reserved for the **type**, **units**, and **study stage** in that order
+ * if values for these are not available, the space should be left blank
+ * data for each sample can then begin on the 5th row
+
+ Please see the following images for reference 
+ ![Full Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/fulltable.png)
+
+ Minimum Viable Data
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/mintable.png)
+
+During the template generating process, the user may be prompted for data for different columns. When no units are detected, the user will be prompted for the type of unit, and then given a list of valid units to choose from. 
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/kind.png)
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/unit.png)
+When no study stage is detected, the user will similarly be given a list of study stages to choose from.
+![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/studystage.png)
+The user will automatically be prompted for an optional notes for each column.
+
+```python
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import jsonld_template_generator
+
+mds_graph = load_mds_ontology_graph()
+
+jsonld_template_generator(csv_path="path/to/data/csv", 
+                           ontology_graph=mds_graph, 
+                           output_path="path/to/output/json-ld/template", 
+                           matched_log_path="path/to/output/matched/terms", 
+                           unmatched_log_path="path/to/output/unmatched/terms",
+                           skip_prompts=False)
+
+```
+
+The template is designed to caputre the metadata associated with a variable, including units, study stage, row key, and variable definition. If the user do not wish to go through the prompts to put in the metadata, set `skip_prompts` to `True`.
+
+After creating the template, run `extract_data_from_csv` using the template and CSV input to create JSON-LDs filled with data instances.
+
+```python
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import extract_data_from_csv
+import json
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+
+
+mds_graph = load_mds_ontology_graph()
+
+with open("path/to/metadata/template", "r") as f:
+    metadata_template = json.load(f) 
+
+prop_col_pair_dict = {"name of relationship specified by rdfs:label": [("column_1", "column_2")]}
+
+extract_data_from_csv(metadata_template=metadata_template, 
+                      csv_file="path/to/csv/data",
+                      orcid="0000-0000-0000-0000", 
+                      output_folder="path/to/output",
+                      row_key_cols=["column_1", "column_3", "column_7"],
+                      id_cols=["column_1", "column_7"],
+                      prop_column_pair_dict=prop_col_pair_dict,
+                      ontology_graph=mds_graph)
+```
+
+The arguments `row_key_cols`, `id_cols`, `prop_column_pair_dict`, and `ontology_graph` are all optional arguments. `row_key_cols` identify columns in which concatenation of values create row keys which are used to identify the columns, while `id_cols` are columns whose value specify identifiers of unique entities which must be kept track across multiple rows. `prop_column_pair_dict` is a Python dictionary specifying the object properties or data properties which will be used in the resulting RDF graph and the instances connected by those properties. Finally, `ontology_grapyh` is a required argument if `prop_column_pair_dict` is provided, and this is the source of the properties available to the user. 
+
+To deserialize your data, use `jsonld_directory_to_csv`, which will turn a folder of JSON-LDs (with the same data schema) back into a CSV with metadata right below the column headers.
+
+```python
+import rdflib
+from rdflib import Graph
+import FAIRLinked.RDFTableConversion.jsonld_batch_converter
+from FAIRLinked.RDFTableConversion.jsonld_batch_converter import jsonld_directory_to_csv
+
+jsonld_directory_to_csv(input_dir="path/to/json-ld/directory",
+                        output_basename="Name-of-CSV",
+                        output_dir="path/to/output/directory")
+```
+
+---
+
 ## ✨ New in v0.3.2
 
 Version 0.3.2 now includes a command line interface for accessing functions in FAIRLinked.
