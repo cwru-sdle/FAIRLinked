@@ -189,7 +189,7 @@ FAIRLinked filter -t <SEARCH_TYPES> -q <QUERY_TERM> [OPTIONS]
 Search for the term "Chem-rxn" within the "Domain" search type.
 
 ```bash
-FAIRLinked filter -t "Domain" -q "Chem-rxn"
+FAIRLinked filter -t "SubDomain" -q "Chem-Rxn"
 ```
 
 Search for terms in the "Sample" Study Stage and save the results to a file.
