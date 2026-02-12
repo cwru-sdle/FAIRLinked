@@ -3,13 +3,10 @@ import json
 import re
 import os
 import difflib
-import rdflib
 from datetime import datetime
 from rdflib import Graph, Namespace, URIRef
-from rdflib.namespace import RDF, RDFS, OWL, SKOS, split_uri
+from rdflib.namespace import RDF, RDFS, OWL, SKOS
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-import sys
-from fuzzysearch import find_near_matches
 import requests
 import ast
 
@@ -187,6 +184,7 @@ def extract_quantity_kinds():
         return kinds
     except Exception as e:
         print(e)
+        return {}
 
 
 
@@ -204,15 +202,24 @@ def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
         else:
             kinds = extract_quantity_kinds()
             ty = userinput
-            while ty not in kinds and ty:
+            while ty not in kinds and ty != "":
                 ty = normalize(input("Please enter the type of quantity this is or hit 'enter' to skip: "))
 
             if not ty:
                 unit = "UNITLESS"
             else:
                 print("Valid Units: ",kinds[ty])
-                while ( unit not in kinds[ty]):
-                    unit = input("Please enter valid units: ")
+                while True:
+                    unit = input("Please enter valid units (or hit 'enter' to skip): ")
+
+                    if unit == "":
+                        unit = "UNITLESS"
+                        break
+
+                    if unit in kinds[ty]:
+                        break
+
+                    print(f"'{unit}' is not a recognized unit for {ty}. Please try again.")
     
 
 
@@ -327,7 +334,7 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         if(not pd.isna(un)):
             try:
                 un = ast.literal_eval(un).get('@id', "").split(":")[1]
-            except :
+            except:
                 pass
             
         if match:
@@ -336,7 +343,6 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         else:
             unmatched_log.append(col)
 
-        import importlib.util
 
         
         if not skip_prompts:
@@ -360,7 +366,6 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
             "@type": f"{binding}:{iri_fragment}",
             "skos:altLabel": col,
             "skos:definition": definition,
-            "qudt:value": [{"@value": ""}],
             "qudt:hasUnit": {"@id": f"unit:{unit}"},
             "prov:generatedAtTime": {
                 "@value": datetime.now().astimezone().isoformat(),
