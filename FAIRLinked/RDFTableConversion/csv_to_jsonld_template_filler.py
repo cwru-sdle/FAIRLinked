@@ -136,7 +136,38 @@ def extract_data_from_csv(
         "": "UNK"}
 
     rowpredicate = URIRef("https://cwrusdle.bitbucket.io/mds/row")
+    row_key = ""
 
+    #check license
+    if(not license):
+        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
+        print("No license provided. Default to CC0-1.0 (Public Domain)")
+
+    elif not license.startswith("http"):
+        # Load SPDX license list
+
+
+        with open("FAIRLinked/helper_data/licenseinfo.json") as f:
+            spdx_data = json.load(f)
+
+        valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
+
+        # Check if the provided short ID is valid
+        if license not in valid_ids:
+            raise ValueError(
+                f"Invalid SPDX license ID '{license}'.\n"
+                f"Please use one from https://spdx.org/licenses/."
+            )
+
+        license_uri = f"https://spdx.org/licenses/{license}.html"
+        license_uri = URIRef(license_uri)
+        write_license_triple(output_folder, base_uri, license_uri)
+
+    else:
+        # Full URI provided; assume it's valid
+        license_uri = URIRef(license)
+        
+        write_license_triple(output_folder, base_uri, license_uri)
     
     for idx, row in df.iloc[3:].iterrows():
 
@@ -217,35 +248,6 @@ def extract_data_from_csv(
             QUDT = Namespace("http://qudt.org/schema/qudt/")
             g.bind("qudt", QUDT)
             g.bind("dcterms", DCTERMS)
-            #check license
-            if(not license):
-                bnode = BNode()
-                license_uri = bnode
-            elif not license.startswith("http"):
-                # Load SPDX license list
-
-
-                with open("FAIRLinked/helper_data/licenseinfo.json") as f:
-                    spdx_data = json.load(f)
-
-                valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
-
-                # Check if the provided short ID is valid
-                if license not in valid_ids:
-                    raise ValueError(
-                        f"Invalid SPDX license ID '{license}'.\n"
-                        f"Please use one from https://spdx.org/licenses/."
-                    )
-
-                license_uri = f"https://spdx.org/licenses/{license}.html"
-                license_uri = URIRef(license_uri)
-                write_license_triple(output_folder, base_uri, license_uri)
-
-            else:
-                # Full URI provided; assume it's valid
-                license_uri = URIRef(license)
-                
-                write_license_triple(output_folder, base_uri, license_uri)
 
             #separate jsonld not needed
             #write_license_triple(output_folder, base_uri, license_uri)
@@ -298,11 +300,15 @@ def extract_data_from_csv(
                         elif prop_type == "Datatype Property":
                             g.add((subj_uri, pred_uri, Literal(obj_val)))
             
-
+            triples_to_remove = []
             for s, p, o in g:
-                if str(p) == "http://qudt.org/schema/qudt/value" and len(o) ==0:
-                    print(f"debug removing empty {s}, {p}, {o}")
-                    g.remove((s, p, o))
+                if p == QUDT.value and len(str(o).strip()) == 0:
+                    if len(str(o).strip()) == 0:
+                        print(f"debug removing empty {s}, {p}, {o}")
+                        triples_to_remove.append((s, p, o))
+
+            for triple in triples_to_remove:
+                g.remove(triple)
 
             # Save the RDF graph to file
             random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
