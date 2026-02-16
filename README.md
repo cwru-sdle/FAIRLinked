@@ -136,7 +136,22 @@ extract_data_from_csv(metadata_template=metadata_template,
                       ontology_graph=mds_graph)
 ```
 
-The arguments `row_key_cols`, `id_cols`, `prop_column_pair_dict`, and `ontology_graph` are all optional arguments. `row_key_cols` identify columns in which concatenation of values create row keys which are used to identify the columns, while `id_cols` are columns whose value specify identifiers of unique entities which must be kept track across multiple rows. `prop_column_pair_dict` is a Python dictionary specifying the object properties or data properties which will be used in the resulting RDF graph and the instances connected by those properties. Finally, `ontology_grapyh` is a required argument if `prop_column_pair_dict` is provided, and this is the source of the properties available to the user. 
+The arguments `row_key_cols`, `id_cols`, `prop_column_pair_dict`, and `ontology_graph` are all optional arguments. `row_key_cols` identify columns in which concatenation of values create row keys which are used to identify the columns, while `id_cols` are columns whose value specify identifiers of unique entities which must be kept track across multiple rows. `prop_column_pair_dict` is a Python dictionary specifying the object properties or data properties which will be used in the resulting RDF graph and the instances connected by those properties. Finally, `ontology_graph` is a required argument if `prop_column_pair_dict` is provided, and this is the source of the properties available to the user. 
+
+To view the list of properties in MDS-Onto, run the following script:
+
+```python
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import generate_prop_metadata_dict
+
+mds_graph = load_mds_ontology_graph()
+
+view_all_props = generate_prop_metadata_dict(mds_graph)
+
+for key, value in view_all_props.items():
+    print(f"{key}: {value}")
+```
+
 
 To deserialize your data, use `jsonld_directory_to_csv`, which will turn a folder of JSON-LDs (with the same data schema) back into a CSV with metadata right below the column headers.
 
