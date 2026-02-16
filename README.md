@@ -86,6 +86,8 @@ When no study stage is detected, the user will similarly be given a list of stud
 ![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/studystage.png)
 The user will automatically be prompted for an optional notes for each column.
 
+**IN THIS FIRST EXAMPLE**, we will use the microindentation data of a PMMA, or Poly(methyl methacrylate), sample.
+
 ```python
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import jsonld_template_generator
