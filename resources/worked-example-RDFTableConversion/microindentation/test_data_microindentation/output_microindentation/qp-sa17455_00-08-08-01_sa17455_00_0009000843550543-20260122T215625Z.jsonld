@@ -1,0 +1,342 @@
+{
+  "@context": {
+    "dcterms": "http://purl.org/dc/terms/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "unit": "https://qudt.org/vocab/unit/",
+    "xsd": "http://www.example.org/"
+  },
+  "@graph": [
+    {
+      "@id": "mds:PolymerGrade.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:PolymerGrade",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081892Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "PolymerGrade",
+      "skos:definition": "Classification of polymer to define composition, purity, and properties",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:unexposedexposed.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": "Exposed"
+    },
+    {
+      "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+    },
+    {
+      "@id": "mds:RegionMeasured.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:RegionMeasured",
+      "mds:hasStudyStage": "Recipe",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081997Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "RegionMeasured",
+      "skos:definition": "",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:RegionMeasured.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": "Non-Cracked"
+    },
+    {
+      "@id": "mds:Hardness.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00"
+    },
+    {
+      "@id": "mds:VickersHardness.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:VickersHardness",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081944Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:PA"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "VickersHardness",
+      "skos:definition": " ",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ExposureStep.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:ExposureStep",
+      "mds:hasStudyStage": "Recipe",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081903Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "ExposureStep",
+      "skos:definition": "The step count of the exposure.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ExposureType.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": "CQUV"
+    },
+    {
+      "@id": "mds:MeasurementNumber.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": 1.0
+    },
+    {
+      "@id": "mds:VickersHardness.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": 15.61
+    },
+    {
+      "@id": "mds:SampleID.sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": "sa17455_00"
+    },
+    {
+      "@id": "mds:SampleID.sa17455_00",
+      "@type": "mds:SampleID",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081878Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "SampleID",
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:Measurement.sa17455_00-08-08-01",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": "sa17455_00-08-08-01"
+    },
+    {
+      "@id": "mds:loadnewton.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:loadnewton",
+      "mds:hasStudyStage": "Recipe",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081988Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:N"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "Load (Newton)",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:PolymerGrade.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": "UVT"
+    },
+    {
+      "@id": "mds:ExposureStep.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": 8.0
+    },
+    {
+      "@id": "mds:MeasurementNumber.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:MeasurementNumber",
+      "mds:hasStudyStage": "Result",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081924Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "MeasurementNumber",
+      "skos:definition": "",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:unexposedexposed.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:unexposedexposed",
+      "mds:hasStudyStage": "Recipe",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081977Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "Unexposed/Exposed",
+      "skos:definition": "Definition not available",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:ExposureType.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:ExposureType",
+      "mds:hasStudyStage": "Recipe",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081913Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "ExposureType",
+      "skos:definition": "The type of exposure e.g. damp heat, cyclic UV, outdoors, modified damp heat (mDH) or modified damp heat+full light spectrum (mDH+FSL).",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:YoungModulus.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:YoungModulus",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081967Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:M2-PER-SEC2"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "YoungModulus",
+      "skos:definition": " ",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:loadnewton.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": 2.0
+    },
+    {
+      "@id": "mds:YoungModulus.sa17455_00-08-08-01_sa17455_00",
+      "dcterms:license": {
+        "@id": "_:N5e7bc9e148414a12907bb5849e0fb804"
+      },
+      "mds:row": "sa17455_00-08-08-01_sa17455_00",
+      "qudt:value": 1.983
+    },
+    {
+      "@id": "mds:Hardness.sa17455_00-08-08-01_sa17455_00",
+      "@type": "mds:Hardness",
+      "mds:hasStudyStage": "Sample",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081934Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:PA"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "Hardness (GPa)",
+      "skos:definition": "Hardness is a mechanical property of a material that indicates resistance to indentation; indicates stiffness. ",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    },
+    {
+      "@id": "mds:Measurement.sa17455_00-08-08-01",
+      "@type": "mds:Measurement",
+      "mds:hasStudyStage": "Analysis",
+      "prov:generatedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-22T21:56:25.081828Z"
+      },
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "qudt:value": "",
+      "skos:altLabel": "MeasurementID",
+      "skos:definition": "Chemical analysis carried out on the sample.",
+      "skos:note": {
+        "@language": "en",
+        "@value": ""
+      }
+    }
+  ]
+}

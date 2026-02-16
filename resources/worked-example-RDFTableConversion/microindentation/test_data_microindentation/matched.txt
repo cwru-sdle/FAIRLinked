@@ -1,0 +1,10 @@
+MeasurementID => Measurement
+SampleID => SampleID
+PolymerGrade => PolymerGrade
+ExposureStep => ExposureStep
+ExposureType => ExposureType
+MeasurementNumber => MeasurementNumber
+Hardness (GPa) => Hardness
+VickersHardness => VickersHardness
+YoungModulus => YoungModulus
+RegionMeasured => RegionMeasured

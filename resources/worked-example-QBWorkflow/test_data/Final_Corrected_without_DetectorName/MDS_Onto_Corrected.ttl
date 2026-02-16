@@ -1,0 +1,481 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix mds: <https://cwrusdle.bitbucket.io/mds#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix pmdco: <https://w3id.org/pmd/co/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+
+mds:Ontology a owl:Ontology ;
+    rdfs:label "MDS-Onto Proof of Concept Ontology" ;
+    dcterms:creator "B.P.Rajamohan",
+        "Erika I. Barcelos",
+        "Mohommad Redad Mehdi",
+        "Ozan Dernek",
+        "Quynh Tran",
+        "Roger H. French",
+        "Van Tran" ;
+    dcterms:description "MDS-Onto Proof of Concept Ontology" ;
+    dcterms:title "Combined MDS-Onto" ;
+    owl:versionInfo "0.3" .
+
+skos:broader
+    a rdf:Property, owl:ObjectProperty ;
+    rdfs:comment "Broader concepts are typically rendered as parents in a concept hierarchy (tree)."@en ;
+    rdfs:isDefinedBy <http://www.w3.org/2004/02/skos/core> ;
+    rdfs:label "has broader"@en ;
+    skos:definition "Relates a concept to a concept that is more general in meaning."@en .
+
+mds:characteristicOf a owl:ObjectProperty ;
+    rdfs:subPropertyOf pmdco:characteristicOf .
+
+mds:hasIdentifier a owl:ObjectProperty ;
+    rdfs:subPropertyOf pmdco:hasIdentifier .
+
+mds:value a owl:DatatypeProperty ;
+    rdfs:subPropertyOf pmdco:value .
+
+mds:unit a owl:ObjectProperty ;
+    rdfs:subPropertyOf pmdco:unit .
+
+pmdco:ProcessingNode a owl:Class ;
+    rdfs:label "ProcessingNode" .
+
+pmdco:Sample a owl:Class ;
+    rdfs:label "Sample" .
+
+pmdco:Identifier a owl:Class ;
+    rdfs:label "Identifier" .
+
+pmdco:Manufacturer a owl:Class ;
+    rdfs:label "Manufacturer" .
+
+foaf:Person a owl:Class ;
+    rdfs:label "Person" .
+
+pmdco:Date a owl:Class ;
+    rdfs:label "Date" .
+
+pmdco:Method a owl:Class ;
+    rdfs:label "Method" .
+
+pmdco:NodeSerialNumber a owl:Class ;
+    rdfs:label "NodeSerialNumber" .
+
+pmdco:Temperature a owl:Class ;
+    rdfs:label "Temperature" .
+
+pmdco:Length a owl:Class ;
+    rdfs:label "Length" .
+
+pmdco:Width a owl:Class ;
+    rdfs:label "Width" .
+
+pmdco:Laboratory a owl:Class ;
+    rdfs:label "Laboratory" .
+
+pmdco:Department a owl:Class ;
+    rdfs:label "Department" .
+
+pmdco:MeasuringDevice a owl:Class ;
+    rdfs:label "MeasuringDevice" .
+
+pmdco:Force a owl:Class ;
+    rdfs:label "Force" .
+
+pmdco:Distance a owl:Class ;
+    rdfs:label "Distance" .
+
+pmdco:SequenceNumber a owl:Class ;
+    rdfs:label "SequenceNumber" .
+
+pmdco:Metadata a owl:Class ;
+    rdfs:label "Metadata" .
+
+pmdco:PrimaryData a owl:Class ;
+    rdfs:label "PrimaryData" .
+
+pmdco:ProjectIdentifier a owl:Class ;
+    rdfs:label "ProjectIdentifier" .
+
+pmdco:Algorithm a owl:Class ;
+    rdfs:label "Algorithm" .
+
+pmdco:NonTransformativeAnalysisProcess a owl:Class ;
+    rdfs:label "NonTransformativeAnalysisProcess" .
+
+pmdco:ValueObject a owl:Class ;
+    rdfs:label "ValueObject" .
+
+mds:Sample a owl:Class ;
+    rdfs:label "Sample" ;
+    rdfs:subClassOf pmdco:Sample .
+
+mds:Manufacturer a owl:Class ;
+    rdfs:label "Manufacturer" ;
+    rdfs:subClassOf pmdco:Manufacturer ;
+    skos:broader mds:Tool .
+
+mds:Person a owl:Class ;
+    rdfs:label "Person" ;
+    rdfs:subClassOf foaf:Person ;
+    skos:broader mds:Recipe .
+
+mds:Date a owl:Class ;
+    rdfs:label "Date" ;
+    rdfs:subClassOf pmdco:Date ;
+    skos:broader mds:Recipe .
+
+mds:NodeSerialNumber a owl:Class ;
+    rdfs:label "NodeSerialNumber" ;
+    rdfs:subClassOf pmdco:NodeSerialNumber ;
+    skos:broader mds:Tool .
+
+mds:Temperature a owl:Class ;
+    rdfs:label "Temperature" ;
+    rdfs:subClassOf pmdco:Temperature ;
+    skos:broader mds:Recipe .
+
+mds:Length a owl:Class ;
+    rdfs:label "Length" ;
+    rdfs:subClassOf pmdco:Length ;
+    skos:broader mds:Recipe .
+
+mds:Width a owl:Class ;
+    rdfs:label "Width" ;
+    rdfs:subClassOf pmdco:Width ;
+    skos:broader mds:Recipe .
+
+mds:Laboratory a owl:Class ;
+    rdfs:label "Laboratory" ;
+    rdfs:subClassOf pmdco:Laboratory ;
+    skos:broader mds:Tool .
+
+mds:Department a owl:Class ;
+    rdfs:label "Department" ;
+    rdfs:subClassOf pmdco:Department ;
+    skos:broader mds:Tool .
+
+mds:MeasuringDevice a owl:Class ;
+    rdfs:label "MeasuringDevice" ;
+    rdfs:subClassOf pmdco:MeasuringDevice ;
+    skos:broader mds:Tool .
+
+mds:Force a owl:Class ;
+    rdfs:label "Force" ;
+    rdfs:subClassOf pmdco:Force ;
+    skos:broader mds:Recipe .
+
+mds:Distance a owl:Class ;
+    rdfs:label "Distance" ;
+    rdfs:subClassOf pmdco:Distance ;
+    skos:broader mds:Recipe .
+
+mds:SequenceNumber a owl:Class ;
+    rdfs:label "SequenceNumber" ;
+    rdfs:subClassOf pmdco:SequenceNumber ;
+    skos:broader mds:Result .
+
+mds:Metadata a owl:Class ;
+    rdfs:label "Metadata" ;
+    rdfs:subClassOf pmdco:Metadata ;
+    skos:broader mds:Result .
+
+mds:PrimaryData a owl:Class ;
+    rdfs:label "PrimaryData" ;
+    rdfs:subClassOf pmdco:PrimaryData ;
+    skos:broader mds:Result .
+
+mds:ProjectIdentifier a owl:Class ;
+    rdfs:label "ProjectIdentifier" ;
+    rdfs:subClassOf pmdco:ProjectIdentifier ;
+    skos:broader mds:Result .
+
+mds:Identifier a owl:Class ;
+    rdfs:label "Identifier" ;
+    rdfs:subClassOf pmdco:Identifier .
+
+mds:FilePath a owl:Class ;
+    rdfs:label "FilePath" ;
+    rdfs:subClassOf pmdco:ValueObject ;
+    skos:broader mds:Result .
+
+mds:Category a owl:Class ;
+    rdfs:label "Category" ;
+    rdfs:subClassOf pmdco:ValueObject ;
+    skos:broader mds:Model .
+
+mds:Recipe a owl:Class ;
+    rdfs:label "Recipe" ;
+    rdfs:subClassOf pmdco:Method ;
+    skos:definition "A set of specifications that describes how a process is carried out" .
+
+mds:Model a owl:Class ;
+    rdfs:label "Model" ;
+    rdfs:subClassOf pmdco:Algorithm ;
+    skos:definition "An algorithm that describes an underlying relationship between inputs and outputs" .
+
+mds:Analysis a owl:Class ;
+    rdfs:label "Analysis" ;
+    rdfs:subClassOf pmdco:NonTransformativeAnalysisProcess ;
+    skos:definition "A process using statistical techniques to examine data to extract underlying relationships" ;
+    skos:broader mds:Model .
+
+mds:Result a owl:Class ;
+    rdfs:label "Result" ;
+    rdfs:subClassOf pmdco:PrimaryData ;
+    skos:definition "A consequence, effect, or outcome of a process" .
+
+mds:Tool a owl:Class ;
+    rdfs:label "Tool" ;
+    rdfs:subClassOf pmdco:ProcessingNode .
+
+mds:ToolID a owl:Class ;
+    rdfs:label "ToolID" ;
+    rdfs:subClassOf pmdco:Identifier ;
+    mds:value xsd:string ;
+    skos:definition "Unique ID of a tool" ;
+    skos:broader mds:Tool .
+
+mds:ToolSoftware a owl:Class ;
+    rdfs:label "ToolSoftware" ;
+    rdfs:subClassOf pmdco:ProcessingNode ;
+    mds:value xsd:string ;
+    skos:definition "Software used by a tool" ;
+    skos:broader mds:Tool .
+
+mds:SampleID a owl:Class ;
+    rdfs:label "SampleID" ;
+    rdfs:subClassOf pmdco:Identifier ;
+    mds:value xsd:string ;
+    skos:definition "Unique ID of a sample" ;
+    skos:broader mds:Sample .
+
+mds:SampleDimension a owl:Class ;
+    rdfs:label "SampleDimension" ;
+    rdfs:subClassOf pmdco:ValueObject ;
+    mds:value xsd:float ;
+    skos:definition "Dimensions of a sample (if sample is solid)" ;
+    skos:broader mds:Sample .
+
+mds:RecipeID a owl:Class ;
+    rdfs:label "RecipeID" ;
+    rdfs:subClassOf pmdco:Identifier ;
+    mds:value xsd:string ;
+    skos:definition "Unique ID for a recipe" ;
+    skos:broader mds:Recipe .
+
+mds:ModelID a owl:Class ;
+    rdfs:label "ModelID" ;
+    rdfs:subClassOf pmdco:Identifier ;
+    mds:value xsd:string ;
+    skos:definition "Unique ID of a model" ;
+    skos:broader mds:Model .
+
+mds:ModelName a owl:Class ;
+    rdfs:label "ModelName" ;
+    rdfs:subClassOf pmdco:Identifier ;
+    mds:value xsd:string ;
+    skos:definition "Human-readable, English name of a model" ;
+    skos:broader mds:Model .
+
+mds:ResultID a owl:Class ;
+    rdfs:label "ResultID" ;
+    rdfs:subClassOf pmdco:Identifier ;
+    mds:value xsd:string ;
+    skos:definition "Unique ID of a result" ;
+    skos:broader mds:Result .
+
+mds:ToolManufacturer a owl:Class ;
+    rdfs:label "ToolManufacturer" ;
+    rdfs:subClassOf mds:Manufacturer ;
+    mds:value xsd:string ;
+    skos:definition "Manufacturer of a tool" ;
+    skos:broader mds:Tool .
+
+mds:ToolModel a owl:Class ;
+    rdfs:label "ToolModel" ;
+    rdfs:subClassOf mds:NodeSerialNumber ;
+    mds:value xsd:string ;
+    skos:definition "Model of a tool" ;
+    skos:broader mds:Tool .
+
+mds:ToolSerialNo a owl:Class ;
+    rdfs:label "ToolSerialNo" ;
+    rdfs:subClassOf mds:NodeSerialNumber ;
+    mds:value xsd:string ;
+    skos:definition "Unique serial number of a tool (assigned by manufacturer)" ;
+    skos:broader mds:Tool .
+
+mds:ToolCalibrationDate a owl:Class ;
+    rdfs:label "ToolCalibrationDate" ;
+    rdfs:subClassOf mds:Date ;
+    mds:value xsd:dateTime ;
+    skos:definition "Date that a tool is calibrated" ;
+    skos:broader mds:Tool .
+
+mds:ToolCalibrationResults a owl:Class ;
+    rdfs:label "ToolCalibrationResults" ;
+    rdfs:subClassOf mds:Result ;
+    mds:value xsd:string ;
+    skos:definition "Results of a calibration of a tool" ;
+    skos:broader mds:Tool .
+
+mds:ToolCalibrationPerson a owl:Class ;
+    rdfs:label "ToolCalibrationPerson" ;
+    rdfs:subClassOf mds:Person ;
+    mds:value xsd:string ;
+    skos:definition "Person that calibrated a tool" ;
+    skos:broader mds:Tool .
+
+mds:SampleDate a owl:Class ;
+    rdfs:label "SampleDate" ;
+    rdfs:subClassOf mds:Date ;
+    mds:value xsd:dateTime ;
+    skos:definition "Date that a sample was created" ;
+    skos:broader mds:Sample .
+
+mds:RecipeCreatedDate a owl:Class ;
+    rdfs:label "RecipeCreatedDate" ;
+    rdfs:subClassOf mds:Date ;
+    mds:value xsd:dateTime ;
+    skos:definition "Date that a recipe is created" ;
+    skos:broader mds:Recipe .
+
+mds:RecipeAuthor a owl:Class ;
+    rdfs:label "RecipeAuthor" ;
+    rdfs:subClassOf mds:Person ;
+    mds:value xsd:string ;
+    skos:definition "Person created a recipe" ;
+    skos:broader mds:Recipe .
+
+mds:RecipeModifiedDate a owl:Class ;
+    rdfs:label "RecipeModifiedDate" ;
+    rdfs:subClassOf mds:Date ;
+    mds:value xsd:dateTime ;
+    skos:definition "Date that a recipe is modified" ;
+    skos:broader mds:Recipe .
+
+mds:RecipeFilePath a owl:Class ;
+    rdfs:label "RecipeFilePath" ;
+    rdfs:subClassOf mds:FilePath ;
+    mds:value xsd:string ;
+    skos:definition "File path unique to a recipe" ;
+    skos:broader mds:Recipe .
+
+mds:ModelType a owl:Class ;
+    rdfs:label "ModelType" ;
+    rdfs:subClassOf mds:Category ;
+    mds:value xsd:string ;
+    skos:definition "Type of a model (linear, regression, logistic, etc.)" ;
+    skos:broader mds:Model .
+
+mds:ModelResults a owl:Class ;
+    rdfs:label "ModelResults" ;
+    rdfs:subClassOf mds:Result ;
+    mds:value xsd:string ;
+    skos:definition "Results of a model" ;
+    skos:broader mds:Model .
+
+mds:ModelFilePath a owl:Class ;
+    rdfs:label "ModelFilePath" ;
+    rdfs:subClassOf mds:FilePath ;
+    mds:value xsd:string ;
+    skos:definition "File path unique to a model" ;
+    skos:broader mds:Model .
+
+mds:PersonORCiD a owl:Class ;
+    rdfs:label "PersonORCiD" ;
+    rdfs:subClassOf mds:Identifier ;
+    skos:definition "Unique ID of a person" .
+
+
+mds:Facility a owl:Class ;
+    rdfs:label "Facility" ;
+    rdfs:subClassOf mds:Laboratory ;
+    skos:definition "Facility where the experiment was performed." ;
+    mds:value xsd:string .
+
+mds:Station a owl:Class ;
+    rdfs:label "Station" ;
+    rdfs:subClassOf mds:Department ;
+    skos:definition "Particular beamline within the facility." ;
+    mds:value xsd:string .
+
+mds:SyncXrayDetector a owl:Class ;
+    rdfs:label "SyncXrayDetector" ;
+    rdfs:subClassOf mds:MeasuringDevice ;
+    mds:hasIdentifier mds:DetectorName ;
+    skos:definition "The detector used to capture the transmitted X-rays." .
+
+mds:PixelSize a owl:Class ;
+    rdfs:label "PixelSize" ;
+    rdfs:subClassOf mds:Length ;
+    skos:definition "Pixel size of the detector." ;
+    mds:characteristicOf mds:SyncXrayDetector ;
+    mds:unit qudt:MicroM ;
+    mds:value xsd:float .
+
+mds:DetectorLength a owl:Class ;
+    rdfs:label "DetectorLength" ;
+    rdfs:subClassOf mds:Length ;
+    mds:unit qudt:MilliM ;
+    mds:characteristicOf mds:SyncXrayDetector ;
+    skos:definition "Length of the detector." ;
+    mds:value xsd:float .
+
+mds:DetectorWidth a owl:Class ;
+    rdfs:label "DetectorWidth" ;
+    rdfs:subClassOf mds:Width ;
+    skos:definition "Width of the detector." ;
+    mds:characteristicOf mds:SyncXrayDetector ;
+    mds:unit qudt:MilliM ;
+    mds:value xsd:float .
+
+mds:Wavelength a owl:Class ;
+    rdfs:label "Wavelength" ;
+    rdfs:subClassOf mds:Length ;
+    skos:definition "The wavelength used for the experiment." ;
+    mds:unit qudt:ANGSTROM ;
+    mds:value xsd:float .
+
+mds:Energy a owl:Class ;
+    rdfs:label "Energy" ;
+    rdfs:subClassOf mds:Force ;
+    skos:definition "The energy of the incident beam." ;
+    mds:unit qudt:KiloEV ;
+    mds:value xsd:float .
+
+mds:DistanceFromSample a owl:Class ;
+    rdfs:label "DistanceFromSample" ;
+    rdfs:subClassOf mds:Distance ;
+    skos:definition "Distance of the detector from the sample." ;
+    mds:unit qudt:MilliM ;
+    mds:value xsd:float .
+
+mds:LogFile a owl:Class ;
+    rdfs:label "LogFile" ;
+    rdfs:subClassOf mds:Metadata ;
+    skos:definition "Contains log of the results." ;
+    mds:value xsd:string .
+
+mds:ImageSequence a owl:Class ;
+    rdfs:label "ImageSequence" ;
+    rdfs:subClassOf mds:SequenceNumber ;
+    skos:definition "Running sequence of the image taken." ;
+    mds:value rdf:Seq .
+
+mds:StackNumber a owl:Class ;
+    rdfs:label "StackNumber" ;
+    rdfs:subClassOf mds:ProjectIdentifier ;
+    skos:definition "The stack of the data." ;
+    mds:value xsd:integer .
+
+mds:DetectorName a owl:Class ;
+    rdfs:label "DetectorName" ;
+    rdfs:subClassOf mds:Identifier ;
+    skos:definition "Name of the detector." ;
+    mds:value xsd:string .

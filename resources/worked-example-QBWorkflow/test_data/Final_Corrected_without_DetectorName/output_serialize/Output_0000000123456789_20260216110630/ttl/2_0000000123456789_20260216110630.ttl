@@ -1,0 +1,153 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix mds: <https://cwrusdle.bitbucket.io/mds#> .
+@prefix qb: <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/vocab/unit#> .
+@prefix sdmx-attribute: <http://purl.org/linked-data/sdmx/2009/attribute#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+mds:Dataset_2_0000000123456789_20260216110630 a qb:DataSet ;
+    dct:creator "0000-0001-2345-6789" ;
+    dct:title "Dataset_2_0000000123456789_20260216110630" ;
+    qb:slice mds:Slice_2_0000000123456789_20260216110630 ;
+    qb:structure mds:DataStructureDefinition .
+
+qb:measureType a qb:DimensionProperty .
+
+sdmx-attribute:unitMeasure a qb:AttributeProperty .
+
+mds:DataStructureDefinition a qb:DataStructureDefinition ;
+    qb:component [ qb:dimension mds:Station ],
+        [ qb:dimension mds:ExperimentId ],
+        [ qb:dimension qb:measureType ],
+        [ qb:measure mds:Wavelength ],
+        [ qb:attribute sdmx-attribute:unitMeasure ],
+        [ qb:dimension mds:DetectorName ],
+        [ qb:measure mds:PixelSize ],
+        [ qb:dimension mds:StackNumber ],
+        [ qb:attribute mds:category ],
+        [ qb:dimension mds:LogFile ],
+        [ qb:dimension mds:Facility ],
+        [ qb:dimension mds:SyncXrayDetector ],
+        [ qb:measure mds:DistanceFromSample ],
+        [ qb:measure mds:Energy ],
+        [ qb:dimension mds:FileName ],
+        [ qb:measure mds:DetectorLength ],
+        [ qb:dimension mds:ImageSequence ],
+        [ qb:measure mds:DetectorWidth ] .
+
+mds:SliceKey_2_0000000123456789_20260216110630 a qb:SliceKey ;
+    qb:componentProperty mds:DetectorName,
+        mds:ExperimentId,
+        mds:Facility,
+        mds:FileName,
+        mds:ImageSequence,
+        mds:LogFile,
+        mds:StackNumber,
+        mds:Station,
+        mds:SyncXrayDetector .
+
+mds:Slice_2_0000000123456789_20260216110630 a qb:Slice ;
+    qb:observation mds:observation_1,
+        mds:observation_2,
+        mds:observation_3,
+        mds:observation_4,
+        mds:observation_5,
+        mds:observation_6 ;
+    qb:sliceStructure mds:SliceKey_2_0000000123456789_20260216110630 ;
+    mds:DetectorName "Detector_B" ;
+    mds:ExperimentId 2 ;
+    mds:Facility "Facility_Y" ;
+    mds:FileName "Image_002.jpg" ;
+    mds:ImageSequence "IMG_SEQ_02" ;
+    mds:LogFile "log_2024_002" ;
+    mds:StackNumber "STACK_02" ;
+    mds:Station "Station_B" ;
+    mds:SyncXrayDetector "No" .
+
+mds:category a qb:AttributeProperty .
+
+mds:observation_1 a qb:Observation ;
+    qb:measureType mds:PixelSize ;
+    sdmx-attribute:unitMeasure qudt:MicroM ;
+    mds:PixelSize 6e-01 .
+
+mds:observation_2 a qb:Observation ;
+    qb:measureType mds:DetectorLength ;
+    sdmx-attribute:unitMeasure qudt:CentiM ;
+    mds:DetectorLength 1.05e+01 .
+
+mds:observation_3 a qb:Observation ;
+    qb:measureType mds:Wavelength ;
+    sdmx-attribute:unitMeasure qudt:N-M ;
+    mds:Wavelength 1.54e+00 .
+
+mds:observation_4 a qb:Observation ;
+    qb:measureType mds:DetectorWidth ;
+    sdmx-attribute:unitMeasure qudt:CentiM ;
+    mds:DetectorWidth 1.55e+01 .
+
+mds:observation_5 a qb:Observation ;
+    qb:measureType mds:Energy ;
+    sdmx-attribute:unitMeasure qudt:KiloEV ;
+    mds:Energy 1.26e+01 .
+
+mds:observation_6 a qb:Observation ;
+    qb:measureType mds:DistanceFromSample ;
+    sdmx-attribute:unitMeasure qudt:M ;
+    mds:DistanceFromSample 3e-01 .
+
+mds:DetectorLength a qb:MeasureProperty ;
+    skos:altLabel "Detector Length" ;
+    mds:category mds:Recipe .
+
+mds:DetectorName a qb:DimensionProperty ;
+    skos:altLabel "Detector Identifier" ;
+    mds:category mds:Tool .
+
+mds:DetectorWidth a qb:MeasureProperty ;
+    skos:altLabel "Detector Width" ;
+    mds:category mds:Recipe .
+
+mds:DistanceFromSample a qb:MeasureProperty ;
+    skos:altLabel "Distance from Sample" ;
+    mds:category mds:Recipe .
+
+mds:Energy a qb:MeasureProperty ;
+    mds:category mds:Recipe .
+
+mds:ExperimentId a qb:DimensionProperty .
+
+mds:Facility a qb:DimensionProperty ;
+    skos:altLabel "Research Facility" ;
+    mds:category mds:Tool .
+
+mds:FileName a qb:DimensionProperty .
+
+mds:ImageSequence a qb:DimensionProperty ;
+    skos:altLabel "Image Sequence Identifier" ;
+    mds:category mds:Result .
+
+mds:LogFile a qb:DimensionProperty ;
+    skos:altLabel "Log File Name" ;
+    mds:category mds:Result .
+
+mds:PixelSize a qb:MeasureProperty ;
+    skos:altLabel "Pixel Size" ;
+    mds:category mds:Recipe .
+
+mds:StackNumber a qb:DimensionProperty ;
+    skos:altLabel "Stack Number" ;
+    mds:category mds:Result .
+
+mds:Station a qb:DimensionProperty ;
+    skos:altLabel "Experimental Station" ;
+    mds:category mds:Tool .
+
+mds:SyncXrayDetector a qb:DimensionProperty ;
+    skos:altLabel "Synchronize X-ray Detector" ;
+    mds:category mds:Tool .
+
+mds:Wavelength a qb:MeasureProperty ;
+    mds:category mds:Recipe .
+

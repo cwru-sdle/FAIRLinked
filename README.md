@@ -48,9 +48,21 @@ You can install FAIRLinked using pip:
 pip install FAIRLinked
 ```
 
+or directly from the FAIRLinked GitHub repository
+
+```bash
+git clone https://github.com/cwru-sdle/FAIRLinked.git
+cd FAIRLinked
+pip install .
+```
+
 ---
 
 ## ⏰ Quick Start
+
+This section provides example runs of the serialization and deserialization processes. All example files can be found in the GitHub repository of `FAIRLinked` under `resources` or can be directly accessed [here](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/resources). Command-line version of the functions below can be found [here](https://github.com/cwru-sdle/FAIRLinked/blob/main/resources/CLI_Examples.md) and in [change log](https://github.com/cwru-sdle/FAIRLinked/blob/main//CHANGELOG.md).
+
+### Serializing and deserializing with RDFTableConversion
 
 To start serializing with FAIRLinked, we first make a template using `jsonld_template_generator` from `FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper`. In your CSV, make sure to have some (possibly empty or partially filled) rows reserved for metadata about your variable. 
 
@@ -80,11 +92,11 @@ from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import jsonld_template_g
 
 mds_graph = load_mds_ontology_graph()
 
-jsonld_template_generator(csv_path="path/to/data/csv", 
+jsonld_template_generator(csv_path="resources/worked-example-RDFTableConversion/microindentation/sa17455_00.csv", 
                            ontology_graph=mds_graph, 
-                           output_path="path/to/output/json-ld/template", 
-                           matched_log_path="path/to/output/matched/terms", 
-                           unmatched_log_path="path/to/output/unmatched/terms",
+                           output_path="resources/worked-example-RDFTableConversion/microindentation/output_template.json", 
+                           matched_log_path="resources/worked-example-RDFTableConversion/microindentation/microindentation_matched.txt", 
+                           unmatched_log_path="resources/worked-example-RDFTableConversion/microindentation/microindentation_unmatched.txt",
                            skip_prompts=False)
 
 ```
@@ -101,17 +113,23 @@ from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 
 mds_graph = load_mds_ontology_graph()
 
-with open("path/to/metadata/template", "r") as f:
+with open("resources/worked-example-RDFTableConversion/microindentation/output_template.json", "r") as f:
     metadata_template = json.load(f) 
 
-prop_col_pair_dict = {"name of relationship specified by rdfs:label": [("column_1", "column_2")]}
+prop_col_pair_dict = {"is about": [("PolymerGrade", "Sample"), 
+                                    ("Hardness (GPa)", "Sample"),
+                                    ("VickersHardness", "YoungModulus"),
+                                    ("Load (Newton)", "Measurement"),
+                                    ("ExposureStep","Measurement"), 
+                                    ("ExposureType","Measurement"),
+                                    ("MeasurementNumber","Measurement")]}
 
 extract_data_from_csv(metadata_template=metadata_template, 
-                      csv_file="path/to/csv/data",
-                      orcid="0000-0000-0000-0000", 
-                      output_folder="path/to/output",
-                      row_key_cols=["column_1", "column_3", "column_7"],
-                      id_cols=["column_1", "column_7"],
+                      csv_file="resources/worked-example-RDFTableConversion/microindentation/sa17455_00.csv",
+                      orcid="0000-0001-2345-6789", 
+                      output_folder="resources/worked-example-RDFTableConversion/microindentation/test_data_microindentation/output_microindentation",
+                      row_key_cols=["Measurement", "Sample"],
+                      id_cols=["Measurement", "Sample"],
                       prop_column_pair_dict=prop_col_pair_dict,
                       ontology_graph=mds_graph)
 ```
@@ -126,502 +144,111 @@ from rdflib import Graph
 import FAIRLinked.RDFTableConversion.jsonld_batch_converter
 from FAIRLinked.RDFTableConversion.jsonld_batch_converter import jsonld_directory_to_csv
 
-jsonld_directory_to_csv(input_dir="path/to/json-ld/directory",
-                        output_basename="Name-of-CSV",
-                        output_dir="path/to/output/directory")
+jsonld_directory_to_csv(input_dir="resources/worked-example-RDFTableConversion/microindentation/test_data_microindentation/output_microindentation",
+                        output_basename="sa17455_00_microindentation",
+                        output_dir="resources/worked-example-RDFTableConversion/microindentation/test_data_microindentation/output_deserialize_microindentation")
 ```
 
+
+## Serializing and deserializing using RDF Data Cube with QBWorkflow
+
+The RDF Data Cube Workflow is better run in `bash`.
+
+```shell
+$ FAIRLinked data-cube-run
+```
+
+This will start a series of prompts for users to serialize their data using RDF Data Cube vocabulary.
+
+```text
+Welcome to FAIRLinked RDF Data Cube 🚀
+Do you have an existing RDF data cube dataset? (yes/no): no
+```
+Answer 'yes' to deserialize your data from linked data back to tabular format. If you do not wish to deserialize, answer 'no'. After answering 'no', you will be asked whether you are currently running an experiment. To generate a data template, answer 'yes'. Otherwise, answer 'no'.
+
+```text
+Are you running an experiment now? (yes/no): yes
+```
+
+Once you've answered 'yes', you will be prompted to provide two ontology files.
+
+```text
+Do you have these ontology files (lowest-level, MDS combined)? (yes/no): yes
+```
+
+This question is asking if you have the following two turtle files: 'lowest-level' and 'MDS combined'. A 'lowest-level' ontology file is a turtle file that contains all the terms you want to use in your dataset, while 'MDS combined' is the general MDS-Onto which can be downloaded from our website https://cwrusdle.bitbucket.io/. If you answer 'yes', you will be prompted to provide file paths to these files. If you answer 'no', then a generic template will be created with unspecified variable name.
+
+```text
+Enter the path to the Lowest-level MDS ontology file: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/Low-Level_Corrected.ttl
+Enter the path to the Combined MDS ontology file: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/MDS_Onto_Corrected.ttl
+
+```
+
+This will generate a template in the current working directory. For the result of this run, see `resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/data_template.xlsx`.
+
+To serialize your data, start the workflow again.
+
+```shell
+$ FAIRLinked data-cube-run
+```
+
+Answer 'no' to the first question.
+
+```text
+Welcome to FAIRLinked RDF Data Cube 🚀
+Do you have an existing RDF data cube dataset? (yes/no): no
+```
+
+When asked if you are running an experiment, answer 'no'.
+
+```text
+Are you running an experiment now? (yes/no): no
+```
+
+For most users, the answer to the question below should be 'no'. However, if you are working with a distributed database where 'hotspotting' could be a potential problem (too many queries directed towards one node), then answering 'yes' will make sure serialized files are "salted". If you answer 'yes', each row in a single sheet will be serialized, and the file names will be "salted" with two random letters in front of the other row identifiers.
+
+```text
+Do you have data for CRADLE ingestion? (yes/no): no
+```
+
+Next, you will be prompted for a namespace template (which contains a mapping of all the prefixes to the proper namespace in the serialized files), your filled-out data file, and the path to output the serialized files.
+
+```text
+Enter ORC_ID: 0000-0001-2345-6789 
+Enter the path to the namespace Excel file: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/namespace_template.xlsx
+Enter the path to the data Excel file: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/mock_xrd_data.xlsx
+Enter the path to the output folder: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/output_serialize
+```
+
+The next question asks for the mode of conversion. If 'entire', then the full table will be serialized into one RDF graph. If 'row-by-row', the each row will be serialized into its own graph. In this example, we will choose row-by-row.
+
+```text
+Do you want to convert the entire DataFrame as one dataset or row-by-row? (entire/row-by-row): row-by-row
+```
+
+You will then be prompted to select your row identifiers and the `FAIRLinked` will automatically exits.
+
+```text
+The following columns appear to be identifiers (contain 'id' in their name):
+Include column 'ExperimentId' in the row-based dataset naming? (yes/no): yes
+Include column 'DetectorWidth' in the row-based dataset naming? (yes/no): no
+Approved ID columns for naming: ['ExperimentId']
+Conversion completed under mode='row-by-row'. Outputs in: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/output_serialize/Output_0000000123456789_20260216110630
+FAIRLinked exiting
+```
+
+To deserialize your data, start the workflow and answer 'yes' to the first question:
+
+```text
+Welcome to FAIRLinked RDF Data Cube 🚀
+Do you have an existing RDF data cube dataset? (yes/no): yes
+```
+
+```text
+Enter the path to your RDF data cube file/folder (can be .ttl/.jsonld or a directory): resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/output_serialize/Output_0000000123456789_20260216110630/jsonld
+Enter the path to the output folder: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/output_deserialize
+```
 ---
-
-## ✨ New in v0.3.2
-
-Version 0.3.2 now includes a command line interface for accessing functions in FAIRLinked.
-
------
-
-# FAIRLinked Command-Line Interface (CLI)
-
-This document provides instructions for using the `FAIRLinked` command-line tool. The tool is organized into three main sub-modules: `InterfaceMDS`, `RDFTableConversion`, and `QBWorkflow`.
-
-## General Usage
-
-The tool is invoked from the command line using the main script name, followed by a command and its specific arguments.
-
-```bash
-FAIRLinked [COMMAND] [OPTIONS]
-```
-
-To see the help message for any command, use the `-h` or `--help` flag.
-
-```bash
-FAIRLinked filter -h
-FAIRLinked generate-template --help
-```
-
------
-
-## InterfaceMDS Commands
-
-These commands are used for interacting with the Materials Data Schema (MDS) ontology.
-
-### `filter`
-
-Get terms associated with a certain Domain, Subdomain, or Study Stage.
-
-**Description:**
-Term search using Domain, SubDomain, or Study Stage. For a complete list of Domains and SubDomains, run `FAIRLinked view-domains` and `FAIRLinked dir-make`. The current list of Study Stages includes: Synthesis, Formulation, Materials Processing, Sample, Tool, Recipe, Result, Analysis, Modelling.
-
-**Usage:**
-
-```bash
-FAIRLinked filter -t <SEARCH_TYPES> -q <QUERY_TERM> [OPTIONS]
-```
-
-**Arguments:**
-
-  * `-t, --search_types`: (Required) Specifies the search criteria. Choices: `"Domain"`, `"SubDomain"`, `"Study Stage"`. You can provide one or more.
-  * `-q, --query_term`: (Required) Enter the domain, subdomain, or study stage.
-  * `-op, --ontology_path`: Path to the ontology file. Defaults to `"default"`.
-  * `-te, --ttl_extr`: Specifies whether to save search results. Choices: `"T"` or `"F"`. Defaults to `"F"`.
-  * `-tp, --ttl_path`: If saving results (`-te T`), provide the full path and filename for the output.
-
-**Example:**
-Search for the term "Chem-rxn" within the "Domain" search type.
-
-```bash
-FAIRLinked filter -t "Domain" -q "Chem-rxn"
-```
-
-Search for terms in the "Sample" Study Stage and save the results to a file.
-
-```bash
-FAIRLinked filter -t "Study Stage" -q "Sample" -te "T" -tp "/path/to/save/sample_terms.ttl"
-```
-
-### `view-domains`
-
-Display unique Domains and SubDomains from the ontology.
-
-**Usage:**
-
-```bash
-FAIRLinked view-domains
-```
-
-### `dir-make`
-
-View and make a directory tree of turtle files based on domains and subdomains.
-
-**Usage:**
-
-```bash
-FAIRLinked dir-make
-```
-
-### `add-terms`
-
-Add new terms to an existing ontology file.
-
-**Usage:**
-
-```bash
-FAIRLinked add-terms -op <PATH_TO_ONTOLOGY>
-```
-
-**Arguments:**
-
-  * `-op, --onto_file_path`: Path to the ontology file you want to modify.
-
-**Example:**
-
-```bash
-FAIRLinked add-terms -op "/path/to/my_ontology.ttl"
-```
-
-### `term-search`
-
-Search for terms by matching term labels using a fuzzy search algorithm.
-
-**Usage:**
-
-```bash
-FAIRLinked term-search
-```
-
------
-
-## RDFTableConversion Commands
-
-These commands facilitate the conversion of tabular data (CSV) to and from RDF (JSON-LD format).
-
-### `generate-template`
-
-Generate a JSON-LD template based on a CSV file.
-
-**Description:**
-This command generates a template that allows users to fill in metadata about columns in their dataframe, including units, definitions, and explanatory notes. For column labels that can be matched to a term in MDS-Onto, the definition will be pre-filled.
-
-**Usage:**
-
-```bash
-FAIRLinked generate-template -cp <CSV_PATH> -out <OUTPUT_PATH> -lp <LOG_PATH> [OPTIONS]
-```
-
-**Arguments:**
-
-  * `-cp, --csv_path`: (Required) Path to the input CSV file.
-  * `-out, --output_path`: (Required) Path to save the output JSON-LD template file.
-  * `-lp, --log_path`: (Required) Path to a directory to store log files detailing which labels were matched.
-  * `-op, --ontology_path`: Path to the ontology file. Use `"default"` for the official MDS-Onto.
-  * `-sp, --skip_prompts`: Skip the metadata prompts (flag; no value needed)
-
-**Example:**
-
-```bash
-FAIRLinked generate-template -cp "/data/experiments.csv" -out "/metadata/template.json" -lp "/logs/" -op "default"
-```
-Find an example template.jsonld in /resources
-
-**Note**
-Please make sure to follow the proper formatting guidelines for input CSV file. 
- * Each column name should be the "common" or alternative name for this object
- * The following three rows should be reserved for the **type**, **units**, and **study stage** in that order
- * if values for these are not available, the space should be left blank
- * data for each sample can then begin on the 5th row
-
- Please see the following images for reference 
- ![Full Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/fulltable.png)
-
- Minimum Viable Data
-![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/mintable.png)
-
-During the template generating process, the user may be prompted for data for different columns. When no units are detected, the user will be prompted for the type of unit, and then given a list of valid units to choose from. 
-![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/kind.png)
-![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/unit.png)
-When no study stage is detected, the user will similarly be given a list of study stages to choose from.
-![Sparse Table](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/studystage.png)
-The user will automatically be prompted for an optional notes for each column.
-
-### `serialize-data`
-
-Create a directory of JSON-LD files from a single CSV file and a metadata template.
-
-**Usage:**
-
-```bash
-FAIRLinked serialize-data -mdt <TEMPLATE_PATH> -cf <CSV_PATH> -rkc <ROW_KEY_COLS> -orc <ORCID> -of <OUTPUT_FOLDER> [OPTIONS]
-```
-
-**Arguments:**
-
-  * `-mdt, --metadata_template`: (Required) Path to the completed JSON-LD metadata template file.
-  * `-cf, --csv_file`: (Required) Path to the CSV file containing the data.
-  * `-rkc, --row_key_cols`: (Optional) Comma-separated list of column names that uniquely identify rows (e.g., `"col1,col2,col3"`).
-  * `-ic, --id_cols`: (Optional) Choose columns used to uniquely identify a specific entity, such as a sample, a sample set, tool etc...
-  * `-orc, --orcid`: (Required) ORCID identifier of the researcher (e.g., `"0000-0001-2345-6789"`).
-  * `-of, --output_folder`: (Required) Directory where the generated JSON-LD files will be saved.
-  * `-pc, --prop_col`: A Python dictionary literal defining relationships between columns.
-  * `-op, --ontology_path`: Path to the ontology file. Required if `-pc` is provided.
-  * `-base, --base_uri`: Base URI used to construct subject and object URIs.
-  * ``-l, --license``: License used, find valid licenses at https://spdx.org/licenses/.
-
-**Example:**
-
-```bash
-FAIRLinked serialize-data \
-    -mdt "/metadata/template.json" \
-    -cf "/data/experiments.csv" \
-    -rkc "SampleID,RunNumber" \
-    -orc "0000-0001-2345-6789" \
-    -of "/output/jsonld_files/"
-```
-
-find example filled out jsonlds in /resources/outdir
-
-**Example with `-pc` argument:**
-
-```bash
-FAIRLinked serialize-data \
-    -mdt "/metadata/template.json" \
-    -cf "/data/experiments.csv" \
-    -rkc "SampleID" \
-    -ic "SampleID","MeasurementID" \
-    -orc "0000-0001-2345-6789" \
-    -of "/output/jsonld_files/" \
-    -op "default" \
-    -pc '{"hasInput": [("ProcessStep", "MaterialID")], "hasOutput":[("ProcessStep", "OutputMaterialID")]}'
-```
-
-### `deserialize-data`
-
-Deserialize a directory of JSON-LD files back into a CSV file.
-
-**Usage:**
-
-```bash
-FAIRLinked deserialize-data -jd <JSONLD_DIRECTORY> -on <OUTPUT_NAME> -od <OUTPUT_DIR>
-```
-
-**Arguments:**
-
-  * `-jd, --jsonld_directory`: (Required) Directory containing the JSON-LD files.
-  * `-on, --output_name`: (Required) The base name for the output files (e.g., "my\_deserialized\_data").
-  * `-od, --output_dir`: (Required) Path to the directory where the output CSV will be saved.
-
-**Example:**
-
-```bash
-FAIRLinked deserialize-data \
-    -jd "/output/jsonld_files/" \
-    -on "reconstructed_data" \
-    -od "/data/reconstructed/"
-```
-
-An example can be found in /resources/output
-
-**Note** 
-The output CSV can be used to generate a template, or can be modified and then turned into a new template
-
------
-
-## QBWorkflow Commands
-
-Commands related to the RDF Data Cube workflow.
-
-### `data-cube-run`
-
-Start the RDF Data Cube Workflow.
-
-**Description:**
-The RDF Data Cube is a comprehensive FAIRification workflow designed for users familiar with the RDF Data Cube vocabulary. This workflow supports the creation of richly structured, multidimensional datasets that adhere to linked data best practices.
-
-**Usage:**
-
-```bash
-FAIRLinked data-cube-run
-```
-
----
-
-## ✨ New in v0.3
-
-Version 0.3 brings a major expansion of FAIRLinked's capabilities with:
-
-- ✅ **New term addition** to ontologies (`add_ontology_term.py`)
-- ✅ **Search/filter terms** in existing RDF files (`search_ontology_terms.py`)
-- ✅ **Data format conversions**: CSV ⇌ JSON-LD, RDF ⇌ Table
-- ✅ **Metadata extractors** for RDF subject-label-value triples
-- ✅ **Namespace template generators** to assist in new dataset creation
-- ✅ **Auto web scraping** to fetch the latest MDS-Onto `.ttl`, `.jsonld`, `.nt`, and `.owl` files from the official Bitbucket
-- ✅ **Robust CLI handlers** with built-in validations and retry logic
-- ✅ **Modular file outputs** including support for `.ttl`, `.jsonld`, `.owl`, `.nt`, `.csv`, `.xlsx`, `.parquet`, `.arrow`
-
-
----
-
-## Interface MDS Subpackage
-
-![InterfaceMDS](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/InterfaceMDSGitHub.png)
-
-
-```python
-import FAIRLinked.InterfaceMDS
-```
-Functions in Interface MDS allow users to interact with MDS-Onto and search for terms relevant to their domains. This includes loading MDS-Onto into an RDFLib Graph, view domains and subdomains, term search, and add new ontology terms to a local copy.
-
-### To load the latest version of MDS-Onto
-
-```python
-import FAIRLinked.InterfaceMDS.load_mds_ontology 
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-
-mds_graph = load_mds_ontology_graph()
-```
-
-### To view domains/subdomains in MDS-Onto
-
-Terms in MDS-Onto are categorized under domains and subdomains, groupings related to topic areas currently being researched at SDLE and collaborators. More information about domains and subdomains can be found [here](https://cwrusdle.bitbucket.io/).
-
-```python
-import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
-from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_viewer
-
-domain_subdomain_viewer()
-```
-
-### To view domains/subdomains tree in MDS-Onto
-
-To see domains/subdomains hierarchy in MDS-Onto, use `domain_subdomain_directory()`. 
-
-```python
-import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
-from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_directory
-
-domain_subdomain_directory()
-```
-
-This function also allows for the user to generate an actual file directory with sub-ontologies tagged only with a domain/subdomain
-
-```python
-import FAIRLinked.InterfaceMDS.load_mds_ontology 
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
-from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_directory
-
-
-mds_graph = load_mds_ontology_graph()
-domain_subdomain_directory(onto_graph=mds_graph, output_dir='path/to/output/directory')
-```
-
-### Search for terms in MDS-Onto
-
-```python
-import FAIRLinked.InterfaceMDS.rdf_subject_extractor
-from FAIRLinked.InterfaceMDS.rdf_subject_extractor import extract_subject_details
-from FAIRLinked.InterfaceMDS.rdf_subject_extractor import fuzzy_filter_subjects_strict
-import FAIRLinked.InterfaceMDS.load_mds_ontology 
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-
-
-mds_graph = load_mds_ontology_graph()
-onto_dataframe = extract_subject_details(mds_graph)
-search_results = fuzzy_filter_subjects_strict(df=onto_dataframe, keywords=["Detector"])
-
-print(search_results)
-```
-
-### Find Domain, Subdomain, and Study Stages
-
-```python
-# %%
-import FAIRLinked.InterfaceMDS.term_search_general
-from FAIRLinked.InterfaceMDS.term_search_general import term_search_general
-
-term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"])
-```
-
-Additional arguments can be put in to save the search results in a turtle file.
-
-```python
-term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"],ttl_extr=1, ttl_path='path/to/output/file')
-```
-
-### Add a new term to Ontology
-
-```python
-import rdflib
-import FAIRLinked.InterfaceMDS.add_ontology_term
-from FAIRLinked.InterfaceMDS.add_ontology_term import add_term_to_ontology
-
-add_term_to_ontology("path/to/mds-onto/file.ttl")
-```
-
-## RDF Table Conversion Subpackage
-
-![FAIRLinkedCore](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/fig2-fairlinked.png)
-
-
-```python
-import FAIRLinked.RDFTableConversion
-```
-Functions in this subpackage allow to generate a JSON-LD metadata template from a CSV with MDS-compliant terms, generate JSON-LDs filled with data and MDS semantic relationships, and then convert a directory of JSON-LDs back into tabular format. 
-
-### Generate a JSON-LD template from CSV
-
-```python
-import rdflib
-from rdflib import Graph
-import FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper
-from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import jsonld_template_generator
-
-mds_graph = Graph()
-mds_graph.parse("path/to/ontology/file")
-
-jsonld_template_generator(csv_path="path/to/data/csv", 
-                           ontology_graph=mds_graph, 
-                           output_path="path/to/output/json-ld/template", 
-                           matched_log_path="path/to/output/matched/terms", 
-                           unmatched_log_path="path/to/output/unmatched/terms",
-                           skip_prompts=False)
-
-```
-
-### Create JSON-LDs from CSVs
-
-```python
-import rdflib
-from rdflib import Graph
-import json
-import FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper
-from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import extract_data_from_csv
-
-with open("path/to/metadata/template", "r") as f:
-    metadata_template = json.load(f) 
-
-extract_data_from_csv(metadata_template=metadata_template, 
-                      csv_file="path/to/data/csv",
-                      row_key_cols=["sample_id"],
-                      id_cols=["sample_id", "measurement_id"],
-                      orcid="0000-0000-0000-0000", 
-                      output_folder="path/to/output/folder/json-lds")
-```
-
-### Create JSON-LDs with relationships between data instances
-
-```python
-import FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler
-from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import extract_data_from_csv
-import json
-import FAIRLinked.InterfaceMDS.load_mds_ontology 
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-
-
-mds_graph = load_mds_ontology_graph()
-
-with open("path/to/metadata/template", "r") as f:
-    metadata_template = json.load(f) 
-
-prop_col_pair_dict = {"name of relationship specified by rdfs:label": [("column_1", "column_2")]}
-
-extract_data_from_csv(metadata_template=metadata_template, 
-                      csv_file="path/to/csv/data",
-                      row_key_cols=["column_1", "column_3", "column_7"],
-                      id_cols=["column_1", "column_7"],
-                      orcid="0000-0000-0000-0000", 
-                      output_folder="path/to/output",
-                      prop_column_pair_dict=prop_col_pair_dict,
-                      ontology_graph=mds_graph)
-```
-
-### Turn JSON-LD directory back to CSV
-
-```python
-import rdflib
-from rdflib import Graph
-import FAIRLinked.RDFTableConversion.jsonld_batch_converter
-from FAIRLinked.RDFTableConversion.jsonld_batch_converter import jsonld_directory_to_csv
-
-jsonld_directory_to_csv(input_dir="path/to/json-ld/directory",
-                        output_basename="Name-of-CSV",
-                        output_dir="path/to/output/directory")
-```
-
-
-
-## RDF DataCube Workflow
-
-```python
-import FAIRLinked.QBWorkflow.rdf_data_cube_workflow as rdf_data_cube_workflow
-from rdf_data_cube_workflow import rdf_data_cube_workflow_start
-
-rdf_data_cube_workflow_start()
-
-```
-
-The RDF DataCube workflow turns tabular data into a format compliant with the [RDF Data Cube vocabulary](https://www.w3.org/TR/vocab-data-cube/). 
-
-
-![FAIRLinked](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/FAIRLinkedv0.2.png)
 
 ## 💡 Acknowledgments
 

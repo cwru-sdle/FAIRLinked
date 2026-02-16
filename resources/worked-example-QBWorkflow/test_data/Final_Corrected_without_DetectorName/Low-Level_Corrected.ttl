@@ -1,0 +1,154 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix mds: <https://cwrusdle.bitbucket.io/mds#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix pmdco: <https://w3id.org/pmd/co/> .
+@prefix qudt: <http://qudt.org/2.1/vocab/unit> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+mds:Ontology a owl:Ontology ;
+    rdfs:label "Low level XRD Proof of Concept Ontology" ;
+    dcterms:creator "B.P.Rajamohan",
+        "Erika I. Barcelos",
+        "Mohommad Redad Mehdi",
+        "Ozan Dernek",
+        "Quynh Tran",
+        "Roger H. French",
+        "Van Tran" ;
+    dcterms:description "Low level XRD terms that extend MDS terms which map to one of several bridge level Ontologies and eventually interface with BFO. Currenlty PMDCo interfaces with PROV-O, and this will chnage to BFO in their v3.0." ;
+    dcterms:title "Low level XRD Proof of Concept Ontology" ;
+    owl:versionInfo "0.3" .
+
+mds:characteristicOf a owl:ObjectProperty ;
+    rdfs:subPropertyOf pmdco:characteristicOf .
+
+mds:hasIdentifier a owl:ObjectProperty ;
+    rdfs:subPropertyOf pmdco:hasIdentifier .
+
+mds:value a owl:DatatypeProperty ;
+    rdfs:subPropertyOf pmdco:value .
+
+mds:unit a owl:ObjectProperty ;
+    rdfs:subPropertyOf pmdco:unit .
+
+mds:Length a owl:Class ;
+    rdfs:label "Length" .
+
+mds:Width a owl:Class ;
+    rdfs:label "Width" .
+
+mds:Laboratory a owl:Class ;
+    rdfs:label "Laboratory" .
+
+mds:Department a owl:Class ;
+    rdfs:label "Department" .
+
+mds:MeasuringDevice a owl:Class ;
+    rdfs:label "MeasuringDevice" .
+
+mds:Force a owl:Class ;
+    rdfs:label "Force" .
+
+mds:Distance a owl:Class ;
+    rdfs:label "Distance" .
+
+mds:SequenceNumber a owl:Class ;
+    rdfs:label "SequenceNumber" .
+
+mds:Metadata a owl:Class ;
+    rdfs:label "Metadata" .
+
+mds:ProjectIdentifier a owl:Class ;
+    rdfs:label "ProjectIdentifier" .
+
+mds:Identifier a owl:Class ;
+    rdfs:label "Identifier" .
+
+mds:Facility a owl:Class ;
+    rdfs:label "Facility" ;
+    rdfs:subClassOf mds:Laboratory ;
+    skos:definition "Facility where the experiment was performed." ;
+    mds:value xsd:string .
+
+mds:Station a owl:Class ;
+    rdfs:label "Station" ;
+    rdfs:subClassOf mds:Department ;
+    skos:definition "Particular beamline within the facility." ;
+    mds:value xsd:string .
+
+mds:SyncXrayDetector a owl:Class ;
+    rdfs:label "SyncXrayDetector" ;
+    rdfs:subClassOf mds:MeasuringDevice ;
+    mds:hasIdentifier mds:DetectorName ;
+    skos:definition "The detector used to capture the transmitted X-rays." .
+
+mds:PixelSize a owl:Class ;
+    rdfs:label "PixelSize" ;
+    rdfs:subClassOf mds:Length ;
+    skos:definition "Pixel size of the detector." ;
+    mds:characteristicOf mds:SyncXrayDetector ;
+    mds:unit qudt:MicroM ;
+    mds:value xsd:float .
+
+mds:DetectorLength a owl:Class ;
+    rdfs:label "DetectorLength" ;
+    rdfs:subClassOf mds:Length ;
+    mds:unit qudt:MilliM ;
+    mds:characteristicOf mds:SyncXrayDetector ;
+    skos:definition "Length of the detector." ;
+    mds:value xsd:float .
+
+mds:DetectorWidth a owl:Class ;
+    rdfs:label "DetectorWidth" ;
+    rdfs:subClassOf mds:Width ;
+    skos:definition "Width of the detector." ;
+    mds:characteristicOf mds:SyncXrayDetector ;
+    mds:unit qudt:MilliM ;
+    mds:value xsd:float .
+
+mds:Wavelength a owl:Class ;
+    rdfs:label "Wavelength" ;
+    rdfs:subClassOf mds:Length ;
+    skos:definition "The wavelength used for the experiment." ;
+    mds:unit qudt:ANGSTROM ;
+    mds:value xsd:float .
+
+mds:Energy a owl:Class ;
+    rdfs:label "Energy" ;
+    rdfs:subClassOf mds:Force ;
+    skos:definition "The energy of the incident beam." ;
+    mds:unit qudt:KiloEV ;
+    mds:value xsd:float .
+
+mds:DistanceFromSample a owl:Class ;
+    rdfs:label "DistanceFromSample" ;
+    rdfs:subClassOf mds:Distance ;
+    skos:definition "Distance of the detector from the sample." ;
+    mds:unit qudt:MilliM ;
+    mds:value xsd:float .
+
+mds:LogFile a owl:Class ;
+    rdfs:label "LogFile" ;
+    rdfs:subClassOf mds:Metadata ;
+    skos:definition "Contains log of the results." ;
+    mds:value xsd:string .
+
+mds:ImageSequence a owl:Class ;
+    rdfs:label "ImageSequence" ;
+    rdfs:subClassOf mds:SequenceNumber ;
+    skos:definition "Running sequence of the image taken." ;
+    mds:value rdf:Seq .
+
+mds:StackNumber a owl:Class ;
+    rdfs:label "StackNumber" ;
+    rdfs:subClassOf mds:ProjectIdentifier ;
+    skos:definition "The stack of the data." ;
+    mds:value xsd:integer .
+
+mds:DetectorName a owl:Class ;
+    rdfs:label "DetectorName" ;
+    rdfs:subClassOf mds:Identifier ;
+    skos:definition "Name of the detector." ;
+    mds:value xsd:string .

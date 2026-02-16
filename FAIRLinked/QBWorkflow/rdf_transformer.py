@@ -929,11 +929,11 @@ def convert_row_by_row_CRADLE(
 
         # fallback => orcid + timestamp
         if any(name_parts_file):
-            combined_file = "-".join(name_parts_file + [numeric_orcid, overall_timestamp])
+            combined_file = "_".join(name_parts_file + [numeric_orcid, overall_timestamp])
         else:
-            combined_file = f"{numeric_orcid}-{overall_timestamp}"
+            combined_file = f"{numeric_orcid}_{overall_timestamp}"
         letter = random.choice(string.ascii_lowercase)
-        combined_file = letter + "-" + combined_file
+        combined_file = letter + "_" + combined_file
         
         row_graph = create_observation_2(row=row,
                        variable_metadata=variable_metadata,
