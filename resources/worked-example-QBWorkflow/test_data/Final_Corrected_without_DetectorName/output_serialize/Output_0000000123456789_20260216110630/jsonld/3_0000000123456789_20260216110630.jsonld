@@ -1,0 +1,484 @@
+{
+  "@context": {
+    "admingeo": "http://data.ordnancesurvey.co.uk/ontology/admingeo/",
+    "brick": "https://brickschema.org/schema/Brick#",
+    "csvw": "http://www.w3.org/ns/csvw#",
+    "dc": "http://purl.org/dc/elements/1.1/",
+    "dcam": "http://purl.org/dc/dcam/",
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dcmitype": "http://purl.org/dc/dcmitype/",
+    "dct": "http://purl.org/dc/terms/",
+    "doap": "http://usefulinc.com/ns/doap#",
+    "eg": "http://example.org/ns#",
+    "ex-geo": "http://example.org/geo#",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "geo": "http://www.opengis.net/ont/geosparql#",
+    "interval": "http://reference.data.gov.uk/def/intervals/",
+    "mds": "https://cwrusdle.bitbucket.io/mds#",
+    "odrl": "http://www.w3.org/ns/odrl/2/",
+    "org": "http://www.w3.org/ns/org#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "prof": "http://www.w3.org/ns/dx/prof/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "qb": "http://purl.org/linked-data/cube#",
+    "qudt": "http://qudt.org/2.1/vocab/unit#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "schema": "https://schema.org/",
+    "sdmx-attribute": "http://purl.org/linked-data/sdmx/2009/attribute#",
+    "sdmx-code": "http://purl.org/linked-data/sdmx/2009/code#",
+    "sdmx-concept": "http://purl.org/linked-data/sdmx/2009/concept#",
+    "sdmx-dimension": "http://purl.org/linked-data/sdmx/2009/dimension#",
+    "sdmx-measure": "http://purl.org/linked-data/sdmx/2009/measure#",
+    "sdmx-metadata": "http://purl.org/linked-data/sdmx/2009/metadata#",
+    "sdmx-subject": "http://purl.org/linked-data/sdmx/2009/subject#",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "sosa": "http://www.w3.org/ns/sosa/",
+    "ssn": "http://www.w3.org/ns/ssn/",
+    "time": "http://www.w3.org/2006/time#",
+    "vann": "http://purl.org/vocab/vann/",
+    "void": "http://rdfs.org/ns/void#",
+    "wgs": "https://www.w3.org/2003/01/geo/wgs84_pos#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "mds:ImageSequence",
+      "@type": "qb:DimensionProperty",
+      "mds:category": {
+        "@id": "mds:Result"
+      },
+      "skos:altLabel": "Image Sequence Identifier"
+    },
+    {
+      "@id": "mds:observation_1",
+      "@type": "qb:Observation",
+      "mds:PixelSize": 0.55,
+      "qb:measureType": {
+        "@id": "mds:PixelSize"
+      },
+      "sdmx-attribute:unitMeasure": {
+        "@id": "qudt:MicroM"
+      }
+    },
+    {
+      "@id": "qb:measureType",
+      "@type": "qb:DimensionProperty"
+    },
+    {
+      "@id": "mds:DetectorName",
+      "@type": "qb:DimensionProperty",
+      "mds:category": {
+        "@id": "mds:Tool"
+      },
+      "skos:altLabel": "Detector Identifier"
+    },
+    {
+      "@id": "mds:ExperimentId",
+      "@type": "qb:DimensionProperty"
+    },
+    {
+      "@id": "sdmx-attribute:unitMeasure",
+      "@type": "qb:AttributeProperty"
+    },
+    {
+      "@id": "mds:category",
+      "@type": "qb:AttributeProperty"
+    },
+    {
+      "@id": "mds:observation_6",
+      "@type": "qb:Observation",
+      "mds:DistanceFromSample": 0.28,
+      "qb:measureType": {
+        "@id": "mds:DistanceFromSample"
+      },
+      "sdmx-attribute:unitMeasure": {
+        "@id": "qudt:M"
+      }
+    },
+    {
+      "@id": "mds:observation_4",
+      "@type": "qb:Observation",
+      "mds:DetectorWidth": 15.2,
+      "qb:measureType": {
+        "@id": "mds:DetectorWidth"
+      },
+      "sdmx-attribute:unitMeasure": {
+        "@id": "qudt:CentiM"
+      }
+    },
+    {
+      "@id": "mds:observation_3",
+      "@type": "qb:Observation",
+      "mds:Wavelength": 1.54,
+      "qb:measureType": {
+        "@id": "mds:Wavelength"
+      },
+      "sdmx-attribute:unitMeasure": {
+        "@id": "qudt:N-M"
+      }
+    },
+    {
+      "@id": "mds:Dataset_3_0000000123456789_20260216110630",
+      "@type": "qb:DataSet",
+      "dct:creator": "0000-0001-2345-6789",
+      "dct:title": "Dataset_3_0000000123456789_20260216110630",
+      "qb:slice": {
+        "@id": "mds:Slice_3_0000000123456789_20260216110630"
+      },
+      "qb:structure": {
+        "@id": "mds:DataStructureDefinition"
+      }
+    },
+    {
+      "@id": "mds:LogFile",
+      "@type": "qb:DimensionProperty",
+      "mds:category": {
+        "@id": "mds:Result"
+      },
+      "skos:altLabel": "Log File Name"
+    },
+    {
+      "@id": "mds:StackNumber",
+      "@type": "qb:DimensionProperty",
+      "mds:category": {
+        "@id": "mds:Result"
+      },
+      "skos:altLabel": "Stack Number"
+    },
+    {
+      "@id": "mds:DetectorWidth",
+      "@type": "qb:MeasureProperty",
+      "mds:category": {
+        "@id": "mds:Recipe"
+      },
+      "skos:altLabel": "Detector Width"
+    },
+    {
+      "@id": "mds:Station",
+      "@type": "qb:DimensionProperty",
+      "mds:category": {
+        "@id": "mds:Tool"
+      },
+      "skos:altLabel": "Experimental Station"
+    },
+    {
+      "@id": "mds:PixelSize",
+      "@type": "qb:MeasureProperty",
+      "mds:category": {
+        "@id": "mds:Recipe"
+      },
+      "skos:altLabel": "Pixel Size"
+    },
+    {
+      "@id": "mds:SliceKey_3_0000000123456789_20260216110630",
+      "@type": "qb:SliceKey",
+      "qb:componentProperty": [
+        {
+          "@id": "mds:ExperimentId"
+        },
+        {
+          "@id": "mds:LogFile"
+        },
+        {
+          "@id": "mds:ImageSequence"
+        },
+        {
+          "@id": "mds:StackNumber"
+        },
+        {
+          "@id": "mds:SyncXrayDetector"
+        },
+        {
+          "@id": "mds:Station"
+        },
+        {
+          "@id": "mds:Facility"
+        },
+        {
+          "@id": "mds:DetectorName"
+        },
+        {
+          "@id": "mds:FileName"
+        }
+      ]
+    },
+    {
+      "@id": "mds:Facility",
+      "@type": "qb:DimensionProperty",
+      "mds:category": {
+        "@id": "mds:Tool"
+      },
+      "skos:altLabel": "Research Facility"
+    },
+    {
+      "@id": "mds:DataStructureDefinition",
+      "@type": "qb:DataStructureDefinition",
+      "qb:component": [
+        {
+          "@id": "_:N8fe6141bb928492eace838f765e66718"
+        },
+        {
+          "@id": "_:Na46a7047af5846f98df1c88308b492f7"
+        },
+        {
+          "@id": "_:Nebee451cf66a4a768cd9a2b176e477a1"
+        },
+        {
+          "@id": "_:Ndd0f3652486746899862e4f6772db184"
+        },
+        {
+          "@id": "_:Ne16daeae81c2488b995aba9bd096eea3"
+        },
+        {
+          "@id": "_:N9ff37423b1574b25a5356a44e66f0485"
+        },
+        {
+          "@id": "_:Nc6150e68b9584886992a9a0e3e244e87"
+        },
+        {
+          "@id": "_:N0a54b6e91953403794a4c207e971cb04"
+        },
+        {
+          "@id": "_:Nc1fc86b8ebf44db981ce398d3e881e94"
+        },
+        {
+          "@id": "_:N2fb6e1ffdd554c8c8489253426c797a7"
+        },
+        {
+          "@id": "_:Ne48cd2aa8f7e4946b7f49354dff404c8"
+        },
+        {
+          "@id": "_:Nd1b6a843bd784f9f91d1c5cf01ecbeb8"
+        },
+        {
+          "@id": "_:Nb8ff142837e5497ab61ae28a50f9a05a"
+        },
+        {
+          "@id": "_:Nfc7ef1186e7f4dac8eb1fe581b20171b"
+        },
+        {
+          "@id": "_:N9d653657056349a1ad60ebaf7c077980"
+        },
+        {
+          "@id": "_:N21c3060edd8d4aa6b18283db4bf0578b"
+        },
+        {
+          "@id": "_:Nd8ce65aaae8949f884eae98d8e644193"
+        },
+        {
+          "@id": "_:Na66d1872fff541c88dfc08b203960a9d"
+        }
+      ]
+    },
+    {
+      "@id": "_:N8fe6141bb928492eace838f765e66718",
+      "qb:measure": {
+        "@id": "mds:Wavelength"
+      }
+    },
+    {
+      "@id": "_:Na46a7047af5846f98df1c88308b492f7",
+      "qb:measure": {
+        "@id": "mds:PixelSize"
+      }
+    },
+    {
+      "@id": "_:Nebee451cf66a4a768cd9a2b176e477a1",
+      "qb:dimension": {
+        "@id": "mds:ImageSequence"
+      }
+    },
+    {
+      "@id": "_:Ndd0f3652486746899862e4f6772db184",
+      "qb:measure": {
+        "@id": "mds:Energy"
+      }
+    },
+    {
+      "@id": "_:Ne16daeae81c2488b995aba9bd096eea3",
+      "qb:dimension": {
+        "@id": "mds:FileName"
+      }
+    },
+    {
+      "@id": "_:N9ff37423b1574b25a5356a44e66f0485",
+      "qb:dimension": {
+        "@id": "mds:DetectorName"
+      }
+    },
+    {
+      "@id": "_:Nc6150e68b9584886992a9a0e3e244e87",
+      "qb:dimension": {
+        "@id": "mds:Facility"
+      }
+    },
+    {
+      "@id": "_:N0a54b6e91953403794a4c207e971cb04",
+      "qb:dimension": {
+        "@id": "mds:Station"
+      }
+    },
+    {
+      "@id": "_:Nc1fc86b8ebf44db981ce398d3e881e94",
+      "qb:dimension": {
+        "@id": "mds:LogFile"
+      }
+    },
+    {
+      "@id": "_:N2fb6e1ffdd554c8c8489253426c797a7",
+      "qb:dimension": {
+        "@id": "qb:measureType"
+      }
+    },
+    {
+      "@id": "_:Ne48cd2aa8f7e4946b7f49354dff404c8",
+      "qb:measure": {
+        "@id": "mds:DetectorLength"
+      }
+    },
+    {
+      "@id": "_:Nd1b6a843bd784f9f91d1c5cf01ecbeb8",
+      "qb:dimension": {
+        "@id": "mds:SyncXrayDetector"
+      }
+    },
+    {
+      "@id": "_:Nb8ff142837e5497ab61ae28a50f9a05a",
+      "qb:attribute": {
+        "@id": "mds:category"
+      }
+    },
+    {
+      "@id": "_:Nfc7ef1186e7f4dac8eb1fe581b20171b",
+      "qb:measure": {
+        "@id": "mds:DetectorWidth"
+      }
+    },
+    {
+      "@id": "_:N9d653657056349a1ad60ebaf7c077980",
+      "qb:attribute": {
+        "@id": "sdmx-attribute:unitMeasure"
+      }
+    },
+    {
+      "@id": "_:N21c3060edd8d4aa6b18283db4bf0578b",
+      "qb:dimension": {
+        "@id": "mds:ExperimentId"
+      }
+    },
+    {
+      "@id": "_:Nd8ce65aaae8949f884eae98d8e644193",
+      "qb:measure": {
+        "@id": "mds:DistanceFromSample"
+      }
+    },
+    {
+      "@id": "_:Na66d1872fff541c88dfc08b203960a9d",
+      "qb:dimension": {
+        "@id": "mds:StackNumber"
+      }
+    },
+    {
+      "@id": "mds:Slice_3_0000000123456789_20260216110630",
+      "@type": "qb:Slice",
+      "mds:DetectorName": "Detector_C",
+      "mds:ExperimentId": 3,
+      "mds:Facility": "Facility_Z",
+      "mds:FileName": "Image_003.jpg",
+      "mds:ImageSequence": "IMG_SEQ_03",
+      "mds:LogFile": "log_2024_003",
+      "mds:StackNumber": "STACK_03",
+      "mds:Station": "Station_C",
+      "mds:SyncXrayDetector": "Yes",
+      "qb:observation": [
+        {
+          "@id": "mds:observation_1"
+        },
+        {
+          "@id": "mds:observation_2"
+        },
+        {
+          "@id": "mds:observation_3"
+        },
+        {
+          "@id": "mds:observation_4"
+        },
+        {
+          "@id": "mds:observation_5"
+        },
+        {
+          "@id": "mds:observation_6"
+        }
+      ],
+      "qb:sliceStructure": {
+        "@id": "mds:SliceKey_3_0000000123456789_20260216110630"
+      }
+    },
+    {
+      "@id": "mds:Wavelength",
+      "@type": "qb:MeasureProperty",
+      "mds:category": {
+        "@id": "mds:Recipe"
+      }
+    },
+    {
+      "@id": "mds:observation_5",
+      "@type": "qb:Observation",
+      "mds:Energy": 12.5,
+      "qb:measureType": {
+        "@id": "mds:Energy"
+      },
+      "sdmx-attribute:unitMeasure": {
+        "@id": "qudt:KiloEV"
+      }
+    },
+    {
+      "@id": "mds:SyncXrayDetector",
+      "@type": "qb:DimensionProperty",
+      "mds:category": {
+        "@id": "mds:Tool"
+      },
+      "skos:altLabel": "Synchronize X-ray Detector"
+    },
+    {
+      "@id": "mds:DistanceFromSample",
+      "@type": "qb:MeasureProperty",
+      "mds:category": {
+        "@id": "mds:Recipe"
+      },
+      "skos:altLabel": "Distance from Sample"
+    },
+    {
+      "@id": "mds:DetectorLength",
+      "@type": "qb:MeasureProperty",
+      "mds:category": {
+        "@id": "mds:Recipe"
+      },
+      "skos:altLabel": "Detector Length"
+    },
+    {
+      "@id": "mds:Energy",
+      "@type": "qb:MeasureProperty",
+      "mds:category": {
+        "@id": "mds:Recipe"
+      }
+    },
+    {
+      "@id": "mds:FileName",
+      "@type": "qb:DimensionProperty"
+    },
+    {
+      "@id": "mds:observation_2",
+      "@type": "qb:Observation",
+      "mds:DetectorLength": 10.2,
+      "qb:measureType": {
+        "@id": "mds:DetectorLength"
+      },
+      "sdmx-attribute:unitMeasure": {
+        "@id": "qudt:CentiM"
+      }
+    }
+  ]
+}

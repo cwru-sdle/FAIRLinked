@@ -1,0 +1,16 @@
+Naming Conventions for ROW-BY-ROW Mode
+--------------------------------------
+Root folder: Output_0000000123456789_20260216110630
+
+We produce subfolders 'ttl', 'jsonld', 'hash'.
+
+Each row => separate qb:DataSet => mds:Dataset_{anyApprovedIDs}_{orcidDigits}_{timestamp}
+           plus a qb:Slice => mds:Slice_{anyApprovedIDs}_{orcidDigits}_{timestamp}
+           and a qb:SliceKey => mds:SliceKey_{anyApprovedIDs}_{orcidDigits}_{timestamp}
+
+Output filenames per row:
+   {anyApprovedIDs}_{orcidDigits}_{timestamp}.ttl
+   {anyApprovedIDs}_{orcidDigits}_{timestamp}.jsonld
+   {anyApprovedIDs}_{orcidDigits}_{timestamp}.jsonld.sha256
+
+Where {anyApprovedIDs} are user-approved ID columns, e.g. 'ExperimentId'.

@@ -568,7 +568,7 @@ def extract_from_folder(
     """
 
     os.makedirs(output_base_folder, exist_ok=True)
-    orcid = orcid.replace("-", "")
+    # orcid = orcid.replace("-", "")
 
     if (license):
         write_license_triple(output_base_folder, base_uri, license)

@@ -931,7 +931,7 @@ def convert_row_by_row_CRADLE(
         if any(name_parts_file):
             combined_file = "-".join(name_parts_file + [numeric_orcid, overall_timestamp])
         else:
-            combined_file = f"{numeric_orcid}-{overall_timestamp}"
+            combined_file = f"{numeric_orcid}_{overall_timestamp}"
         letter = random.choice(string.ascii_lowercase)
         combined_file = letter + "-" + combined_file
         
