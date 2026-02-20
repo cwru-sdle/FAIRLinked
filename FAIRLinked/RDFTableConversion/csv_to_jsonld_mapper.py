@@ -315,14 +315,14 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
                     bindings[binding] = bindings_dict[binding]
 
                 definition = str(match["definition"]) if match else "Definition not available"
-                study_stage = match["study_stage"][0].value if match else "Study stage information not available"
+                study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
                
         else: #csv included type:
             binding, iri_fragment = typ.split(":")
             if(binding == "mds"):
                 #if term in mds ontology, get study stage and def from ontologyt
                 definition = str(match["definition"]) if match else "Definition not available"
-                study_stage = match["study_stage"][0].value if match else "Study stage information not available"
+                study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
             else:
                 definition = "Definition not available"
                 study_stage = df.loc[2,col] #try to get study stage from csv
