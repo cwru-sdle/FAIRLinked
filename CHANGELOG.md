@@ -52,10 +52,10 @@ FAIRLinked filter -t <SEARCH_TYPES> -q <QUERY_TERM> [OPTIONS]
   * `-tp, --ttl_path`: If saving results (`-te T`), provide the full path and filename for the output.
 
 **Example:**
-Search for the term "Chem-rxn" within the "Domain" search type.
+Search for the term "Chem-rxn" within the "SubDomain" search type.
 
 ```bash
-FAIRLinked filter -t "Domain" -q "Chem-rxn"
+FAIRLinked filter -t "SubDomain" -q "Chem-rxn"
 ```
 
 Search for terms in the "Sample" Study Stage and save the results to a file.

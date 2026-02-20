@@ -47,4 +47,4 @@ FAIRLinked deserialize-data \
 ```
 
 
-You can compare your generated files with the examples in the /ex folder
+You can compare your generated files with the examples in the resources folder
