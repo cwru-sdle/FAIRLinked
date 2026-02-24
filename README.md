@@ -60,7 +60,7 @@ pip install .
 
 ## ⏰ Quick Start
 
-This section provides example runs of the serialization and deserialization processes. All example files can be found in the GitHub repository of `FAIRLinked` under `resources` or can be directly accessed [here](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/resources). Command-line version of the functions below can be found [here](https://github.com/cwru-sdle/FAIRLinked/blob/main/resources/CLI_Examples.md) and in [change log](https://github.com/cwru-sdle/FAIRLinked/blob/main//CHANGELOG.md).
+This section provides example runs of the serialization and deserialization processes. All example files can be found in the GitHub repository of `FAIRLinked` under `resources` or can be directly accessed [here](https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/resources). Command-line version of the functions below can be found [here](https://github.com/cwru-sdle/FAIRLinked/blob/main/resources/CLI_Examples.md) and in [updates](https://github.com/cwru-sdle/FAIRLinked/blob/main/UPDATES.md).
 
 ### Serializing and deserializing with RDFTableConversion
 
@@ -133,10 +133,11 @@ extract_data_from_csv(metadata_template=metadata_template,
                       row_key_cols=["Measurement", "Sample"],
                       id_cols=["Measurement", "Sample"],
                       prop_column_pair_dict=prop_col_pair_dict,
-                      ontology_graph=mds_graph)
+                      ontology_graph=mds_graph,
+                      license="CC0-1.0")
 ```
 
-The arguments `row_key_cols`, `id_cols`, `prop_column_pair_dict`, and `ontology_graph` are all optional arguments. `row_key_cols` identify columns in which concatenation of values create row keys which are used to identify the columns, while `id_cols` are columns whose value specify identifiers of unique entities which must be kept track across multiple rows. `prop_column_pair_dict` is a Python dictionary specifying the object properties or data properties which will be used in the resulting RDF graph and the instances connected by those properties. Finally, `ontology_graph` is a required argument if `prop_column_pair_dict` is provided, and this is the source of the properties available to the user. 
+The arguments `row_key_cols`, `id_cols`, `prop_column_pair_dict`, and `ontology_graph` are all optional arguments. `row_key_cols` identify columns in which concatenation of values create row keys which are used to identify the columns, while `id_cols` are columns whose value specify identifiers of unique entities which must be kept track across multiple rows. `prop_column_pair_dict` is a Python dictionary specifying the object properties or data properties which will be used in the resulting RDF graph and the instances connected by those properties. Finally, `ontology_graph` is a required argument if `prop_column_pair_dict` is provided, and this is the source of the properties available to the user. The `license` argument is an optional argument. If not provided, the function defaults to the permissive public domain license (CC0-1.0). For a list of available licenses see https://spdx.org/licenses/.
 
 To view the list of properties in MDS-Onto, run the following script:
 

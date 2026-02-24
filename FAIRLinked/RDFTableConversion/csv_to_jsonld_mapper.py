@@ -264,6 +264,8 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
 
     # Load all possible bindings 
     bindings_dict = {prefix: str(namespace) for prefix, namespace in ontology_graph.namespaces()}
+    if "mds" not in bindings_dict:
+        bindings_dict["mds"] = "https://cwrusdle.bitbucket.io/mds/"
 
     matched_log = []
     unmatched_log = []
@@ -274,7 +276,7 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
     jsonld = {
         "@context": {
             "qudt": "http://qudt.org/schema/qudt/",
-            "mds": "https://cwrusdle.bitbucket.io/mds#",
+            "mds": "https://cwrusdle.bitbucket.io/mds/",
             "skos": "http://www.w3.org/2004/02/skos/core#",
             "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
             "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
