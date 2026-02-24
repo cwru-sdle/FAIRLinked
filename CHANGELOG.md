@@ -1,3 +1,8 @@
+# 0.3.2.9
+
+Update documentation for clearer instructions on how to specify `prop_column_pair_dict`.
+Fix link to `resources` folder
+
 
 # 0.3.2.8
 
