@@ -15,4 +15,5 @@ FAIRLinked documentation
    installation
    quick-start
    user-guide
+   command-line
    FAIRLinked
