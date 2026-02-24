@@ -1,0 +1,292 @@
+{
+  "@context": {
+    "qudt": "http://qudt.org/schema/qudt/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "xsd": "http://www.example.org/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "unit": "https://qudt.org/vocab/unit/"
+  },
+  "@graph": [
+    {
+      "@id": "mds:Measurement",
+      "@type": "mds:Measurement",
+      "skos:altLabel": "MeasurementID",
+      "skos:definition": "Chemical analysis carried out on the sample.",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:44:21.628824-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Analysis"
+    },
+    {
+      "@id": "mds:SampleID",
+      "@type": "mds:SampleID",
+      "skos:altLabel": "SampleID",
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:44:31.144426-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "mds:PolymerGrade",
+      "@type": "mds:PolymerGrade",
+      "skos:altLabel": "PolymerGrade",
+      "skos:definition": "Classification of polymer to define composition, purity, and properties",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:44:39.420027-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "mds:ExposureStep",
+      "@type": "mds:ExposureStep",
+      "skos:altLabel": "ExposureStep",
+      "skos:definition": "The step count of the exposure.",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:44:43.227880-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:ExposureType",
+      "@type": "mds:ExposureType",
+      "skos:altLabel": "ExposureType",
+      "skos:definition": "The type of exposure e.g. damp heat, cyclic UV, outdoors, modified damp heat (mDH) or modified damp heat+full light spectrum (mDH+FSL).",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:44:46.738153-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:MeasurementNumber",
+      "@type": "mds:MeasurementNumber",
+      "skos:altLabel": "MeasurementNumber",
+      "skos:definition": "",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:44:50.311264-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Result"
+    },
+    {
+      "@id": "mds:Hardness",
+      "@type": "mds:Hardness",
+      "skos:altLabel": "Hardness (GPa)",
+      "skos:definition": "Hardness is a mechanical property of a material that indicates resistance to indentation; indicates stiffness. ",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:PA"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:45:34.844939-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "mds:VickersHardness",
+      "@type": "mds:VickersHardness",
+      "skos:altLabel": "VickersHardness",
+      "skos:definition": " ",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:PA"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:45:55.779997-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "mds:YoungModulus",
+      "@type": "mds:YoungModulus",
+      "skos:altLabel": "YoungModulus",
+      "skos:definition": " ",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:M2-PER-SEC2"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:47:57.727077-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "mds:unexposedexposed",
+      "@type": "mds:unexposedexposed",
+      "skos:altLabel": "Unexposed/Exposed",
+      "skos:definition": "Definition not available",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:52:28.106758-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:loadnewton",
+      "@type": "mds:loadnewton",
+      "skos:altLabel": "Load (Newton)",
+      "skos:definition": "Definition not available",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:N"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:52:59.904668-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:RegionMeasured",
+      "@type": "mds:RegionMeasured",
+      "skos:altLabel": "RegionMeasured",
+      "skos:definition": "",
+      "qudt:value": [
+        {
+          "@value": ""
+        }
+      ],
+      "qudt:hasUnit": {
+        "@id": "unit:UNITLESS"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2025-12-15T15:53:05.967098-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    }
+  ]
+}

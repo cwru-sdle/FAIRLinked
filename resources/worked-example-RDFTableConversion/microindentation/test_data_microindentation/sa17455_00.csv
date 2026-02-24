@@ -1,0 +1,11 @@
+Measurement,Sample,PolymerGrade,ExposureStep,ExposureType,MeasurementNumber,Hardness (GPa),VickersHardness,YoungModulus,Unexposed/Exposed,Load (Newton),RegionMeasured
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+sa17455_00-08-08-01,sa17455_00,UVT,08,CQUV,01,,15.61,1.983,Exposed,2,Non-Cracked
+sa17455_00-08-08-02,sa17455_00,UVT,08,CQUV,02,,20.29,2.23,Exposed,2,Non-Cracked
+sa17455_00-08-08-03,sa17455_00,UVT,08,CQUV,03,0.221,,2.25,Exposed,2,Non-Cracked
+sa17455_00-08-08-04,sa17455_00,UVT,08,CQUV,04,0.16,,1.676,Exposed,2,Non-Cracked
+sa17455_00-08-08-05,sa17455_00,UVT,08,CQUV,05,0.16,15.14,1.605,Exposed,2,Cracked
+sa17455_00-08-08-06,sa17455_00,UVT,08,CQUV,06,0.155,14.64,1.57,Exposed,2,Cracked
+sa17455_00-08-08-07,sa17455_00,UVT,08,CQUV,07,0.215,20.27,1.92,Exposed,2,Cracked

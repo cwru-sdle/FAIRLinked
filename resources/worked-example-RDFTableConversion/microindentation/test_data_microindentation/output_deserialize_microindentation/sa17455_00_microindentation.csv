@@ -1,0 +1,11 @@
+__Label__,ExposureStep,ExposureType,Hardness (GPa),Load (Newton),MeasurementID,MeasurementNumber,PolymerGrade,RegionMeasured,SampleID,Unexposed/Exposed,VickersHardness,YoungModulus,__rowkey__
+Type,mds:ExposureStep,mds:ExposureType,mds:Hardness,mds:loadnewton,mds:Measurement,mds:measurementnumber,mds:polymergrade,mds:regionmeasured,mds:SampleID,mds:unexposedexposed,mds:VickersHardness,mds:YoungModulus,
+Units,{'@id': 'unit:UNITLESS'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:GigaPA'},{'@id': 'unit:N'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:UNITLESS'},{'@id': 'unit:PA'},
+Study Stage,Recipe,Recipe,Sample,Recipe,Analysis,Recipe,Sample,Recipe,Sample,Recipe,Sample,Sample,
+1,8.0,CQUV,0.215,2.0,sa17455_00-08-08-07,7.0,UVT,Cracked,sa17455_00,Exposed,20.27,1.92,mds:VickersHardness.AN919470_SA766611_REC465090_0009000843550543-20251121T173811Z
+2,8.0,CQUV,0.155,2.0,sa17455_00-08-08-06,6.0,UVT,Cracked,sa17455_00,Exposed,14.64,1.57,mds:SampleID.AN477027_SA114261_REC120877_0009000843550543-20251121T173811Z
+3,8.0,CQUV,0.221,2.0,sa17455_00-08-08-03,3.0,UVT,Non-Cracked,sa17455_00,Exposed,20.86,2.25,mds:measurementnumber.AN275164_SA448678_REC771532_0009000843550543-20251121T173811Z
+4,8.0,CQUV,0.165,2.0,sa17455_00-08-08-01,1.0,UVT,Non-Cracked,sa17455_00,Exposed,15.61,1.983,mds:YoungModulus.AN655608_SA200296_REC396461_0009000843550543-20251121T173810Z
+5,8.0,CQUV,0.215,2.0,sa17455_00-08-08-02,2.0,UVT,Non-Cracked,sa17455_00,Exposed,20.29,2.23,mds:ExposureType.AN522873_SA855660_REC520488_0009000843550543-20251121T173811Z
+6,8.0,CQUV,0.16,2.0,sa17455_00-08-08-05,5.0,UVT,Cracked,sa17455_00,Exposed,15.14,1.605,mds:loadnewton.AN297518_SA101718_REC975827_0009000843550543-20251121T173811Z
+7,8.0,CQUV,0.16,2.0,sa17455_00-08-08-04,4.0,UVT,Non-Cracked,sa17455_00,Exposed,15.27,1.676,mds:Measurement.AN874821_SA456231_REC416452_0009000843550543-20251121T173811Z
