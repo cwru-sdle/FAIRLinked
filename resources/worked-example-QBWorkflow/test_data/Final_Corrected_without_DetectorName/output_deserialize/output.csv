@@ -1,0 +1,6 @@
+ExperimentId,FileName,DetectorLength,DetectorWidth,DistanceFromSample,Energy,PixelSize,Wavelength,ImageSequence,LogFile,StackNumber,DetectorName,Facility,Station,SyncXrayDetector
+1,Image_001.jpg,10.0,15.0,0.25,12.4,0.5,1.54,IMG_SEQ_01,log_2024_001,STACK_01,Detector_A,Facility_X,Station_A,Yes
+2,Image_002.jpg,10.5,15.5,0.3,12.6,0.6,1.54,IMG_SEQ_02,log_2024_002,STACK_02,Detector_B,Facility_Y,Station_B,No
+3,Image_003.jpg,10.2,15.2,0.28,12.5,0.55,1.54,IMG_SEQ_03,log_2024_003,STACK_03,Detector_C,Facility_Z,Station_C,Yes
+4,Image_004.jpg,10.3,15.3,0.29,12.55,0.58,1.54,IMG_SEQ_04,log_2024_004,STACK_04,Detector_D,Facility_X,Station_D,No
+5,Image_005.jpg,10.1,15.1,0.27,12.45,0.52,1.54,IMG_SEQ_05,log_2024_005,STACK_05,Detector_E,Facility_Y,Station_E,Yes

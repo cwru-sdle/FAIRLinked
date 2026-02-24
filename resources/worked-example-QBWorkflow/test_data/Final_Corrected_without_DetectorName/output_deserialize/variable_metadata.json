@@ -1,0 +1,119 @@
+{
+  "Wavelength": {
+    "IsMeasure": "Yes",
+    "AltLabel": null,
+    "Category": "Recipe",
+    "Unit": [
+      "http://qudt.org/2.1/vocab/unit#N-M"
+    ],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#Wavelength"
+  },
+  "ImageSequence": {
+    "IsMeasure": "No",
+    "AltLabel": "Image Sequence Identifier",
+    "Category": "Result",
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#ImageSequence"
+  },
+  "Energy": {
+    "IsMeasure": "Yes",
+    "AltLabel": null,
+    "Category": "Recipe",
+    "Unit": [
+      "http://qudt.org/2.1/vocab/unit#KiloEV"
+    ],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#Energy"
+  },
+  "DistanceFromSample": {
+    "IsMeasure": "Yes",
+    "AltLabel": "Distance from Sample",
+    "Category": "Recipe",
+    "Unit": [
+      "http://qudt.org/2.1/vocab/unit#M"
+    ],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#DistanceFromSample"
+  },
+  "SyncXrayDetector": {
+    "IsMeasure": "No",
+    "AltLabel": "Synchronize X-ray Detector",
+    "Category": "Tool",
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#SyncXrayDetector"
+  },
+  "DetectorName": {
+    "IsMeasure": "No",
+    "AltLabel": "Detector Identifier",
+    "Category": "Tool",
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#DetectorName"
+  },
+  "FileName": {
+    "IsMeasure": "No",
+    "AltLabel": null,
+    "Category": null,
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#FileName"
+  },
+  "StackNumber": {
+    "IsMeasure": "No",
+    "AltLabel": "Stack Number",
+    "Category": "Result",
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#StackNumber"
+  },
+  "PixelSize": {
+    "IsMeasure": "Yes",
+    "AltLabel": "Pixel Size",
+    "Category": "Recipe",
+    "Unit": [
+      "http://qudt.org/2.1/vocab/unit#MicroM"
+    ],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#PixelSize"
+  },
+  "Facility": {
+    "IsMeasure": "No",
+    "AltLabel": "Research Facility",
+    "Category": "Tool",
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#Facility"
+  },
+  "LogFile": {
+    "IsMeasure": "No",
+    "AltLabel": "Log File Name",
+    "Category": "Result",
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#LogFile"
+  },
+  "ExperimentId": {
+    "IsMeasure": "No",
+    "AltLabel": null,
+    "Category": null,
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#ExperimentId"
+  },
+  "Station": {
+    "IsMeasure": "No",
+    "AltLabel": "Experimental Station",
+    "Category": "Tool",
+    "Unit": [],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#Station"
+  },
+  "DetectorLength": {
+    "IsMeasure": "Yes",
+    "AltLabel": "Detector Length",
+    "Category": "Recipe",
+    "Unit": [
+      "http://qudt.org/2.1/vocab/unit#CentiM"
+    ],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#DetectorLength"
+  },
+  "DetectorWidth": {
+    "IsMeasure": "Yes",
+    "AltLabel": "Detector Width",
+    "Category": "Recipe",
+    "Unit": [
+      "http://qudt.org/2.1/vocab/unit#CentiM"
+    ],
+    "ExistingURI": "https://cwrusdle.bitbucket.io/mds#DetectorWidth"
+  }
+}

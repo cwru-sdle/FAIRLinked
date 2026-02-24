@@ -129,10 +129,5 @@ htmlcov/
 prof/
 profile_default/
 ipython_config.py
-*.xls
-*.xlsx
 *.swp
 *.swo
-*.parquet
-*.csv
-*.json
