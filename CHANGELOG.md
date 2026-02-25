@@ -2,6 +2,8 @@
 
 Update documentation for clearer instructions on how to specify `prop_column_pair_dict`.
 Fix link to `resources` folder
+Fix deserialization functions
+In input prompts for QBWorkflow, change 'ORC_ID' to 'ORCID iD'
 
 
 # 0.3.2.8

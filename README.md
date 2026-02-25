@@ -58,6 +58,12 @@ pip install .
 
 ---
 
+# 👀 Public Datasets
+
+[PMMA (poly(methyl methacrylate)) dataset](https://doi.org/10.17605/OSF.IO/9HPGW) generated using FAIRLinked. 
+
+---
+
 ## ⏰ Quick Start
 
 This section provides example runs of the serialization and deserialization processes. All example files can be found in the GitHub repository of `FAIRLinked` under `resources` or can be directly accessed [here](https://github.com/cwru-sdle/FAIRLinked/blob/main/resources). Command-line version of the functions below can be found [here](https://github.com/cwru-sdle/FAIRLinked/blob/main/resources/CLI_Examples.md) and in [updates](https://github.com/cwru-sdle/FAIRLinked/blob/main/UPDATES.md).
@@ -232,7 +238,7 @@ Do you have data for CRADLE ingestion? (yes/no): no
 Next, you will be prompted for a namespace template (which contains a mapping of all the prefixes to the proper namespace in the serialized files), your filled-out data file, and the path to output the serialized files.
 
 ```text
-Enter ORC_ID: 0000-0001-2345-6789 
+Enter ORCID iD: 0000-0001-2345-6789 
 Enter the path to the namespace Excel file: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/namespace_template.xlsx
 Enter the path to the data Excel file: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/mock_xrd_data.xlsx
 Enter the path to the output folder: resources/worked-example-QBWorkflow/test_data/Final_Corrected_without_DetectorName/output_serialize

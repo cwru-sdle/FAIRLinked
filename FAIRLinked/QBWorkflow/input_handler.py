@@ -74,11 +74,11 @@ def get_orcid() -> str:
 
     while True:
         try:
-            orcid = input("Enter ORC_ID: ").strip()
+            orcid = input("Enter ORCID iD: ").strip()
             if not orcid:
-                raise ValueError("ORC_ID cannot be empty. Please enter a valid ORC_ID.")
+                raise ValueError("ORCID iD cannot be empty. Please enter a valid ORCID iD.")
             if not validate_orcid_format(orcid):
-                raise ValueError("Invalid ORC_ID format. Please enter a valid ORC_ID.")
+                raise ValueError("Invalid ORCID iD format. Please enter a valid ORCID iD.")
             return orcid
         except ValueError as e:
             print(e)
