@@ -28,38 +28,46 @@ def hash6(s):
     return six_digit
 
 def extract_row_from_jsonld(data: dict, filename: str):
-    """
-    Extracts a single row of data from a JSON-LD object.
+    row, fair_types, units, study_stages = {}, {}, {}, {}
+    id_to_label = {} # This is our "Bridge"
+    graph = data.get("@graph", [])
 
-    Args:
-        data (dict): JSON-LD data parsed as dictionary.
-        filename (str): Name of the file the data came from.
+    # PASS 1: Identify "What" each column is
+    for item in graph:
+        label = item.get("skos:altLabel", "").strip()
+        if label:
+            node_id = item.get("@id")
+            id_to_label[node_id] = label
+            
+            # Store metadata
+            fair_types[label] = item.get("@type", "")
+            unit = item.get("qudt:hasUnit", "")
+            units[label] = unit.get("@id", "") if isinstance(unit, dict) else str(unit)
+            study_stages[label] = item.get("mds:hasStudyStage", "")
 
-    Returns:
-        tuple: (row_values, fair_types, units) as dictionaries.
-    """
-    row = {}
-    fair_types = {}
-    units = {}
-    study_stages = {}
+    # PASS 2: Find "How much" (the actual data)
+    for item in graph:
+        node_id = item.get("@id")
+        # Look up if this ID belongs to one of our discovered labels
+        label = id_to_label.get(node_id)
+        
+        if label:
+            val = item.get("qudt:value")
+            # Handle the @value nesting and potential lists
+            if isinstance(val, dict):
+                val = val.get("@value", "")
+            elif isinstance(val, list):
+                # If you want the whole list in one cell:
+                val = [v.get("@value", v) if isinstance(v, dict) else v for v in val]
+            
+            # Only update if there is a value (don't overwrite with empty)
+            if val is not None and val != "":
+                row[label] = val
 
-    for item in data.get("@graph", []):
-        alt_label = item.get("skos:altLabel", "").strip()
-        if not alt_label:
-            continue
-
-        value = item.get("qudt:value", "")
-        fair_type = item.get("@type", "")
-        unit = item.get("qudt:hasUnit", [])
-        sstage = item.get("mds:hasStudyStage", "")
-
-
-        row[alt_label] = value
-        fair_types[alt_label] = fair_type
-        units[alt_label] = unit
-        study_stages[alt_label] = sstage
-
+    # Final logic to ensure columns exist
     row["__source_file__"] = filename
+    for label in fair_types.keys():
+        row.setdefault(label, "")
     fair_types["__source_file__"] = ""
     units["__source_file__"] = ""
     study_stages["__source_file__"] = ""
@@ -95,7 +103,7 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
                 with open(path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 row, fair_types, units, study_stages = extract_row_from_jsonld(data, filename)
-                key = graph_entry = data.get('@graph', [])[0].get("mds:row","")
+                key = next((item.get("mds:row") for item in data.get("@graph", []) if "mds:row" in item), "")
                 row_keys.append(key)
                 data_rows.append(row)
                 fair_type_rows.append(fair_types)
@@ -134,7 +142,6 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
  
     # Add row keys
     df_with_headers["__rowkey__"] = row_keys
-                    
 
 
     # Define output paths
@@ -142,9 +149,11 @@ def jsonld_directory_to_csv(input_dir: str, output_basename: str = "merged_outpu
     parquet_path = os.path.join(output_dir, f"{output_basename}.parquet")
     arrow_path = os.path.join(output_dir, f"{output_basename}.arrow")
 
+    df_storage = df.astype(str)
+
     # Save outputs
     df_with_headers.to_csv(csv_path, index=False)
-    df.to_parquet(parquet_path, index=False)
-    df.to_feather(arrow_path)
+    df_storage.to_parquet(parquet_path, index=False)
+    df_storage.to_feather(arrow_path)
 
     print(f"\n✅ Output files saved to:\n- {csv_path}\n- {parquet_path}\n- {arrow_path}")

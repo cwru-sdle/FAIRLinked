@@ -28,7 +28,7 @@ Development Installation
 
     git clone https://github.com/cwru-sdle/FAIRLinked
     cd FAIRLinked
-    pip install -e
+    pip install e .
 
 
 
