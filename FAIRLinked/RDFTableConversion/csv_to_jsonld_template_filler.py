@@ -226,7 +226,7 @@ def extract_data_from_csv(
                     subject_uri = f"mds:{localname}.{entity_identifier}"
                 else:
                     subject_uri = f"mds:{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
-                item["@id"] = subject_uri
+                item["@id"] = URIRef(subject_uri)
                 subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
                 if "prov:generatedAtTime" in item:
@@ -246,8 +246,11 @@ def extract_data_from_csv(
             g = Graph(identifier=URIRef(f"{base_uri}{full_row_key}{idx}"))
             g.parse(data=json.dumps(jsonld_data), format="json-ld")
             QUDT = Namespace("http://qudt.org/schema/qudt/")
+            MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+            g.bind("mds", MDS)
             g.bind("qudt", QUDT)
             g.bind("dcterms", DCTERMS)
+
 
             #separate jsonld not needed
             #write_license_triple(output_folder, base_uri, license_uri)
@@ -313,8 +316,19 @@ def extract_data_from_csv(
             # Save the RDF graph to file
             random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
             output_file = os.path.join(output_folder, f"{random_suffix}-{full_row_key}.jsonld")
-            g.serialize(destination=output_file, format="json-ld", context=context, indent=2)
-            results.append(g)
+            # g.serialize(destination=output_file, format="json-ld", context=context, indent=2, auto_compact=True, encoding='utf-8')
+            raw_jsonld = g.serialize(format="json-ld", context=context)
+            clean_graph = Graph()
+            clean_graph.parse(data=raw_jsonld, format='json-ld')
+            clean_graph.serialize(
+                destination=output_file, 
+                format="json-ld", 
+                context=context, 
+                indent=2, 
+                auto_compact=True,
+                encoding="utf-8"
+                )
+            results.append(clean_graph)
 
         except Exception as e:
             warnings.warn(f"Error processing row {idx} with key {row_key if 'row_key' in locals() else 'N/A'}: {e}")

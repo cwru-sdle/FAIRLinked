@@ -1,3 +1,8 @@
+# 0.3.2.10
+
+Fix node duplication
+Fix inability to serialize numpy float objects
+
 # 0.3.2.9
 
 Update documentation for clearer instructions on how to specify `prop_column_pair_dict`.
