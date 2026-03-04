@@ -66,6 +66,10 @@ def sample_ontology_graph():
     g.add((dt_prop, RDF.type, OWL.DatatypeProperty))
     g.add((dt_prop, RDFS.label, Literal("has age")))
 
+    dt_prop_2 = ex.hasName
+    g.add((dt_prop_2, RDF.type, OWL.DatatypeProperty))
+    g.add((dt_prop_2, RDFS.label, Literal("has name")))
+
     return g
 
 
@@ -190,12 +194,12 @@ def complex_sample_csv(tmp_path):
     # Row 3: Study Stage
     # Row 3+: Data
     content = (
-        "Value1,AgeColumn,FriendColumn\n"
-        "ex:Sample,ex:hasAge,ex:hasFriend\n"
-        "unit,yr,name\n"
-        "Sample,Tool,Recipe\n"
-        "SampleA,25,SampleB\n"
-        "SampleB,30,SampleA\n"
+        "Value1,AgeColumn,FriendColumn,Value1Name\n"
+        "ex:Sample,ex:hasAge,ex:hasFriend,ex:hasName\n"
+        "unit,yr,name,unitless\n"
+        "Sample,Tool,Recipe,Tool\n"
+        "SampleA,25,SampleB,Thomas\n"
+        "SampleB,30,SampleA,Frank\n"
     )
     csv_path.write_text(content)
     return csv_path
@@ -214,7 +218,8 @@ def test_extract_data_with_complex_properties(
     # "has friend" is an Object Property in our sample_ontology_graph
     prop_dict = {
         "has age": [("Value1", "AgeColumn")],
-        "has friend": [("Value1", "FriendColumn")]
+        "has friend": [("Value1", "FriendColumn")],
+        "has name": [("Value1", "Value1Name")]
     }
 
     results = extract_data_from_csv(
@@ -245,6 +250,17 @@ def test_extract_data_with_complex_properties(
             assert str(o) in ["25", "30"]
     assert age_found, "Datatype Property 'has age' was not found in the graph"
 
+    # ---- Check Datatype Property (Name) ---
+    # We expect (SampleB, ex:hasName, Thomas)
+    name_found = False
+    for g in results:
+        for s, p, o in g.triples((None, EX.hasName, None)):
+            name_found = True
+            assert isinstance(o, Literal)
+            # Ensure the object is a URI, not just a string literal
+            assert str(o) in ['Thomas', 'Frank']
+    assert name_found, "Datatype Property 'has name' was not found in the graph"
+
     # --- Check Object Property (Friend) ---
     # We expect (SampleA, ex:hasFriend, SampleB_URI)
     friend_found = False
@@ -255,6 +271,7 @@ def test_extract_data_with_complex_properties(
             # Ensure the object is a URI, not just a string literal
             assert "http" in str(o)
     assert friend_found, "Object Property 'has friend' was not found in the graph"
+
 
 
 
