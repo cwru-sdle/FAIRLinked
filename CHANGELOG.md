@@ -1,3 +1,7 @@
+# 0.3.2.13
+
+Force numpy data type to python type but make an exception for strings
+
 # 0.3.2.12
 
 Force numpy data types to python types
