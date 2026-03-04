@@ -1,0 +1,143 @@
+{
+  "@context": {
+    "qudt": "http://qudt.org/schema/qudt/",
+    "mds": "https://cwrusdle.bitbucket.io/mds/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "cco": "https://www.commoncoreontologies.org/",
+    "unit": "https://qudt.org/vocab/unit/"
+  },
+  "@graph": [
+    {
+      "@id": "mds:XraySample",
+      "@type": "mds:XraySample",
+      "skos:altLabel": "Sample",
+      "skos:definition": "A specimen used for X-ray based experiments.",
+      "qudt:hasUnit": {
+        "@id": "unit:celsius"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2026-03-04T12:41:15.494074-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "recipe",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:ChemicalFormula",
+      "@type": "mds:ChemicalFormula",
+      "skos:altLabel": "chemical_formula",
+      "skos:definition": "A chemical formula is a set of chemical symbols showing the elements present in a compound and their relative proportions.",
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2026-03-04T12:41:15.494628-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "p",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "mds:ProcessingMethod",
+      "@type": "mds:ProcessingMethod",
+      "skos:altLabel": "processing_method",
+      "skos:definition": "The manufacturing method by which the sample was created.",
+      "qudt:hasUnit": {
+        "@id": "unit:celsius"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2026-03-04T12:41:15.495029-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "recipe",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "cco:ont00000607",
+      "@type": "cco:ont00000607",
+      "skos:altLabel": "sample_depth",
+      "skos:definition": "Definition not available",
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2026-03-04T12:41:15.502274-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "p",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    },
+    {
+      "@id": "mds:SampleID",
+      "@type": "mds:SampleID",
+      "skos:altLabel": "sample_id",
+      "skos:definition": "Controls response time of the feedback loop; can dramatically affect the image quality and dependent on both the duration and magnitude of the error signal.",
+      "qudt:hasUnit": {
+        "@id": "unit:celsius"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2026-03-04T12:41:15.502671-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "recipe",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Sample"
+    },
+    {
+      "@id": "cco:ont00000738",
+      "@type": "cco:ont00000738",
+      "skos:altLabel": "sample_length",
+      "skos:definition": "Definition not available",
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2026-03-04T12:41:15.510010-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "p",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Formulation"
+    },
+    {
+      "@id": "cco:ont00000324",
+      "@type": "cco:ont00000324",
+      "skos:altLabel": "sample_width",
+      "skos:definition": "Definition not available",
+      "qudt:hasUnit": {
+        "@id": "unit:IN"
+      },
+      "prov:generatedAtTime": {
+        "@value": "2026-03-04T12:41:15.516809-05:00",
+        "@type": "xsd:dateTime"
+      },
+      "skos:note": {
+        "@value": "p",
+        "@language": "en"
+      },
+      "mds:hasStudyStage": "Recipe"
+    }
+  ]
+}

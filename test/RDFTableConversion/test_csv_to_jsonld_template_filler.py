@@ -40,7 +40,7 @@ def sample_metadata_template():
 
 @pytest.fixture
 def test_template():
-    path = "test/test_data/out.jsonld" 
+    path = "./test/test_data/out.jsonld" 
     with open(path, "r") as f:
         metadata_template = json.load(f)
         return metadata_template
@@ -48,7 +48,7 @@ def test_template():
 @pytest.fixture
 def sample_csv(tmp_path):
     
-    return "test/test_data/XRD_data_demo_valid.csv"
+    return "./test/test_data/XRD_data_demo_valid.csv"
 
 
 @pytest.fixture
@@ -179,7 +179,7 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
     assert data["@context"].get("dcterms") == "http://purl.org/dc/terms/"
 
     assert any((None,DCTERMS.license , None) in g for g in results), \
-        "skos:altLabel missing in memory graph"
+        "Missing license information"
 
 
 

@@ -189,7 +189,7 @@ def extract_data_from_csv(
                         raise ValueError("Missing skos:altLabel in template")
                     col = item["skos:altLabel"]
                     studystage = item["mds:hasStudyStage"]
-                    val = df.at[idx,col].item()
+                    val = df.at[idx,col]
 
                     if studystage not in keys:
                         keys[studystage] = [val]
@@ -221,7 +221,7 @@ def extract_data_from_csv(
 
                 prefix, localname = item["@type"].split(":")
                 if id_cols is not None and item["skos:altLabel"] in id_cols:
-                    raw_identifier = row.get(item["skos:altLabel"]).item()
+                    raw_identifier = row.get(item["skos:altLabel"])
                     if not raw_identifier:
                         raise ValueError(f"Cannot find entity identifier in row {idx}")
                     entity_identifier = re.sub(r'[^a-zA-Z0-9_\-\.]', '', raw_identifier)
@@ -327,9 +327,8 @@ def extract_data_from_csv(
                 destination=output_file, 
                 format="json-ld", 
                 context=context, 
-                indent=2, 
-                auto_compact=True,
-                encoding="utf-8"
+                indent=2,
+                auto_compact=True
                 )
             results.append(clean_graph)
 

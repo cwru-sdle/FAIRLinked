@@ -45,7 +45,7 @@ setup(
             'pytest-cov'
         ]
     },
-    python_requires='>=3.9.18',
+    python_requires='>=3.10.0',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: BSD License',
