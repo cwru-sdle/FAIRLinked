@@ -155,6 +155,8 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
         license=license_input
     )
 
+    base_uri = "https://cwrusdle.bitbucket.io/mds/"
+
     if 'base_uri' not in locals():
         base_uri = "https://cwrusdle.bitbucket.io/mds/"
 
@@ -171,7 +173,7 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
     
     # Top-level context present
     assert "@context" in data
-    assert data["@context"].get("mds") == base_uri.rstrip("/") + "#"
+    assert data["@context"].get("mds") == base_uri
     assert data["@context"].get("dcterms") == "http://purl.org/dc/terms/"
 
     assert any((None,DCTERMS.license , None) in g for g in results), \
