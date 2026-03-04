@@ -181,6 +181,22 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
     assert any((None,DCTERMS.license , None) in g for g in results), \
         "Missing license information"
 
+@pytest.fixture
+def complex_sample_csv(tmp_path):
+    csv_path = tmp_path / "complex_data.csv"
+    # Row 0: Header
+    # Row 1: Units (skipped by iloc[3:])
+    # Row 2: Ontology types (skipped by iloc[3:])
+    # Row 3+: Data
+    content = (
+        "Value1,AgeColumn,FriendColumn\n"
+        "unit,yr,name\n"
+        "ex:Sample,ex:hasAge,ex:hasFriend\n"
+        "SampleA,25,SampleB\n"
+        "SampleB,30,SampleA\n"
+    )
+    csv_path.write_text(content)
+    return csv_path
 
 def test_extract_data_with_complex_properties(
     sample_metadata_template, 
@@ -212,7 +228,7 @@ def test_extract_data_with_complex_properties(
     # Basic assertions
     assert len(results) == 2  # Two data rows
     jsonld_files = list(output_dir.glob("*.jsonld"))
-    assert len(jsonld_files) > 0
+    assert len(jsonld_files) == 2
 
     EX = Namespace("http://example.org/")
     
