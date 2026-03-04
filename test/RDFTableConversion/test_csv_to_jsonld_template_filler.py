@@ -66,6 +66,10 @@ def sample_ontology_graph():
     g.add((dt_prop, RDF.type, OWL.DatatypeProperty))
     g.add((dt_prop, RDFS.label, Literal("has age")))
 
+    dt_prop_2 = ex.hasName
+    g.add((dt_prop_2, RDF.type, OWL.DatatypeProperty))
+    g.add((dt_prop_2, RDFS.label, Literal("has name")))
+
     return g
 
 
@@ -181,7 +185,92 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
     assert any((None,DCTERMS.license , None) in g for g in results), \
         "Missing license information"
 
+@pytest.fixture
+def complex_sample_csv(tmp_path):
+    csv_path = tmp_path / "complex_data.csv"
+    # Row 0: Header
+    # Row 1: Ontology types
+    # Row 1: Units
+    # Row 3: Study Stage
+    # Row 3+: Data
+    content = (
+        "Value1,AgeColumn,FriendColumn,Value1Name\n"
+        "ex:Sample,ex:hasAge,ex:hasFriend,ex:hasName\n"
+        "unit,yr,name,unitless\n"
+        "Sample,Tool,Recipe,Tool\n"
+        "SampleA,25,SampleB,Thomas\n"
+        "SampleB,30,SampleA,Frank\n"
+    )
+    csv_path.write_text(content)
+    return csv_path
 
+def test_extract_data_with_complex_properties(
+    sample_metadata_template, 
+    complex_sample_csv, 
+    tmp_path, 
+    sample_ontology_graph
+):
+    output_dir = tmp_path / "output_complex"
+    output_dir.mkdir()
+
+    # Define the property mapping
+    # "has age" is a Datatype Property in our sample_ontology_graph
+    # "has friend" is an Object Property in our sample_ontology_graph
+    prop_dict = {
+        "has age": [("Value1", "AgeColumn")],
+        "has friend": [("Value1", "FriendColumn")],
+        "has name": [("Value1", "Value1Name")]
+    }
+
+    results = extract_data_from_csv(
+        metadata_template=sample_metadata_template,
+        csv_file=str(complex_sample_csv),
+        orcid="0009-0008-4355-0543",
+        output_folder=str(output_dir),
+        row_key_cols=["Value1"],
+        prop_column_pair_dict=prop_dict,
+        ontology_graph=sample_ontology_graph
+    )
+
+    # Basic assertions
+    assert len(results) == 2  # Two data rows
+    jsonld_files = list(output_dir.glob("*.jsonld"))
+    assert len(jsonld_files) == 2
+
+    EX = Namespace("http://example.org/")
+    
+    # --- Check Datatype Property (Age) ---
+    # We expect (SampleA, ex:hasAge, 25)
+    age_found = False
+    for g in results:
+        for s, p, o in g.triples((None, EX.hasAge, None)):
+            age_found = True
+            assert isinstance(o, Literal)
+            # Check if it caught one of our ages from the CSV
+            assert str(o) in ["25", "30"]
+    assert age_found, "Datatype Property 'has age' was not found in the graph"
+
+    # ---- Check Datatype Property (Name) ---
+    # We expect (SampleB, ex:hasName, Thomas)
+    name_found = False
+    for g in results:
+        for s, p, o in g.triples((None, EX.hasName, None)):
+            name_found = True
+            assert isinstance(o, Literal)
+            # Ensure the object is a URI, not just a string literal
+            assert str(o) in ['Thomas', 'Frank']
+    assert name_found, "Datatype Property 'has name' was not found in the graph"
+
+    # --- Check Object Property (Friend) ---
+    # We expect (SampleA, ex:hasFriend, SampleB_URI)
+    friend_found = False
+    for g in results:
+        for s, p, o in g.triples((None, EX.hasFriend, None)):
+            friend_found = True
+            assert isinstance(o, URIRef)
+            # Ensure the object is a URI, not just a string literal
+            assert "http" in str(o)
+    assert friend_found, "Object Property 'has friend' was not found in the graph"
 
 
 

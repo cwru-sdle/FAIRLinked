@@ -1,3 +1,7 @@
+# 0.3.2.13
+
+Deal with numpy data types for when user wants to use datatype properties to connect from instances to literals
+
 # 0.3.2.12
 
 Force numpy data types to python types

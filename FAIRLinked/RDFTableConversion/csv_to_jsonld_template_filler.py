@@ -295,8 +295,10 @@ def extract_data_from_csv(
                         subj_uri = subject_lookup.get(alt_label)
                         if not subj_uri:
                             continue
-
-                        obj_val = row[obj_col].item()
+                        
+                        obj_val = row[obj_col]
+                        if hasattr(obj_val, 'item'):
+                            obj_val = obj_val.item()
                         if pd.isna(obj_val):
                             continue
 
