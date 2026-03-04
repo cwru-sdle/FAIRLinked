@@ -159,6 +159,8 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
 
     if 'base_uri' not in locals():
         base_uri = "https://cwrusdle.bitbucket.io/mds/"
+    else:
+        base_uri = locals()['base_uri']
 
 
     # Check that results is a list of RDF graphs
