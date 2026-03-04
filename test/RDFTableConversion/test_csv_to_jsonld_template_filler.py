@@ -185,13 +185,15 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
 def complex_sample_csv(tmp_path):
     csv_path = tmp_path / "complex_data.csv"
     # Row 0: Header
-    # Row 1: Units (skipped by iloc[3:])
-    # Row 2: Ontology types (skipped by iloc[3:])
+    # Row 1: Ontology types
+    # Row 1: Units
+    # Row 3: Study Stage
     # Row 3+: Data
     content = (
         "Value1,AgeColumn,FriendColumn\n"
-        "unit,yr,name\n"
         "ex:Sample,ex:hasAge,ex:hasFriend\n"
+        "unit,yr,name\n"
+        "Sample,Tool,Recipe\n"
         "SampleA,25,SampleB\n"
         "SampleB,30,SampleA\n"
     )
