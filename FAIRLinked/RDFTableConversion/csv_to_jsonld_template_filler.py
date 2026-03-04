@@ -9,6 +9,7 @@ import warnings
 from datetime import datetime
 import uuid
 import pandas as pd
+import numpy as np
 from rdflib import Graph, URIRef, Literal, Namespace, XSD
 from rdflib.namespace import RDF, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
@@ -262,7 +263,9 @@ def extract_data_from_csv(
                 if alt_label in row:
                     g.remove((subj_uri, QUDT.value, None))
                     if pd.notna(row[alt_label]) and row[alt_label] != "":
-                        data_value = row[alt_label].item()
+                        data_value = row[alt_label]
+                        if hasattr(data_value, 'item'):
+                            data_value = data_value.item()
                         g.add((subj_uri, QUDT.value, Literal(data_value, datatype=XSD.string)))
                     else:
                         print(f"Skipping NA value for {alt_label} on row {idx} with row key {row_key}")
