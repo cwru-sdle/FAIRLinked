@@ -182,7 +182,61 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
         "Missing license information"
 
 
+def test_extract_data_with_complex_properties(
+    sample_metadata_template, 
+    complex_sample_csv, 
+    tmp_path, 
+    sample_ontology_graph
+):
+    output_dir = tmp_path / "output_complex"
+    output_dir.mkdir()
 
+    # Define the property mapping
+    # "has age" is a Datatype Property in our sample_ontology_graph
+    # "has friend" is an Object Property in our sample_ontology_graph
+    prop_dict = {
+        "has age": [("Value1", "AgeColumn")],
+        "has friend": [("Value1", "FriendColumn")]
+    }
+
+    results = extract_data_from_csv(
+        metadata_template=sample_metadata_template,
+        csv_file=str(complex_sample_csv),
+        orcid="0009-0008-4355-0543",
+        output_folder=str(output_dir),
+        row_key_cols=["Value1"],
+        prop_column_pair_dict=prop_dict,
+        ontology_graph=sample_ontology_graph
+    )
+
+    # Basic assertions
+    assert len(results) == 2  # Two data rows
+    jsonld_files = list(output_dir.glob("*.jsonld"))
+    assert len(jsonld_files) > 0
+
+    EX = Namespace("http://example.org/")
+    
+    # --- Check Datatype Property (Age) ---
+    # We expect (SampleA, ex:hasAge, 25)
+    age_found = False
+    for g in results:
+        for s, p, o in g.triples((None, EX.hasAge, None)):
+            age_found = True
+            assert isinstance(o, Literal)
+            # Check if it caught one of our ages from the CSV
+            assert str(o) in ["25", "30"]
+    assert age_found, "Datatype Property 'has age' was not found in the graph"
+
+    # --- Check Object Property (Friend) ---
+    # We expect (SampleA, ex:hasFriend, SampleB_URI)
+    friend_found = False
+    for g in results:
+        for s, p, o in g.triples((None, EX.hasFriend, None)):
+            friend_found = True
+            assert isinstance(o, URIRef)
+            # Ensure the object is a URI, not just a string literal
+            assert "http" in str(o)
+    assert friend_found, "Object Property 'has friend' was not found in the graph"
 
 
 
