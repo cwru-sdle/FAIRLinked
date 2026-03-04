@@ -4,7 +4,6 @@ import pandas as pd
 from tqdm import tqdm
 import traceback
 import hashlib
-import re
 
 def hash6(s):
     """
