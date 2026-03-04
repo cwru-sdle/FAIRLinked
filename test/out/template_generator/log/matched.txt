@@ -1,6 +1,0 @@
-Sample => XraySample
-chemical_formula => ChemicalFormula
-processing_method => ProcessingMethod
-sample_depth => ont00000607
-sample_id => SampleID
-sample_width => ont00000324
