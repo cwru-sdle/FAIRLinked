@@ -29,7 +29,7 @@ setup(
     },
     packages=find_packages(),
     install_requires=[
-        'rdflib>=7.0.0',
+        'rdflib>=7.6.0',
         'typing-extensions>=4.0.0',
         'pyarrow>=11.0.0',
         'openpyxl>=3.0.0',
@@ -58,5 +58,7 @@ setup(
         'console_scripts': [
             'FAIRLinked=FAIRLinked.cli.__main__:main',
         ],
-    }
+    },
+    package_data={'FAIRLinked.helper_data': ['*.json', '*.jsonld']},
+    include_package_data=True
 )

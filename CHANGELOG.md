@@ -1,3 +1,9 @@
+# 0.3.2.11
+
+Update rdflib dependency
+Fix license path problem
+Fix xsd namespace
+
 # 0.3.2.10
 
 Fix node duplication

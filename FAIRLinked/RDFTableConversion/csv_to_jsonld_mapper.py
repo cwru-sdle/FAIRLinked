@@ -281,9 +281,10 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
             "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
             "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
             "owl": "http://www.w3.org/2002/07/owl#",
-            "xsd": "http://www.example.org/",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
             "prov": "http://www.w3.org/ns/prov#",
-            "dcterms": "http://purl.org/dc/terms/"      
+            "dcterms": "http://purl.org/dc/terms/",
+            "cco": "https://www.commoncoreontologies.org/"      
         },
         "@graph": []
     }
