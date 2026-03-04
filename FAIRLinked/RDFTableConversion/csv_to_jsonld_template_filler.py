@@ -15,12 +15,18 @@ from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 from .csv_to_jsonld_mapper import normalize
-import FAIRLinked.helper_data
+import FAIRLinked.helper_data as helper_data
 import importlib.resources as pkg_resources
 import traceback
 import hashlib
 import requests
 import logging
+from importlib import resources
+
+def load_licenses():
+    with resources.files(helper_data).joinpath("licenseinfo.json").open() as f:
+        spdx_data = json.load(f)
+    return spdx_data
 
 def hash6(s):
     """
@@ -147,8 +153,8 @@ def extract_data_from_csv(
         # Load SPDX license list
 
 
-        with open("FAIRLinked/helper_data/licenseinfo.json") as f:
-            spdx_data = json.load(f)
+
+        spdx_data = load_licenses()
 
         valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
 
@@ -465,7 +471,7 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
         ```json
         {
           "@context": {
-            "mds": "https://cwrusdle.bitbucket.io/mds#",
+            "mds": "https://cwrusdle.bitbucket.io/mds/",
             "dcterms": "http://purl.org/dc/terms/"
           },
           "@id": "mds:Dataset",
@@ -482,8 +488,7 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
         # Load SPDX license list
         
 
-        with open("FAIRLinked/helper_data/licenseinfo.json", "r") as f:
-            spdx_data = json.load(f)
+        spdx_data = load_licenses()
 
         valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
 
@@ -503,18 +508,18 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
 
     # Create RDF graph
     g = Graph()
-    mds = Namespace(base_uri.rstrip("/") + "#")
-    g.bind("mds", mds)
+    MDS = Namespace(base_uri)
+    g.bind("mds", MDS)
     g.bind("dcterms", DCTERMS)
 
-    g.add((mds.Dataset, DCTERMS.license, URIRef(license_uri)))
+    g.add((MDS.Dataset, DCTERMS.license, URIRef(license_uri)))
 
     # Serialize to JSON-LD (expanded form)
     jsonld_data = json.loads(g.serialize(format="json-ld"))
 
     # Define desired context
     context = {
-        "mds": str(mds),
+        "mds": str(MDS),
         "dcterms": str(DCTERMS)
     }
 
