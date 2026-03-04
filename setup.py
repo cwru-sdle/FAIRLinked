@@ -33,7 +33,7 @@ setup(
         'typing-extensions>=4.0.0',
         'pyarrow>=11.0.0',
         'openpyxl>=3.0.0',
-        'pandas>=1.0.0',
+        'pandas>=2.3.0',
         'cemento>=0.6.1',
         'fuzzysearch>=0.8.0',
         'tqdm>=4.0.0',
@@ -45,7 +45,7 @@ setup(
             'pytest-cov'
         ]
     },
-    python_requires='>=3.9.18',
+    python_requires='>=3.10.0',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: BSD License',
@@ -59,6 +59,6 @@ setup(
             'FAIRLinked=FAIRLinked.cli.__main__:main',
         ],
     },
-    package_data={'FAIRLinked.helper_data': ['*.json', '*.jsonld']},
+    package_data={'FAIRLinked.helper_data': ['*.json']},
     include_package_data=True
 )

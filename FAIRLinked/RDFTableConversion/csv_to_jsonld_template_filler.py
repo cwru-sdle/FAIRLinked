@@ -10,17 +10,14 @@ from datetime import datetime
 import uuid
 import pandas as pd
 import numpy as np
-from rdflib import Graph, URIRef, Literal, Namespace, XSD, BNode
-from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
+from rdflib import Graph, URIRef, Literal, Namespace, XSD
+from rdflib.namespace import RDF, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
 from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-from .csv_to_jsonld_mapper import normalize
 import FAIRLinked.helper_data as helper_data
-import importlib.resources as pkg_resources
 import traceback
 import hashlib
 import requests
-import logging
 from importlib import resources
 
 def load_licenses():
@@ -266,7 +263,10 @@ def extract_data_from_csv(
                 if alt_label in row:
                     g.remove((subj_uri, QUDT.value, None))
                     if pd.notna(row[alt_label]) and row[alt_label] != "":
-                        g.add((subj_uri, QUDT.value, Literal(row[alt_label], datatype=XSD.string)))
+                        data_value = row[alt_label]
+                        if hasattr(data_value, 'item'):
+                            data_value = data_value.item()
+                        g.add((subj_uri, QUDT.value, Literal(data_value, datatype=XSD.string)))
                     else:
                         print(f"Skipping NA value for {alt_label} on row {idx} with row key {row_key}")
                     g.add((subj_uri, rowpredicate, Literal(row_key[:-1]) ))
@@ -296,7 +296,7 @@ def extract_data_from_csv(
                         if not subj_uri:
                             continue
 
-                        obj_val = row[obj_col]
+                        obj_val = row[obj_col].item()
                         if pd.isna(obj_val):
                             continue
 
@@ -330,9 +330,8 @@ def extract_data_from_csv(
                 destination=output_file, 
                 format="json-ld", 
                 context=context, 
-                indent=2, 
-                auto_compact=True,
-                encoding="utf-8"
+                indent=2,
+                auto_compact=True
                 )
             results.append(clean_graph)
 

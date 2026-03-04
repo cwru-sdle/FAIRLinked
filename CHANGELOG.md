@@ -1,3 +1,7 @@
+# 0.3.2.12
+
+Force numpy data types to python types
+
 # 0.3.2.11
 
 Update rdflib dependency

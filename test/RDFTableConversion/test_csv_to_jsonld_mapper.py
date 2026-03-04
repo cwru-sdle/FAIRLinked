@@ -145,7 +145,7 @@ def test_jsonld_template_generator(sample_csv, standard_mock_kinds):
     mock_inputs = ['temperature', 'celsius', 'recipe', 'p'] * 12
 
     data = sample_csv 
-    out = 'test/out/template_generator/out/out.jsonld'
+    out = 'test/out/template_generator/out/out.json'
     matched = 'test/out/template_generator/log/matched.txt'
     unmatched = 'test/out/template_generator/log/unmatched.txt'
     op = load_mds_ontology_graph()
@@ -166,7 +166,7 @@ def test_template_generator_with_extracted_units(tmp_path, sample_ontology_graph
     bindings_dict = {prefix: str(namespace) for prefix, namespace in graph.namespaces()}
 
     data = sample_csv #'../fairlinked/data/xrd_mock_data/XRD_data_demo_valid.csv'
-    out =  tmp_path / "test/out/template_generator/out/out.jsonld"
+    out =  tmp_path / "test/out/template_generator/out/out.json"
     matched = tmp_path / "test/out/template_generator/log/matched.txt"
     unmatched = tmp_path / "test/out/template_generator/log/matched.txt"
     op = sample_ontology_graph
