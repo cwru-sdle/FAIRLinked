@@ -44,7 +44,7 @@ class MatDatSciDf:
             mapping or pre-allocating metadata for the dataset.
         metadata_obj (MatDatSciDf.Metadata): The internal manager handling the 
             RDFLib Graph and JSON-LD template synchronization.
-        data_relations (MatDatSciDf.DataRelationDict): The internal manager for 
+        data_relations (MatDatSciDf.DataRelationsDict): The internal manager for 
             defining semantic links (Object/Datatype properties) between columns.
         orcid (str): Validated ORCID iD of the data curator.
         orcid_verified (bool): Boolean status of curator identity verification.
@@ -148,7 +148,7 @@ class MatDatSciDf:
         if data_relations_dict is None:
             data_relations_dict = {}
 
-        self.data_relations = self.DataRelationDict(prop_col_pair_dict=data_relations_dict)
+        self.data_relations = self.DataRelationsDict(prop_col_pair_dict=data_relations_dict)
         self.metadata_obj = self.Metadata(metadata_template=self.metadata_template)
         
 
@@ -182,16 +182,16 @@ class MatDatSciDf:
         Prints a formatted list of all semantic relations available in the ontology.
 
         This is a helper method for users to discover which properties can be 
-        used in a DataRelationDict to link columns together.
+        used in a DataRelationsDict to link columns together.
         """
 
         view_all_props = self.get_relations()
         for key, value in view_all_props.items():
             print(f"{key}: {value}")
 
-    #### DATA RELATION DICTIONARY OBJECT #####
+    #### DATA RELATIONS DICTIONARY OBJECT #####
 
-    class DataRelationDict:
+    class DataRelationsDict:
         """
         Manages semantic relationships between DataFrame columns for RDF serialization.
 
@@ -207,7 +207,7 @@ class MatDatSciDf:
 
         def __init__(self, prop_col_pair_dict: dict):
             """
-            Initializes the DataRelationDict with optional starting relations.
+            Initializes the DataRelationsDict with optional starting relations.
 
             Args:
                 prop_col_pair_dict (dict): Initial mapping of properties to column pairs. 
@@ -218,7 +218,7 @@ class MatDatSciDf:
             self.prop_pair_dict = prop_col_pair_dict
 
 
-        def add_relation(self, data_relations: dict, ontology_graph: Graph, onto_props: dict):
+        def add_relations(self, data_relations: dict, ontology_graph: Graph, onto_props: dict):
             """
             Merges new column relationships into the dictionary with ontology validation.
 
@@ -263,9 +263,13 @@ class MatDatSciDf:
 
             print(f"✅ Integrated {len(data_relations)} property groups into the relation dictionary.")
 
-        def validate_data_relations(self, df: pd.DataFrame, ontology_graph: Graph, onto_props: dict, df_name: Optional[str] = "DataFrame") -> bool:
+        def validate_data_relations(self, 
+                                    df: pd.DataFrame, 
+                                    ontology_graph: Graph, 
+                                    onto_props: dict, 
+                                    df_name: Optional[str] = "DataFrame") -> bool:
             """
-            Validates the DataRelationDict against the DataFrame and the Ontology.
+            Validates the DataRelationsDict against the DataFrame and the Ontology.
 
             This method ensures that:
             1. Every property key used can be resolved (via rdfs:label, CURIE, or full URI).
@@ -326,7 +330,7 @@ class MatDatSciDf:
                             all_valid = False
 
             if all_valid:
-                print("✅ DataRelationDict is valid and ready for serialization.")
+                print("✅ DataRelationsDict is valid and ready for serialization.")
             else:
                 print("🛑 Validation failed. Please fix the errors listed above.")
 
@@ -368,7 +372,7 @@ class MatDatSciDf:
                             will be skipped, which may result in false-negative errors for prefixed properties.
                         """
                 if not self.prop_pair_dict:
-                    print("No relations defined in this DataRelationDict.")
+                    print("No relations defined in this DataRelationsDict.")
                     return
 
                 # Prepare validation sets
@@ -450,11 +454,11 @@ class MatDatSciDf:
 
     ### DATA RELATIONS DICT WRAPPER ###
     
-    def add_relation(self, data_relations: dict):
+    def add_relations(self, data_relations: dict):
         data_rel_obj = self.data_relations
         onto_graph = self.ontology
         onto_props = self.get_relations()
-        data_rel_obj.add_relation(data_relations=data_relations, 
+        data_rel_obj.add_relations(data_relations=data_relations, 
                                 ontology_graph=onto_graph, 
                                 onto_props=onto_props)
 
@@ -466,7 +470,7 @@ class MatDatSciDf:
 
     def view_data_relations(self):
         """
-        Displays a visual validation report for the provided DataRelationDict.
+        Displays a visual validation report for the provided DataRelationsDict.
         """
         self.data_relations.print_data_relations(
             df=self.df, 
@@ -501,7 +505,10 @@ class MatDatSciDf:
             UNIT (rdflib.Namespace): Namespace for QUDT unit individuals.
         """
 
-        def __init__(self, metadata_template, matched_log: Optional[list] = None, unmatched_log: Optional[list] = None):
+        def __init__(self, 
+                    metadata_template: dict, 
+                    matched_log: Optional[list] = None, 
+                    unmatched_log: Optional[list] = None):
             """
             Initializes the Metadata manager and parses the template into an RDF graph.
 
@@ -644,7 +651,12 @@ class MatDatSciDf:
                 print(f"⚠️ Field '{field}' is not a recognized field. Try: {list(field_map.keys())}")
 
 
-        def add_column_metadata(self, col_name: str, rdf_type: str, unit: str = "UNITLESS", definition: str = "No definition provided", study_stage: str = "UNK"):
+        def add_column_metadata(self, 
+                                col_name: str, 
+                                rdf_type: str, 
+                                unit: str = "UNITLESS", 
+                                definition: str = "No definition provided", 
+                                study_stage: str = "UNK"):
             """
             Manually adds a new column definition to the metadata template.
             
@@ -1041,38 +1053,42 @@ class MatDatSciDf:
                     write_files: Optional[bool] = True) -> list[Graph]:
 
         """
-        Serializes each row of the DataFrame into individual RDF files based on the provided metadata template.
+        Serializes each row of the DataFrame into individual RDF files using the 
+        active semantic metadata template.
 
-        This method iterates through the DataFrame, generates a unique row key (using either 
-        specified columns or a hash of study-stage data), and maps CSV values to RDF subjects 
-        defined in the Metadata object. It also handles object and datatype property relationships 
-        defined in the data_relation_dict.
+        This method transforms tabular experimental data into Linked Data. It iterates 
+        through the DataFrame, generating a unique row identifier (Subject URI) for 
+        each entry based on either specified 'id_cols' or a hash of the study-stage 
+        metadata. It maps cell values to 'qudt:value' triples and establishes 
+        inter-column relationships defined in the internal 'data_relations' manager.
 
         Args:
-            output_folder (str): The directory where the serialized RDF files will be saved.
-            format (str, optional): The RDF serialization format (e.g., 'json-ld', 'turtle', 'xml'). 
-                Defaults to 'json-ld'.
-            row_key_cols (list[str], optional): Specific column names to use for generating 
-                the unique row identifier. If None, a hash-based key is generated.
-            id_cols (list[str], optional): Column names that should be used as part of the 
-                entity's URI identifier (@id) instead of the generic row key.
-            license (str, optional): An SPDX license ID (e.g., 'MIT', 'CC0-1.0') or a full 
-                URI. If None, defaults to CC0-1.0.
-            write_files (bool, optional): Whether or not to write the serialized data to disk. 
-                Defaults to True
+            output_folder (str): Directory where individual RDF files will be saved.
+            format (str, optional): The RDF serialization format. 
+                Supported: 'json-ld', 'turtle', 'xml', 'nt'. Defaults to 'json-ld'.
+            row_key_cols (list[str], optional): Column names used to generate the 
+                unique row string used for file naming and internal row indexing.
+            id_cols (list[str], optional): Column names whose values should be 
+                normalized and used as the primary Subject URI identifier (@id). 
+                If None, Subject URIs are generated from the unique row key.
+            license (str, optional): An SPDX license identifier (e.g., 'MIT') or 
+                a full URI. Defaults to 'CC0-1.0'.
+            write_files (bool, optional): If True, writes each row to a file on disk. 
+                If False, only returns the list of RDF Graphs. Defaults to True.
 
         Raises:
-            ValueError: If a provided license ID is not found in the SPDX list or if 
-                required metadata (like 'skos:altLabel') is missing from the template.
+            ValueError: If the provided license is invalid or if the metadata 
+                template is missing required 'skos:altLabel' definitions.
 
         Returns:
-            List[Graph]: A list of RDFLib Graph objects, one for each successfully 
-                serialized row.
-        
+            List[rdflib.Graph]: A list of RDFLib Graph objects, each representing 
+                one row of experimental data and its associated semantic context.
+
         Note:
-            - Creates the `output_folder` if it does not exist.
-            - Writes multiple files to the `output_folder` named with a pattern of 
-                '{random_suffix}-{row_key}.jsonld'.
+            - Parent directories for `output_folder` are created automatically.
+            - Files are named using the pattern: '{random_suffix}-{row_key}.{ext}'.
+            - Triples for 'pd.NA' or empty string values are omitted to maintain 
+              graph sparsity and data integrity.
         """
 
         df = self.df
@@ -1322,7 +1338,7 @@ class MatDatSciDf:
         """
         Aggregates all row-level RDF graphs into a single master file while preserving the original context.
 
-        This method performs a "Deep Serialization" by first generating RDF subgraphs for every 
+        This method performs a "Bulk Serialization" by first generating RDF subgraphs for every 
         row in the DataFrame and then merging them into a singular master Graph object. 
         Unlike 'serialize_row', which creates multiple files, this method outputs one 
         unified dataset file, ensuring that the JSON-LD '@context' is applied globally 
@@ -1664,7 +1680,10 @@ class MatDatSciDf:
                 base_uri=base_uri
             )
 
-    def save_mds_df(self, output_dir: str, metadata_in_output_df: bool = False, formats: list = ["csv", "parquet", "arrow"]):
+    def save_mds_df(self, 
+                    output_dir: str, 
+                    metadata_in_output_df: bool = False, 
+                    formats: list = ["csv", "parquet", "arrow"]):
         """
         Saves the internal DataFrame and associated metadata to the local file system.
 
@@ -1784,7 +1803,7 @@ class MatDatSciDf:
         n_cols = len(self.df.columns)
         matched = len(self.metadata_template.get("@graph", []))
         
-        # Calculate total number of semantic links defined in the DataRelationDict
+        # Calculate total number of semantic links defined in the DataRelationsDict
         # We check if 'data_rel_obj' exists or pass it as an argument if needed.
         # Assuming you store it in the instance after validation:
         
