@@ -12,7 +12,7 @@ from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
 from urllib.parse import quote
 import traceback
 import requests
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 from typing import Optional
 from .utility import (
     load_licenses, 
