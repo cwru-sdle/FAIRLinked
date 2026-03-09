@@ -6,7 +6,7 @@ import difflib
 from datetime import datetime
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from ..InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import requests
 import ast
 
