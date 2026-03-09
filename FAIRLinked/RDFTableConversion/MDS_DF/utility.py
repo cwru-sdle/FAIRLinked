@@ -5,7 +5,7 @@ from pyld import jsonld
 from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import RDF, OWL, RDFS, DCTERMS, SKOS
 from urllib.parse import urlparse
-import FAIRLinked.helper_data as helper_data
+from ... import helper_data as helper_data
 import hashlib
 import requests
 from importlib import resources

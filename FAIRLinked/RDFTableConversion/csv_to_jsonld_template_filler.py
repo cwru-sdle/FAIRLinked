@@ -13,8 +13,8 @@ import numpy as np
 from rdflib import Graph, URIRef, Literal, Namespace, XSD
 from rdflib.namespace import RDF, OWL, RDFS, DCTERMS
 from urllib.parse import quote, urlparse
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-import FAIRLinked.helper_data as helper_data
+from ..InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from .. import helper_data as helper_data
 import traceback
 import hashlib
 import requests
