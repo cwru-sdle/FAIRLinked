@@ -1,14 +1,200 @@
-import pandas as pd
+import os
 import json
 import re
-import os
-import difflib
-from datetime import datetime
-from rdflib import Graph, Namespace, URIRef
-from rdflib.namespace import RDF, RDFS, OWL, SKOS
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from pyld import jsonld
+from rdflib import Graph, URIRef, Namespace
+from rdflib.namespace import RDF, OWL, RDFS, DCTERMS, SKOS
+from urllib.parse import urlparse
+import FAIRLinked.helper_data as helper_data
+import hashlib
 import requests
-import ast
+from importlib import resources
+import difflib
+
+def load_licenses():
+    with resources.files(helper_data).joinpath("licenseinfo.json").open() as f:
+        spdx_data = json.load(f)
+    return spdx_data
+
+def hash6(s):
+    """
+    Takes any string and returns a 6-digit number (100000-999999).
+    
+    Args:
+        s: Input string to hash
+        
+    Returns:
+        int: A 6-digit number between 100000 and 999999
+    """
+    # Create a hash of the string using SHA-256
+    hash_obj = hashlib.sha256(s.encode('utf-8'))
+    
+    # Convert hash to integer
+    hash_int = int(hash_obj.hexdigest(), 16)
+    
+    # Map to 6-digit range (100000-999999)
+    six_digit = (hash_int % 900000) + 100000
+    
+    return six_digit
+
+def resolve_predicate(key, ontology_graph):
+    """
+    Resolves a given key into a full RDF predicate URI and determines its property type
+    (object or datatype) within a provided ontology graph.
+
+    The function accepts either a full IRI (e.g. ``http://example.org/ontology#hasMaterial``)
+    or a CURIE (e.g. ``ex:hasMaterial``).  It first checks whether the key is a valid absolute IRI.
+    If not, it attempts to expand the key as a CURIE using the namespace manager attached to the
+    supplied RDFLib ontology graph.  If neither expansion succeeds, the function returns
+    ``(None, None)``.
+
+    Once a valid predicate URI is obtained, the function inspects the ontology graph to determine
+    whether the predicate is an ``owl:ObjectProperty`` or an ``owl:DatatypeProperty``.  If neither
+    type is declared in the ontology, the label type is returned as ``None``.
+
+    Parameters
+    ----------
+    key : str
+        Predicate identifier to resolve.  Can be a full IRI (e.g. ``http://...``) or a CURIE
+        (e.g. ``ex:hasMaterial``).
+
+    ontology_graph : rdflib.Graph
+        RDFLib graph object representing the ontology within which the predicate should be
+        resolved.  The graph must have a properly configured ``namespace_manager`` to expand
+        CURIEs.
+
+    Returns
+    -------
+    tuple
+        A 2-tuple of the form ``(predicate_uri, label_type)`` where:
+        - ``predicate_uri`` is an ``rdflib.term.URIRef`` representing the resolved predicate IRI,
+          or ``None`` if the key could not be resolved.
+        - ``label_type`` is a string describing the property type:
+          ``"Object Property"``, ``"Datatype Property"``, or ``None`` if no type match was found.
+    """
+    
+    # try full iri
+    parsed = urlparse(key)
+    if parsed.scheme and parsed.netloc:
+        pred_uri = URIRef(key)
+    else:
+        # try curie
+        try:
+            pred_uri = ontology_graph.namespace_manager.expand_curie(key)
+        except ValueError:
+            return None, None  # Not a valid IRI or CURIE → skip
+
+    # determine type
+    if (pred_uri, RDF.type, OWL.ObjectProperty) in ontology_graph:
+        label_type = "Object Property"
+    elif (pred_uri, RDF.type, OWL.DatatypeProperty) in ontology_graph:
+        label_type = "Datatype Property"
+    else:
+        label_type = None
+
+    return pred_uri, label_type
+
+
+def write_license_triple(output_folder: str, base_uri: str, license_id: str):
+    """
+    Creates a compact JSON-LD file defining a single RDF triple that links a dataset to its license.
+
+    This function generates a minimal JSON-LD graph of the form:
+        mds:Dataset dcterms:license <SPDX_URI>
+
+    If a short SPDX identifier (e.g. "MIT", "CC-BY-4.0") is provided, the function verifies that the
+    identifier exists in the official SPDX license list (`licenses.json`, bundled with the package)
+    and converts it to its canonical SPDX URI (e.g.
+    `https://spdx.org/licenses/MIT.html`).  If a full URI beginning with "http" is supplied, the URI
+    is used as-is.
+
+    The resulting triple is serialized to a compact JSON-LD file named
+    ``dataset_license.jsonld`` in the specified output folder.  The JSON-LD document includes a
+    top-level ``@context`` containing compact namespace prefixes for ``mds`` and ``dcterms``.
+
+    Parameters
+    ----------
+    output_folder : str
+        Path to the directory where the output JSON-LD file will be written.  The directory is
+        created if it does not exist.
+
+    base_uri : str
+        Base namespace URI of the MDS ontology.  The function appends a fragment (“#”) and uses
+        ``mds:Dataset`` as the subject IRI of the triple.
+
+    license_id : str
+        SPDX short identifier (e.g., "MIT", "CC-BY-4.0") OR full license URI.  Short identifiers are
+        validated against the official SPDX license list before being converted into full URIs.
+
+    Outputs
+    -------
+    dataset_license.jsonld : file
+        A JSON-LD file written to ``output_folder`` with the structure:
+
+        ```json
+        {
+          "@context": {
+            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "dcterms": "http://purl.org/dc/terms/"
+          },
+          "@id": "mds:Dataset",
+          "dcterms:license": {
+            "@id": "https://spdx.org/licenses/MIT.html"
+          }
+        }
+        ```
+
+    """
+
+    # --- 1️⃣ Validate and convert SPDX short ID to full URI ---
+    if not license_id.startswith("http"):
+        # Load SPDX license list
+        
+
+        spdx_data = load_licenses()
+
+        valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
+
+        # Check if the provided short ID is valid
+        if license_id not in valid_ids:
+            raise ValueError(
+                f"Invalid SPDX license ID '{license_id}'.\n"
+                f"Please use one from https://spdx.org/licenses/."
+            )
+
+        license_uri = f"https://spdx.org/licenses/{license_id}.html"
+
+    else:
+        # Full URI provided; assume it's valid
+        license_uri = license_id
+
+
+    # Create RDF graph
+    g = Graph()
+    MDS = Namespace(base_uri)
+    g.bind("mds", MDS)
+    g.bind("dcterms", DCTERMS)
+
+    g.add((MDS.Dataset, DCTERMS.license, URIRef(license_uri)))
+
+    # Serialize to JSON-LD (expanded form)
+    jsonld_data = json.loads(g.serialize(format="json-ld"))
+
+    # Define desired context
+    context = {
+        "mds": str(MDS),
+        "dcterms": str(DCTERMS)
+    }
+
+    # Compact using pyld to get CURIEs instead of full IRIs
+    compacted = jsonld.compact(jsonld_data, context)
+
+    # Write to file
+    json_path = os.path.join(output_folder, "dataset_license.jsonld")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(compacted, f, indent=2)
+
+
 
 def normalize(text):
     """
@@ -189,7 +375,7 @@ def extract_quantity_kinds():
 
 
 
-def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
+def prompt_for_missing_fields(col, unit, study_stage, ontology_graph, units):
     print(f"--Enter terms for {col} --")
     if(unit not in units):
         userinput = normalize(input("Please select the type of quantity (eg. length, density, unitless, etc) or hit 'enter' to skip:  "))
@@ -245,204 +431,3 @@ def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
 
 def get_license():
     return input("Please enter license")
-
-def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log_path, unmatched_log_path, skip_prompts=False):
-    """
-    Use a CSV file into a JSON-LD template that user can fill out column metadata.
-
-    Args:
-        csv_path (str): Path to the CSV file to generate JSON-LD template.
-        ontology_graph (rdflib.Graph): The ontology RDF graph for matching terms.
-        output_path (str): Path to write the resulting JSON-LD file.
-        matched_log_path (str): Path to write the log of columns that matched the ontology.
-        unmatched_log_path (str): Path to write the log of columns that can't be found in the ontology.
-        skip_prompts (bool): Allow users to skip metadata prompts
-    """
-    df = pd.read_csv(csv_path)
-    columns = list(df.columns)
-    ontology_terms = extract_terms_from_ontology(ontology_graph)
-
-    # Load all possible bindings 
-    bindings_dict = {prefix: str(namespace) for prefix, namespace in ontology_graph.namespaces()}
-    if "mds" not in bindings_dict:
-        bindings_dict["mds"] = "https://cwrusdle.bitbucket.io/mds/"
-
-    matched_log = []
-    unmatched_log = []
-    bindings = {}
-
-
-    # Construct the base JSON-LD structure
-    jsonld = {
-        "@context": {
-            "qudt": "http://qudt.org/schema/qudt/",
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
-            "skos": "http://www.w3.org/2004/02/skos/core#",
-            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
-            "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
-            "owl": "http://www.w3.org/2002/07/owl#",
-            "xsd": "http://www.w3.org/2001/XMLSchema#",
-            "prov": "http://www.w3.org/ns/prov#",
-            "dcterms": "http://purl.org/dc/terms/",
-            "cco": "https://www.commoncoreontologies.org/"      
-        },
-        "@graph": []
-    }
-    units = extract_qudt_units()
-    # Process each column and attempt to match it to ontology terms
-    for col in columns:
-        if col == "__source_file__" or col == "__Label__" or col == "__rowkey__":
-            continue
-        typ = df.loc[0,col]
-
-        match = find_best_match(col, ontology_terms)
-        if(pd.isna(typ) or ":" not in typ):# if no type was explicitily included in csv
-           
-            #get iri from closest match
-            iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else normalize(col)
-
-            # Get base iri
-            iri_str = str(match["iri"]) if match else None
-            binding =""
-            study_stage = ""
-            definition = "Definition not available"
-            if iri_str:
-                last_slash = iri_str.rfind("/")
-                last_hash = iri_str.rfind("#")
-                split_pos = max(last_slash, last_hash)
-                iri_base = iri_str[:split_pos + 1] if split_pos != -1 else iri_str
-                binding = next((k for k, v in bindings_dict.items() if v == iri_base), "mds")
-                
-                #add binding to list of contexts
-                if(binding not in bindings):
-                    bindings[binding] = bindings_dict[binding]
-
-                definition = str(match["definition"]) if match else "Definition not available"
-                study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
-               
-        else: #csv included type:
-            binding, iri_fragment = typ.split(":")
-            if(binding == "mds"):
-                #if term in mds ontology, get study stage and def from ontologyt
-                definition = str(match["definition"]) if match else "Definition not available"
-                study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
-            else:
-                definition = "Definition not available"
-                study_stage = df.loc[2,col] #try to get study stage from csv
-                if pd.isna(study_stage): 
-                    study_stage =  "Study stage information not available"
-
-        # try get units
-        un = df.loc[1,col]
-
-        if not pd.isna(un):
-            try:
-                # Step 1: Convert string representation to a Python object
-                # Handles both "{'id': ...}" and "unit:UNIT"
-                evaluated = ast.literal_eval(un)
-                
-                # Step 2: Extract the string based on type
-                if isinstance(evaluated, dict):
-                    # It's a dict, get the ID value
-                    target_str = evaluated.get('@id', "")
-                else:
-                    # It's already a string (like "unit:UNIT")
-                    target_str = str(evaluated)
-
-                # Step 3: Split and safely get the second part
-                if ":" in target_str:
-                    un = target_str.split(":")[1]
-                else:
-                    un = target_str # Fallback if no colon exists
-
-            except (ValueError, SyntaxError, IndexError) as e:
-                print(f"Parsing error for value '{un}': {e}")
-                un = "UNITLESS"
-            
-        if match:
-            matched_log.append(f"{col} => {iri_fragment}")
-
-        else:
-            unmatched_log.append(col)
-
-
-        
-        if not skip_prompts:
-            unit, study, notes = prompt_for_missing_fields(iri_fragment,un, study_stage, ontology_graph, units)
-        else:
-            unit = "UNITLESS"
-            study = study_stage if study_stage not in [
-                "", "Study stage information not available"
-            ] else ""
-            notes = ""
-        
-
-        if(binding == ""):
-            binding = "mds"
-
-        if(binding not in bindings):
-                    bindings[binding] = bindings_dict[binding]
-         
-        entry = {
-            "@id": f"{binding}:{iri_fragment}",
-            "@type": f"{binding}:{iri_fragment}",
-            "skos:altLabel": col,
-            "skos:definition": definition,
-            "qudt:hasUnit": {"@id": f"unit:{unit}"},
-            "prov:generatedAtTime": {
-                "@value": datetime.now().astimezone().isoformat(),
-                "@type": "xsd:dateTime"
-            },
-            "skos:note": {
-                "@value": f"{notes}",
-                "@language": "en"
-            },
-            "mds:hasStudyStage": study
-        }
-        jsonld["@graph"].append(entry)
-
-    # Ensure output directories exist
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    os.makedirs(os.path.dirname(matched_log_path), exist_ok=True)
-    os.makedirs(os.path.dirname(unmatched_log_path), exist_ok=True)
-
-    # Add contexts
-    jsonld["@context"].update({
-        "unit": "https://qudt.org/vocab/unit/"
-    })
-    for i in bindings:
-        jsonld["@context"].update({
-            i: bindings[i]
-        })
-
-    # Write JSON-LD
-    with open(output_path, "w") as f:
-        json.dump(jsonld, f, indent=2)
-
-    # Write matched log
-    with open(matched_log_path, "w") as f:
-        f.write("\n".join(matched_log))
-
-    # Write unmatched log (remove duplicates with set)
-    with open(unmatched_log_path, "w") as f:
-        f.write("\n".join(sorted(set(unmatched_log))))  # BUG FIX: previously had stray '-' before 'fix'
-
-def jsonld_temp_gen_interface(args):
-
-    print(args.ontology_path)
-    if args.ontology_path == "default":
-        ontology_graph = Graph()
-        ontology_graph = load_mds_ontology_graph()       
-    else:
-        ontology_graph = Graph()
-        ontology_graph.parse(source=args.ontology_path)
-
-    matched_path = os.path.join(args.log_path, "matched.txt")
-    unmatched_path = os.path.join(args.log_path, "unmatched.txt")
-    jsonld_template_generator(csv_path=args.csv_path, 
-                            ontology_graph=ontology_graph, 
-                            output_path=args.output_path, 
-                            matched_log_path=matched_path, 
-                            unmatched_log_path=unmatched_path, 
-                            skip_prompts=args.skip_prompts)
-    
