@@ -63,6 +63,8 @@ class MatDatSciDf:
     def __init__(self, 
                 df: pd.DataFrame, 
                 metadata_template: dict,
+                matched_log: Optional[list]= None,
+                unmatched_log: Optional[list] = None,
                 data_relations_dict: Optional[dict] = None, 
                 orcid: str = "0000-0000-0000-0000", 
                 df_name: Optional[str] = None,
@@ -75,6 +77,10 @@ class MatDatSciDf:
         Args:
             df (pd.DataFrame): The source DataFrame containing experimental results.
             metadata_template (dict): The initial JSON-LD dictionary defining column contexts.
+            matched_log (list): A historical record of columns successfully mapped to 
+                ontology terms during the initialization process.
+            unmatched_log (list): A record of columns that failed to find an automated 
+                match in the reference ontology.
             data_relations_dict (dict, optional): A dictionary of Subject-Predicate-Object 
                 mappings to link columns. Defaults to an empty dict.
             orcid (str, optional): The curator's ORCID iD. Validated via public API 
@@ -144,14 +150,20 @@ class MatDatSciDf:
                 self.ontology = MatDatSciDf.mds_graph
         else:
             self.ontology = ontology_graph
+        
+
         self.base_uri = base_uri
 
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+        self.ontology.bind("mds", self.MDS)
         if data_relations_dict is None:
             data_relations_dict = {}
 
+        self.matched_log = matched_log
+        self.unmatched_log = unmatched_log
+
         self.data_relations = DataRelationsDict(prop_col_pair_dict=data_relations_dict)
-        self.metadata_obj = Metadata(metadata_template=self.metadata_template)
+        self.metadata_obj = Metadata(metadata_template=self.metadata_template, matched_log=self.matched_log, unmatched_log=self.unmatched_log)
         
 
     def get_relations(self):
