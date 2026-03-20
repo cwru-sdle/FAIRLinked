@@ -5,7 +5,7 @@ import numpy as np
 from functools import wraps
 from datetime import datetime
 from uuid import uuid4
-from typing import Optional
+from typing import Optional, cast
 import psutil
 import os
 from .main import MatDatSciDf
@@ -14,6 +14,7 @@ from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import warnings
 import requests
 from ... import __version__
+from .utility import extract_terms_from_ontology, find_best_match, get_curie
 
 class AnalysisTracker:
 
@@ -66,7 +67,7 @@ class AnalysisTracker:
                 self.orcid_verified = False
         self.base_uri = base_uri
         self.prefix = prefix
-        self.analysis_id = f"run_{uuid4().hex[:8]}"
+        self.analysis_id = f"run_{uuid4().hex[:12]}"
         self.sources = []
         self.proj_name = proj_name
         self.file_events = []
@@ -81,15 +82,26 @@ class AnalysisTracker:
             self.ontology = ontology_graph
         
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+        self.QUDT = Namespace("http://qudt.org/schema/qudt/")
         self.ontology.bind("mds", self.MDS)
         
         
 
     def get_context(self) -> dict:
         return {
-            "dcterms": "http://purl.org/dc/terms/",
             self.prefix: self.base_uri,
-            "@vocab": f"{self.base_uri}analysis/"
+            "qudt": "http://qudt.org/schema/qudt/",
+            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "skos": "http://www.w3.org/2004/02/skos/core#",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
+            "owl": "http://www.w3.org/2002/07/owl#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
+            "prov": "http://www.w3.org/ns/prov#",
+            "dcterms": "http://purl.org/dc/terms/",
+            "cco": "https://www.commoncoreontologies.org/",
+            "unit": "https://qudt.org/vocab/unit/",
+            "obo": "http://purl.obolibrary.org/obo/"      
         }
 
     # --- WRAPPERS ---
@@ -119,13 +131,18 @@ class AnalysisTracker:
         Returns:
             Any: The original return value of the tracked function.
         """
-    # 1. Log Arguments
+        # 1. Log Arguments
         sig = inspect.signature(func)
         bound_args = sig.bind(*args, **kwargs)
         bound_args.apply_defaults()
+
+        run_id = f"{func.__name__}.{self.analysis_id}"
         for name, val in bound_args.arguments.items():
-            if name != 'self': 
-                self._route_data(name, val)
+            if name == 'self':
+                self.track_other("instance_attr", val, parent_id=run_id)
+            else:
+                # Regular arguments (dataframes, floats, etc.)
+                self._route_data(name, val, parent_id=run_id)
         
         # 2. Science Execution with OS-Level Auditing
         process = psutil.Process(os.getpid())
@@ -141,61 +158,87 @@ class AnalysisTracker:
                 
             event_type = "read/import" if 'r' in mode else "write/modification"
             self.file_events.append({
-                    "file_name": os.path.basename(file.path),
-                    "location": file.path,
-                    "event": event_type,
-                    "timestamp": datetime.now().isoformat()
+                    "@id": f"{self.prefix}:file_event_{uuid4().hex[:8]}_{self.analysis_id}",
+                    "@type": "cco:ont00000958",
+                    "mds:fileName": os.path.basename(file.path),
+                    "mds:fileLocation": file.path,
+                    "mds:fileEvent": event_type,
+                    "prov:generatedAtTime": datetime.now().isoformat()
                 })
 
-        self._route_data(f"{func.__name__}_output", result)
+        if isinstance(result, tuple):
+            for i, item in enumerate(result):
+                self._route_data(f"{func.__name__}_output_{i}", item, parent_id=run_id)
+        else:
+            self._route_data(f"{func.__name__}_output", result, parent_id=run_id)
         return result
 
-    def _route_data(self, name, val):
-        """Internal switcher to pick the right tracking method."""
+    def _route_data(self, name, val, parent_id=None):
+        """The Central Switchboard"""
         if isinstance(val, pd.DataFrame):
-            self.track_dataframe(name, val)
+            self.track_dataframe(name, val, parent_id)
         elif isinstance(val, dict):
-            self.track_dict(name, val)
+            self.track_dict(name, val, parent_id)
         elif isinstance(val, (list, np.ndarray)):
-            self.track_list_array(name, val)
+            self.track_list_array(name, val, parent_id)
         elif isinstance(val, (str, int, float, bool)):
-            self.track_simple_datatype(name, val)
+            self.track_simple_datatype(name, val, parent_id)
         else:
-            self.track_other(name, val)
+            self.track_other(name, val, parent_id)
 
 
     # --- TRACKING METHODS ---
 
-    def track_simple_datatype(self, name, val):
+    def track_simple_datatype(self, name, val, parent_id=None):
+
+        onto_terms = extract_terms_from_ontology(self.ontology)
+        
+        match = find_best_match(name, ontology_terms=onto_terms)
+
+        bindings = self.get_context()
+
+        iri = match['iri'] if match else None
+
+        curie = get_curie(iri, bindings) 
+
         self.sources.append({
-            "arg_id": f"{name}.{self.analysis_id}",
-            "arg_name": name,
-            "type": type(val).__name__,
-            "value": val
+            "@id": f"{self.prefix}:{name}.{self.analysis_id}",
+            "@type": f"{curie}",
+            "mds:argumentIdentifier": f"{name}.{self.analysis_id}",
+            "skos:altLabel": name,
+            "mds:argumentType": type(val).__name__,
+            "qudt:value": val,
+            "mds:containerIdentifier": parent_id 
         })
 
-    def track_dict(self, name, val):
-        self.sources.append(
-            {
-            "arg_id": f"{name}.{self.analysis_id}",
-            "arg_name": name, 
-            "type": "dictionary", 
-            "value": val,
-            }
-        )
+    def track_dict(self, name, val, parent_id=None):
+        current_id = f"{name}.{self.analysis_id}"
+        self.sources.append({
+            "@id": f"{self.prefix}:{current_id}",
+            "@type": "cco:ont00000958",
+            "mds:argumentIdentifier": current_id,
+            "skos:altLabel": name, 
+            "mds:argumentType": "dictionary", 
+            "mds:keys": list(val.keys()),
+            "mds:containerIdentifier": parent_id # Links to its container
+        })
+        for k, v in val.items():
+            # Recursively pass the current dict as the new parent
+            self._route_data(f"{name}.{k}", v, parent_id=current_id)
 
-    def track_dataframe(self, name, df):
-        self.sources.append(
-        {
-            "arg_id": f"{name}.{self.analysis_id}",
-            "arg_name": name, 
-            "type": "dataframe", 
-            "columns": list(df.columns), 
-            "num_rows": len(df)
-        }
-        )
+    def track_dataframe(self, name, df, parent_id=None):
+        self.sources.append({
+            "@id": f"{self.prefix}:{name}.{self.analysis_id}",
+            "@type": "cco:ont00000958",
+            "mds:argumentIdentifier": f"{name}.{self.analysis_id}",
+            "skos:altLabel": name, 
+            "mds:argumentType": "dataframe", 
+            "mds:columnsList": list(df.columns), 
+            "mds:numberOfRows": len(df),
+            "mds:containerIdentifier": parent_id
+        })
 
-    def track_list_array(self, name, data):
+    def track_list_array(self, name, data, parent_id = None):
         # 1. Handle NumPy Arrays
         if hasattr(data, 'shape'):
             dimensions = list(data.shape)
@@ -214,20 +257,36 @@ class AnalysisTracker:
         shape_str = "x".join(map(str, dimensions))
 
         self.sources.append({
-            "arg_id": f"{name}.{self.analysis_id}",
-            "arg_name": name,
-            "type": type(data).__name__,
-            "size": len(data),
-            "shape": shape_str
+            "@id": f"{self.prefix}:{name}.{self.analysis_id}",
+            "@type": "cco:ont00000958",
+            "mds:argumentIdentifier": f"{name}.{self.analysis_id}",
+            "skos:altLabel": name,
+            "mds:argumentType": type(data).__name__,
+            "mds:listSize": len(data),
+            "mds:arrayShape": shape_str,
+            "mds:containerIdentifier": parent_id
         })
 
-    def track_other(self, name, obj):
+    def track_other(self, name, obj, parent_id=None):
+        current_id = f"{name}.{self.analysis_id}"
+        
+        # Log the object...
         self.sources.append({
-            "arg_id": f"{name}.{self.analysis_id}",
-            "arg_name": name, 
-            "type": type(obj).__name__, 
-            "note": "Data structure documentation not supported"
+            "@id": f"{self.prefix}:{current_id}",
+            "@type": "cco:ont00000958",
+            "mds:argumentIdentifier": current_id,
+            "skos:altLabel": name, 
+            "mds:argumentType": type(obj).__name__, 
+            "mds:containerIdentifier": parent_id
         })
+
+        # Inspect the object...
+        try:
+            for attr_name, attr_val in vars(obj).items():
+                if not attr_name.startswith('_') and isinstance(attr_val, (int, float, str, bool)):
+                    self._route_data(f"{name}.{attr_name}", attr_val, parent_id=current_id)
+        except TypeError:
+            pass
 
     def create_analysis_jsonld(self):
 
@@ -235,12 +294,21 @@ class AnalysisTracker:
 
         output = {
             "@context": self.get_context(),
+            "@graph":[
+            {
             "@id": f"mds:{self.analysis_id}",
-            "dcterms:creator": f"https://orcid.org/{self.orcid}",
+            "@type": "mds:AnalyticalResult",
+            "dcterms:creator":{
+                "@id": f"https://orcid.org/{self.orcid}"
+            },
             "dcterms:date": datetime.now().strftime("%Y-%m-%d"),
             "dcterms:source": self.sources,
             "dcterms:provenance": self.file_events,
-            "dcterms:description": orcid_verification
+            "dcterms:description": orcid_verification,
+            "mds:hasStudyStage": "Analysis"
+            }
+            ]
+    
         }
         return json.dumps(output, indent=2)
 
@@ -263,34 +331,33 @@ class AnalysisTracker:
     def create_report(self) -> str:
         """Generates a human-readable Markdown report of the analysis."""
         report = []
-        report.append(f"# Analysis Report: {self.proj_name}")
+        report.append(f"## Analysis Report: {self.proj_name}")
         report.append(f"**Analysis ID:** `{self.analysis_id}`")
         report.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         report.append(f"**Creator:** [{self.orcid}](https://orcid.org/{self.orcid}) ({'Verified' if self.orcid_verified else 'Unverified'})")
-        report.append("\n---\n")
+        report.append("\n")
 
         # 1. Inputs and Outputs
-        report.append("## 🧪 Data Sources & Variables")
+        report.append("### 🧪 Data Sources & Variables")
         if not self.sources:
             report.append("_No variables tracked._")
         else:
             for s in self.sources:
-                shape_info = f" (Shape: {s.get('shape')})" if 'shape' in s else ""
-                val_info = f" = `{s.get('value')}`" if 'value' in s else ""
-                report.append(f"* **{s['arg_name']}** ({s['type']}){shape_info}{val_info}")
+                shape_info = f" (Shape: {s.get('mds:arrayShape')})" if 'mds:arrayShape' in s else ""
+                val_info = f" = `{s.get('qudt:value')}`" if 'qudt:value' in s else ""
+                report.append(f"* **{s['skos:altLabel']}** ({s['mds:argumentType']}){shape_info}{val_info}")
 
         # 2. File System Events (The "Paper Trail")
-        report.append("\n## 📂 File System Activity")
+        report.append("\n### 📂 File System Activity")
         if not self.file_events:
             report.append("_No file system events detected._")
         else:
-            report.append("| File Name | Event | Location |")
+            report.append("| File Name | Event | mds:fileLocation |")
             report.append("| :--- | :--- | :--- |")
             for e in self.file_events:
-                report.append(f"| {e['file_name']} | {e['event']} | `{e['location']}` |")
+                report.append(f"| {e['mds:fileName']} | {e['mds:fileEvent']} | `{e['mds:fileLocation']}` |")
 
         report.append("\n---")
-        report.append(f"_Generated by FAIRLinked version {__version__} AnalysisTracker_")
         
         return "\n".join(report)
 
@@ -306,8 +373,10 @@ class AnalysisTracker:
             f.write(self.create_report())
 
     def create_arg_df(self):
-        # 1. Create the dictionary of data first
-        row_data = {s["arg_name"]: s["arg_id"] for s in self.sources}
+        row_data = {
+            s["skos:altLabel"]: (s["qudt:value"] if s.get("mds:argumentType") in ['int', 'str', 'float', 'bool'] else s["mds:argumentIdentifier"]) 
+            for s in self.sources
+        }
     
         # 2. Add your mandatory tracking columns
         row_data["__rowkey__"] = self.analysis_id
@@ -317,43 +386,102 @@ class AnalysisTracker:
         # Wrapping row_data in a list [] tells Pandas this is one row of data
         return pd.DataFrame([row_data])
 
-    def save_arg_df(self, format: str = 'csv'):
-        """
-        Serializes the argument dataframe to the structured analysis folder.
-        Supported formats: 'csv', 'parquet', 'feather'
-        """
-        # 1. Define and create the directory
-        table_dir = os.path.join(self.home_path, "analysis_tables")
-        os.makedirs(table_dir, exist_ok=True)
 
-        # 2. Construct the filename
-        filename = f"{self.proj_name}_{self.analysis_id}_table.{format}"
-        full_path = os.path.join(table_dir, filename)
+class AnalysisGroup:
 
-        # 3. Create the dataframe
-        df = self.create_arg_df()
+    def __init__(self,
+                proj_name: str, 
+                home_path: str, 
+                orcid: str = "0000-0000-0000-0000", 
+                base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
+                ontology_graph: Optional[Graph] = None, 
+                prefix: Optional[str] = "mds") -> None:
 
-        # 4. Save based on format
-        if format.lower() == "csv":
-            df.to_csv(full_path, index=False)
-        elif format.lower() == "parquet":
-            df.to_parquet(full_path, index=False)
-        elif format.lower() == "pyarrow" or format.lower() == "feather":
-            # Pyarrow requires a reset index for row storage
-            df.reset_index(drop=True).to_feather(full_path)
-        else:
-            raise ValueError(f"Unsupported format: {format}. Use 'csv', 'parquet', 'pyarrow' or 'feather'.")
+        self.analyses = {}
+        self.proj_name = proj_name
+        self.home_path = home_path
+        self.orcid = orcid
+        self.base_uri = base_uri
+        self.ontology = ontology_graph
+        self.prefix = prefix
+        self.group_id = f"run_group_{uuid4().hex[:12]}"
+        self.QUDT = Namespace("http://qudt.org/schema/qudt/")
+        self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+
+    def get_context(self) -> dict:
+        return {
+            self.prefix: self.base_uri,
+            "qudt": "http://qudt.org/schema/qudt/",
+            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "skos": "http://www.w3.org/2004/02/skos/core#",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
+            "owl": "http://www.w3.org/2002/07/owl#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
+            "prov": "http://www.w3.org/ns/prov#",
+            "dcterms": "http://purl.org/dc/terms/",
+            "cco": "https://www.commoncoreontologies.org/",
+            "unit": "https://qudt.org/vocab/unit/",
+            "obo": "http://purl.obolibrary.org/obo/"      
+        }
+        
+
+    def run_and_track(self, func, *args, **kwargs):
+        
+        analysis = AnalysisTracker(
+                        proj_name=self.proj_name, 
+                        home_path=self.home_path, 
+                        orcid=self.orcid,
+                        base_uri=self.base_uri,
+                        ontology_graph=self.ontology,
+                        prefix=self.prefix
+                        )
+
+        analysis_result = analysis.run_and_track(func, *args, **kwargs)
+        analysis_jsonld = analysis.create_analysis_jsonld()
+        analysis_report = analysis.create_report()
+        analysis_df = analysis.create_arg_df()
+
+        
+        self.analyses[analysis.analysis_id] = {
+                "analysis_obj": analysis,
+                "result": analysis_result,
+                "jsonld": analysis_jsonld,
+                "report": analysis_report,
+                "dataframe": analysis_df
+            }
+
+    def create_group_arg_df(self) -> pd.DataFrame:
+        
+        if not self.analyses:
+            warnings.warn("No analyses have been tracked in this group yet.")
+
+            return pd.DataFrame()
+
+        df_list = [meta["dataframe"] for meta in self.analyses.values()]
+
+        group_df = pd.concat(df_list, axis=0, ignore_index=True, sort=False)
+
+        cols = group_df.columns.tolist()
+        metadata_cols = ["ProjectTitle", "__rowkey__"]
+
+        existing_meta = [c for c in metadata_cols if c in cols]
+        data_cols = [c for c in cols if c not in existing_meta]
+        result = group_df[existing_meta + data_cols]
+        
+        return cast(pd.DataFrame, result)
 
     def create_metadata_template(self):
-        arg_df = self.create_arg_df()
-        dummy_mdsdf = MatDatSciDf(df=arg_df, ontology_graph=self.ontology, metadata_template={})
+        group_arg_df = self.create_group_arg_df()
+
+        dummy_mdsdf = MatDatSciDf(df=group_arg_df, ontology_graph=self.ontology, metadata_template={})
         metadata_template, matched_log, unmatched_log = dummy_mdsdf.template_generator(skip_prompts=True)
 
         return metadata_template, matched_log, unmatched_log
 
     def create_MatDatSciDf(self):
         metadata_template, matched_log, unmatched_log = self.create_metadata_template()
-        arg_df = self.create_arg_df()
+        arg_df = self.create_group_arg_df()
 
         arg_MatDatSciDf = MatDatSciDf(df = arg_df, 
                                     metadata_template=metadata_template, 
@@ -363,6 +491,80 @@ class AnalysisTracker:
 
         return arg_MatDatSciDf
 
+    def create_group_report(self):
+
+        group_report = []
+
+        group_report.append(f"# Group Analysis Report: {self.proj_name}")
+        group_report.append(f"**Group Analysis ID:** `{self.group_id}`")
+        group_report.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        group_report.append("\n---\n")
+
+        for analysis_id, meta in self.analyses.items():
+            report = meta["report"]
+
+            group_report.append(report)
+        
+        group_report.append(f"Generated by FAIRLinked version {__version__}")
+        group_report.append("\n---")
+
+        return "\n".join(group_report)
+
+    def save_report(self):
+        report_dir = os.path.join(self.home_path, self.group_id)
+        os.makedirs(report_dir, exist_ok=True)
+        
+        filename = f"{self.proj_name}_{self.group_id}_summary.md"
+        full_path = os.path.join(report_dir, filename)
+        
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(self.create_group_report())
+
+    def save_jsonld(self):
+        combined_nodes = []
+        # Create a list of references to show "Components" of the group
+        analysis_refs = [{"@id": f"mds:{aid}"} for aid in self.analyses.keys()]
+
+        # 1. Loop through the dictionary using .items()
+        for analysis_id, meta in self.analyses.items():
+            # Trigger the individual tracker's serialization
+            meta["analysis_obj"].serialize_analysis_jsonld()
+            
+            # Load the individual graph
+            individual_data = json.loads(meta["jsonld"])
+            
+            if "@graph" in individual_data:
+                for node in individual_data["@graph"]:
+                    # Link the primary Analysis Activity to this Group
+                    if node["@id"] == f"mds:{analysis_id}":
+                        node["group"] = {"@id": f"mds:{self.group_id}"}
+                
+                combined_nodes.extend(individual_data["@graph"])
+
+        # 2. Define the Group Metadata Node
+        group_node = {
+            "@id": f"mds:{self.group_id}",
+            "@type": "mds:AnalyticalResult",
+            "dcterms:title": self.proj_name,
+            "dcterms:creator": {"@id": f"https://orcid.org/{self.orcid}"},
+            "dcterms:date": datetime.now().strftime("%Y-%m-%d"),
+            "mds:hasAnalysisComponent": analysis_refs,
+            "mds:hasStudyStage": "Analysis"
+        }
+
+        # 3. Final Master Graph Assembly
+        master_output = {
+            "@context": self.get_context(),
+            "@graph": [group_node] + combined_nodes
+        }
+
+        # 4. Save to file
+        group_json_dir = os.path.join(self.home_path, self.group_id, "_group_json")
+        os.makedirs(group_json_dir, exist_ok=True)
+        filename = f"{self.proj_name}_{self.group_id}_master_graph.json"
+        
+        with open(os.path.join(group_json_dir, filename), "w", encoding="utf-8") as f:
+            json.dump(master_output, f, indent=2)
     
 
 

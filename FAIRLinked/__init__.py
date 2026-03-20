@@ -1,7 +1,7 @@
 
 __version__ = "0.3.3.0"
 
-from .RDFTableConversion import MatDatSciDf
+from .RDFTableConversion import MatDatSciDf, AnalysisGroup
 
-__all__ = ["MatDatSciDf"]
+__all__ = ["MatDatSciDf", "AnalysisGroup"]
 
