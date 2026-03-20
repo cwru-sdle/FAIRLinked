@@ -1,0 +1,387 @@
+import json
+import inspect
+import pandas as pd
+import numpy as np
+from functools import wraps
+from datetime import datetime
+from uuid import uuid4
+from typing import Optional
+import psutil
+import os
+from .main import MatDatSciDf
+from rdflib import Graph, Namespace
+from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+import warnings
+import requests
+from ... import __version__
+
+class AnalysisTracker:
+
+    mds_graph = load_mds_ontology_graph()
+
+    def __init__(self, 
+                proj_name: str, 
+                home_path: str, 
+                orcid: str = "0000-0000-0000-0000", 
+                base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
+                ontology_graph: Optional[Graph] = None, 
+                prefix: Optional[str] = "mds") -> None:
+        """
+        Initializes the tracker with project metadata and researcher identity.
+
+        Args:
+            proj_name: Human-readable name of the research project.
+            home_path: Root directory for storing all analysis artifacts.
+            orcid: Researcher's ORCID iD for provenance attribution. 
+                   Attempts to verify via Public API.
+            base_uri: The base URI for semantic namespace generation.
+            ontology_graph: A custom RDFLib Graph. Defaults to MDS ontology.
+            prefix: The prefix used for the base_uri in JSON-LD.
+        """
+        
+        self.home_path = home_path
+        if orcid == "0000-0000-0000-0000":
+            self.orcid = orcid
+            self.orcid_verified = False
+            print("⚠️ Using Placeholder ORCID. This is not recommended for data publication.")
+        else:
+            try:
+                clean_orcid = orcid.split("/")[-1].strip()
+                response = requests.get(f"https://pub.orcid.org/v3.0/{clean_orcid}", 
+                                        headers={'Accept': 'application/json'},
+                                        timeout=5)
+                
+                if response.status_code == 200:
+                    self.orcid = clean_orcid
+                    self.orcid_verified = True
+                else:
+                    # Instead of crashing, we warn and mark as unverified
+                    warnings.warn(f"❌ ORCID '{orcid}' not found. Analysis will be marked as UNVERIFIED.")
+                    self.orcid = clean_orcid
+                    self.orcid_verified = False
+            
+            except requests.exceptions.RequestException:
+                warnings.warn("🌐 Connection Error: Could not verify ORCID. Tagging as UNVERIFIED.")
+                self.orcid = orcid
+                self.orcid_verified = False
+        self.base_uri = base_uri
+        self.prefix = prefix
+        self.analysis_id = f"run_{uuid4().hex[:8]}"
+        self.sources = []
+        self.proj_name = proj_name
+        self.file_events = []
+        if ontology_graph is None:
+            if MatDatSciDf.mds_graph is None:
+                print("MDS-Onto from source is not available, please parse ontology from a local file")
+                user_defined_onto = Graph()
+                self.ontology = user_defined_onto
+            else:
+                self.ontology = MatDatSciDf.mds_graph
+        else:
+            self.ontology = ontology_graph
+        
+        self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+        self.ontology.bind("mds", self.MDS)
+        
+        
+
+    def get_context(self) -> dict:
+        return {
+            "dcterms": "http://purl.org/dc/terms/",
+            self.prefix: self.base_uri,
+            "@vocab": f"{self.base_uri}analysis/"
+        }
+
+    # --- WRAPPERS ---
+
+    def track(self, func):
+        """Decorator for methods: @tracker.track"""
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return self.run_and_track(func, *args, **kwargs)
+        return wrapper
+
+    def run_and_track(self, func, *args, **kwargs):
+
+        """
+        Executes a function while auditing arguments, results, and file system events.
+
+        This method captures:
+        1. Function input arguments and default values.
+        2. OS-level file handles (reads/writes) active during execution.
+        3. The function's return value.
+
+        Args:
+            func: The target function to execute.
+            *args: Positional arguments for the function.
+            **kwargs: Keyword arguments for the function.
+
+        Returns:
+            Any: The original return value of the tracked function.
+        """
+    # 1. Log Arguments
+        sig = inspect.signature(func)
+        bound_args = sig.bind(*args, **kwargs)
+        bound_args.apply_defaults()
+        for name, val in bound_args.arguments.items():
+            if name != 'self': 
+                self._route_data(name, val)
+        
+        # 2. Science Execution with OS-Level Auditing
+        process = psutil.Process(os.getpid())
+        
+        # Execute
+        result = func(*args, **kwargs)
+        
+        # 3. Capture open file handles at the moment of completion
+        # Note: Polling in a thread is better for short-lived files, 
+        # but this catches all currently active handles.
+        for file in process.open_files():
+            mode = getattr(file, 'mode', 'r')
+                
+            event_type = "read/import" if 'r' in mode else "write/modification"
+            self.file_events.append({
+                    "file_name": os.path.basename(file.path),
+                    "location": file.path,
+                    "event": event_type,
+                    "timestamp": datetime.now().isoformat()
+                })
+
+        self._route_data(f"{func.__name__}_output", result)
+        return result
+
+    def _route_data(self, name, val):
+        """Internal switcher to pick the right tracking method."""
+        if isinstance(val, pd.DataFrame):
+            self.track_dataframe(name, val)
+        elif isinstance(val, dict):
+            self.track_dict(name, val)
+        elif isinstance(val, (list, np.ndarray)):
+            self.track_list_array(name, val)
+        elif isinstance(val, (str, int, float, bool)):
+            self.track_simple_datatype(name, val)
+        else:
+            self.track_other(name, val)
+
+
+    # --- TRACKING METHODS ---
+
+    def track_simple_datatype(self, name, val):
+        self.sources.append({
+            "arg_id": f"{name}.{self.analysis_id}",
+            "arg_name": name,
+            "type": type(val).__name__,
+            "value": val
+        })
+
+    def track_dict(self, name, val):
+        self.sources.append(
+            {
+            "arg_id": f"{name}.{self.analysis_id}",
+            "arg_name": name, 
+            "type": "dictionary", 
+            "value": val,
+            }
+        )
+
+    def track_dataframe(self, name, df):
+        self.sources.append(
+        {
+            "arg_id": f"{name}.{self.analysis_id}",
+            "arg_name": name, 
+            "type": "dataframe", 
+            "columns": list(df.columns), 
+            "num_rows": len(df)
+        }
+        )
+
+    def track_list_array(self, name, data):
+        # 1. Handle NumPy Arrays
+        if hasattr(data, 'shape'):
+            dimensions = list(data.shape)
+        
+        # 2. Handle Nested Lists (The recursive way)
+        elif isinstance(data, list):
+            dimensions = []
+            temp = data
+            while isinstance(temp, list) and len(temp) > 0:
+                dimensions.append(len(temp))
+                temp = temp[0]
+        
+        else:
+            dimensions = [len(data)]
+
+        shape_str = "x".join(map(str, dimensions))
+
+        self.sources.append({
+            "arg_id": f"{name}.{self.analysis_id}",
+            "arg_name": name,
+            "type": type(data).__name__,
+            "size": len(data),
+            "shape": shape_str
+        })
+
+    def track_other(self, name, obj):
+        self.sources.append({
+            "arg_id": f"{name}.{self.analysis_id}",
+            "arg_name": name, 
+            "type": type(obj).__name__, 
+            "note": "Data structure documentation not supported"
+        })
+
+    def create_analysis_jsonld(self):
+
+        orcid_verification = "ORCID iD verified." if self.orcid_verified else "ORCID iD not verified."
+
+        output = {
+            "@context": self.get_context(),
+            "@id": f"mds:{self.analysis_id}",
+            "dcterms:creator": f"https://orcid.org/{self.orcid}",
+            "dcterms:date": datetime.now().strftime("%Y-%m-%d"),
+            "dcterms:source": self.sources,
+            "dcterms:provenance": self.file_events,
+            "dcterms:description": orcid_verification
+        }
+        return json.dumps(output, indent=2)
+
+    def serialize_analysis_jsonld(self):
+        """Serializes the JSON-LD to the structured analysis folder."""
+        # 1. Define and create the directory
+        json_dir = os.path.join(self.home_path, "analysis_json")
+        os.makedirs(json_dir, exist_ok=True)
+
+        # 2. Construct the specific filename
+        filename = f"{self.proj_name}_{self.analysis_id}_arguments.json"
+        full_path = os.path.join(json_dir, filename)
+
+        # 3. Get the JSON-LD data and write to disk
+        jsonld_data = self.create_analysis_jsonld()
+        
+        with open(full_path, 'w', encoding='utf-8') as f:
+            f.write(jsonld_data)
+
+    def create_report(self) -> str:
+        """Generates a human-readable Markdown report of the analysis."""
+        report = []
+        report.append(f"# Analysis Report: {self.proj_name}")
+        report.append(f"**Analysis ID:** `{self.analysis_id}`")
+        report.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report.append(f"**Creator:** [{self.orcid}](https://orcid.org/{self.orcid}) ({'Verified' if self.orcid_verified else 'Unverified'})")
+        report.append("\n---\n")
+
+        # 1. Inputs and Outputs
+        report.append("## 🧪 Data Sources & Variables")
+        if not self.sources:
+            report.append("_No variables tracked._")
+        else:
+            for s in self.sources:
+                shape_info = f" (Shape: {s.get('shape')})" if 'shape' in s else ""
+                val_info = f" = `{s.get('value')}`" if 'value' in s else ""
+                report.append(f"* **{s['arg_name']}** ({s['type']}){shape_info}{val_info}")
+
+        # 2. File System Events (The "Paper Trail")
+        report.append("\n## 📂 File System Activity")
+        if not self.file_events:
+            report.append("_No file system events detected._")
+        else:
+            report.append("| File Name | Event | Location |")
+            report.append("| :--- | :--- | :--- |")
+            for e in self.file_events:
+                report.append(f"| {e['file_name']} | {e['event']} | `{e['location']}` |")
+
+        report.append("\n---")
+        report.append(f"_Generated by FAIRLinked version {__version__} AnalysisTracker_")
+        
+        return "\n".join(report)
+
+    def save_report(self):
+        """Saves the human-readable report as a .md file."""
+        report_dir = os.path.join(self.home_path, "reports")
+        os.makedirs(report_dir, exist_ok=True)
+        
+        filename = f"{self.proj_name}_{self.analysis_id}_summary.md"
+        full_path = os.path.join(report_dir, filename)
+        
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(self.create_report())
+
+    def create_arg_df(self):
+        # 1. Create the dictionary of data first
+        row_data = {s["arg_name"]: s["arg_id"] for s in self.sources}
+    
+        # 2. Add your mandatory tracking columns
+        row_data["__rowkey__"] = self.analysis_id
+        row_data["ProjectTitle"] = self.proj_name
+    
+        # 3. Create the DataFrame from this single-row dictionary
+        # Wrapping row_data in a list [] tells Pandas this is one row of data
+        return pd.DataFrame([row_data])
+
+    def save_arg_df(self, format: str = 'csv'):
+        """
+        Serializes the argument dataframe to the structured analysis folder.
+        Supported formats: 'csv', 'parquet', 'feather'
+        """
+        # 1. Define and create the directory
+        table_dir = os.path.join(self.home_path, "analysis_tables")
+        os.makedirs(table_dir, exist_ok=True)
+
+        # 2. Construct the filename
+        filename = f"{self.proj_name}_{self.analysis_id}_table.{format}"
+        full_path = os.path.join(table_dir, filename)
+
+        # 3. Create the dataframe
+        df = self.create_arg_df()
+
+        # 4. Save based on format
+        if format.lower() == "csv":
+            df.to_csv(full_path, index=False)
+        elif format.lower() == "parquet":
+            df.to_parquet(full_path, index=False)
+        elif format.lower() == "pyarrow" or format.lower() == "feather":
+            # Pyarrow requires a reset index for row storage
+            df.reset_index(drop=True).to_feather(full_path)
+        else:
+            raise ValueError(f"Unsupported format: {format}. Use 'csv', 'parquet', 'pyarrow' or 'feather'.")
+
+    def create_metadata_template(self):
+        arg_df = self.create_arg_df()
+        dummy_mdsdf = MatDatSciDf(df=arg_df, ontology_graph=self.ontology, metadata_template={})
+        metadata_template, matched_log, unmatched_log = dummy_mdsdf.template_generator(skip_prompts=True)
+
+        return metadata_template, matched_log, unmatched_log
+
+    def create_MatDatSciDf(self):
+        metadata_template, matched_log, unmatched_log = self.create_metadata_template()
+        arg_df = self.create_arg_df()
+
+        arg_MatDatSciDf = MatDatSciDf(df = arg_df, 
+                                    metadata_template=metadata_template, 
+                                    ontology_graph=self.ontology,
+                                    matched_log=matched_log, 
+                                    unmatched_log=unmatched_log)
+
+        return arg_MatDatSciDf
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    
+
+    
+
+    
+
+    
