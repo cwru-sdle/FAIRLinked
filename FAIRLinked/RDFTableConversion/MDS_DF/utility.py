@@ -431,3 +431,33 @@ def prompt_for_missing_fields(col, unit, study_stage, ontology_graph, units):
 
 def get_license():
     return input("Please enter license")
+
+def get_curie(iri, bindings):
+        """
+        Converts a full IRI to a CURIE using the provided bindings.
+        Defaults to 'obo:BFO_0000001' if no match is found
+        """
+        if not iri:
+            return "obo:BFO_0000001"
+
+        best_prefix = None
+        best_uri = ""
+
+        for prefix, uri in bindings.items():
+            # Skip JSON-LD keywords
+            if "@" in prefix:
+                continue
+            
+            # Check if the IRI starts with this namespace URI
+            if iri.startswith(str(uri)):
+                # We want the longest matching URI for accuracy
+                if len(str(uri)) > len(best_uri):
+                    best_prefix = prefix
+                    best_uri = str(uri)
+
+        if best_prefix:
+            # Remove the URI part and join with the prefix
+            fragment = iri[len(best_uri):].lstrip('#/')
+            return f"{best_prefix}:{fragment}"
+
+        return "obo:BFO_0000001"
