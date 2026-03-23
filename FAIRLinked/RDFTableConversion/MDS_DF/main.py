@@ -600,7 +600,7 @@ class MatDatSciDf:
         prop_metadata_dict = self.get_relations()
 
         if write_files:
-            os.makedirs(os.path.dirname(output_folder), exist_ok=True)
+            os.makedirs(output_folder, exist_ok=True)
 
         sskey = {
             "Synthesis": "SYN", 
