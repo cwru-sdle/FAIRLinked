@@ -214,6 +214,17 @@ class MatDatSciDf:
                                 ontology_graph=onto_graph, 
                                 onto_props=onto_props)
 
+    def delete_relation(self, prop_key: str, pair: Optional[tuple] = None):
+        """
+        Top-level API to remove semantic links between columns.
+
+        Args:
+            prop_key (str): The property identifier (e.g., 'mds:measuredBy').
+            pair (tuple, optional): Specific (subj, obj) columns to un-link. 
+                If None, removes all links for that property.
+        """
+        self.data_relations.delete_relation(prop_key, pair)
+
     def validate_data_relations(self):
         """Wrapper to validate relations using the instance's own data and ontology."""
         onto_metadata = self.get_relations()
@@ -241,7 +252,6 @@ class MatDatSciDf:
         for a specific column.
         """
         self.metadata_obj.update_template(col_name, field, value)
-        # Update the local dictionary reference to keep them in sync
         self.metadata_template = self.metadata_obj.metadata_temp
 
     def add_column_metadata(self, col_name: str, rdf_type: str, unit: str = "UNITLESS", 
@@ -251,6 +261,17 @@ class MatDatSciDf:
         Useful for defining columns found in 'Discovery Warning' reports.
         """
         self.metadata_obj.add_column_metadata(col_name, rdf_type, unit, definition, study_stage)
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def delete_column_metadata(self, col_name: str):
+        """
+        Top-level API to remove a column's semantic metadata definition.
+        Useful for cleaning up incorrect mappings or unwanted discovery columns.
+
+        Args:
+            col_name (str): The column label to remove from the metadata template.
+        """
+        self.metadata_obj.delete_column_metadata(col_name)
         self.metadata_template = self.metadata_obj.metadata_temp
 
     def view_metadata(self, format: str = "table"):
