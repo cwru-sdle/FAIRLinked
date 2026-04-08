@@ -225,6 +225,29 @@ class Metadata:
             self.metadata_temp = json.loads(updated_json)
 
             print(f"✅ Successfully added metadata for new column: '{col_name}'.")
+
+        def delete_column_metadata(self, col_name: str):
+            """
+            Removes all metadata associated with a specific column from the graph and template.
+
+            Args:
+                col_name (str): The column name (skos:altLabel) to be removed.
+            """
+            # 1. Find the subject subject (the node) that has the altLabel matching col_name
+            subject = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
+
+            if subject:
+                # 2. Remove all triples where this node is the subject
+                self.template_graph.remove((subject, None, None))
+                
+                # 3. Re-sync the dictionary to reflect the deletion
+                context = self.metadata_temp.get("@context", {})
+                updated_json = self.template_graph.serialize(format="json-ld", context=context)
+                self.metadata_temp = json.loads(updated_json)
+                
+                print(f"✅ Successfully deleted metadata for column: '{col_name}'.")
+            else:
+                print(f"⚠️ Column '{col_name}' not found in the metadata.")
         
         def print_template(self, format: str = "table"):
             """

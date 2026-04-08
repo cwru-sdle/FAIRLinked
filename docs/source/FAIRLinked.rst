@@ -10,6 +10,7 @@ Subpackages
    FAIRLinked.InterfaceMDS
    FAIRLinked.QBWorkflow
    FAIRLinked.RDFTableConversion
+   FAIRLinked.RDFTableConversion.MDS_DF
 
 Module contents
 ---------------

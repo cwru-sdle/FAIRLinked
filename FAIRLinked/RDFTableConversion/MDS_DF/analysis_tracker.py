@@ -17,6 +17,10 @@ from ... import __version__
 from .utility import extract_terms_from_ontology, find_best_match, get_curie
 
 class AnalysisTracker:
+    """
+    A system for auditing scientific analysis, capturing data provenance, 
+    and generating semantic JSON-LD metadata.
+    """
 
     mds_graph = load_mds_ontology_graph()
 
@@ -88,6 +92,14 @@ class AnalysisTracker:
         
 
     def get_context(self) -> dict:
+
+        """
+        Defines the JSON-LD context mapping prefixes to namespace URIs.
+
+        Returns:
+            dict: A dictionary of semantic prefix mappings (e.g., prov, mds, qudt).
+        """
+
         return {
             self.prefix: self.base_uri,
             "qudt": "http://qudt.org/schema/qudt/",
@@ -107,7 +119,15 @@ class AnalysisTracker:
     # --- WRAPPERS ---
 
     def track(self, func):
-        """Decorator for methods: @tracker.track"""
+        """
+        A decorator to automatically wrap a function with provenance tracking.
+
+        Args:
+            func: The function to be decorated.
+
+        Returns:
+            function: The wrapped function that executes via run_and_track.
+        """
         @wraps(func)
         def wrapper(*args, **kwargs):
             return self.run_and_track(func, *args, **kwargs)
@@ -174,7 +194,15 @@ class AnalysisTracker:
         return result
 
     def _route_data(self, name, val, parent_id=None):
-        """The Central Switchboard"""
+        """
+        The central dispatcher that directs data to specific tracking methods 
+        based on the object's type (DataFrame, Dict, List, etc.).
+
+        Args:
+            name: The variable name or identifier.
+            val: The data object to be tracked.
+            parent_id: Optional identifier of the parent container for nesting.
+        """
         if isinstance(val, pd.DataFrame):
             self.track_dataframe(name, val, parent_id)
         elif isinstance(val, dict):
@@ -190,6 +218,15 @@ class AnalysisTracker:
     # --- TRACKING METHODS ---
 
     def track_simple_datatype(self, name, val, parent_id=None):
+        """
+        Tracks primitive types (str, int, float, bool) and attempts to 
+        map them to ontology terms using fuzzy matching.
+
+        Args:
+            name: Variable name.
+            val: The primitive value.
+            parent_id: ID of the containing process or object.
+        """
 
         onto_terms = extract_terms_from_ontology(self.ontology)
         
@@ -212,6 +249,15 @@ class AnalysisTracker:
         })
 
     def track_dict(self, name, val, parent_id=None):
+        """
+        Logs a dictionary's keys and recursively tracks its nested values.
+
+        Args:
+            name: Dictionary name.
+            val: The dictionary object.
+            parent_id: ID of the containing process or object.
+        """
+
         current_id = f"{name}.{self.analysis_id}"
         self.sources.append({
             "@id": f"{self.prefix}:{current_id}",
@@ -227,6 +273,15 @@ class AnalysisTracker:
             self._route_data(f"{name}.{k}", v, parent_id=current_id)
 
     def track_dataframe(self, name, df, parent_id=None):
+        """
+        Logs structural metadata of a Pandas DataFrame, including column 
+        names and row counts.
+
+        Args:
+            name: DataFrame name.
+            df: The pandas DataFrame object.
+            parent_id: ID of the containing process or object.
+        """
         self.sources.append({
             "@id": f"{self.prefix}:{name}.{self.analysis_id}",
             "@type": "cco:ont00000958",
@@ -239,6 +294,14 @@ class AnalysisTracker:
         })
 
     def track_list_array(self, name, data, parent_id = None):
+        """
+        Tracks the dimensions and size of lists and NumPy arrays.
+
+        Args:
+            name: Array or list name.
+            data: The sequence or array-like object.
+            parent_id: ID of the containing process or object.
+        """
         # 1. Handle NumPy Arrays
         if hasattr(data, 'shape'):
             dimensions = list(data.shape)
@@ -268,6 +331,15 @@ class AnalysisTracker:
         })
 
     def track_other(self, name, obj, parent_id=None):
+        """
+        Falls back to inspecting custom objects by logging their public 
+        attributes as nested data.
+
+        Args:
+            name: Object name.
+            obj: The Python object to inspect.
+            parent_id: ID of the containing process or object.
+        """
         current_id = f"{name}.{self.analysis_id}"
         
         # Log the object...
@@ -289,6 +361,12 @@ class AnalysisTracker:
             pass
 
     def create_analysis_jsonld(self):
+        """
+        Assembles all tracked data and file events into a valid JSON-LD string.
+
+        Returns:
+            str: A formatted JSON-LD string containing the analysis graph.
+        """
 
         orcid_verification = "ORCID iD verified." if self.orcid_verified else "ORCID iD not verified."
 
@@ -313,7 +391,9 @@ class AnalysisTracker:
         return json.dumps(output, indent=2)
 
     def serialize_analysis_jsonld(self):
-        """Serializes the JSON-LD to the structured analysis folder."""
+        """
+        Writes the JSON-LD metadata to a physical file within the analysis directory.
+        """
         # 1. Define and create the directory
         json_dir = os.path.join(self.home_path, "analysis_json")
         os.makedirs(json_dir, exist_ok=True)
@@ -329,7 +409,13 @@ class AnalysisTracker:
             f.write(jsonld_data)
 
     def create_report(self) -> str:
-        """Generates a human-readable Markdown report of the analysis."""
+        """
+        Generates a human-readable Markdown summary of the analysis 
+        variables and file system activities.
+
+        Returns:
+            str: A Markdown formatted report.
+        """
         report = []
         report.append(f"## Analysis Report: {self.proj_name}")
         report.append(f"**Analysis ID:** `{self.analysis_id}`")
@@ -362,7 +448,9 @@ class AnalysisTracker:
         return "\n".join(report)
 
     def save_report(self):
-        """Saves the human-readable report as a .md file."""
+        """
+        Saves the human-readable Markdown report to the reports directory.
+        """
         report_dir = os.path.join(self.home_path, "reports")
         os.makedirs(report_dir, exist_ok=True)
         
@@ -373,6 +461,13 @@ class AnalysisTracker:
             f.write(self.create_report())
 
     def create_arg_df(self):
+        """
+        Flattens the tracked variables into a single-row Pandas DataFrame for 
+        tabular comparison across different runs.
+
+        Returns:
+            pd.DataFrame: A DataFrame row containing run metadata and values.
+        """
         row_data = {
             s["skos:altLabel"]: (s["qudt:value"] if s.get("mds:argumentType") in ['int', 'str', 'float', 'bool'] else s["mds:argumentIdentifier"]) 
             for s in self.sources
@@ -389,6 +484,11 @@ class AnalysisTracker:
 
 class AnalysisGroup:
 
+    """
+    Manages a collection of related AnalysisTracker instances, facilitating 
+    group-level reporting and master graph generation.
+    """
+
     def __init__(self,
                 proj_name: str, 
                 home_path: str, 
@@ -396,6 +496,17 @@ class AnalysisGroup:
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
                 ontology_graph: Optional[Graph] = None, 
                 prefix: Optional[str] = "mds") -> None:
+        """
+        Initializes the group with shared project metadata.
+
+        Args:
+            proj_name: Name of the project group.
+            home_path: Root directory for all child analyses.
+            orcid: Researcher's ORCID iD.
+            base_uri: Base URI for semantic namespaces.
+            ontology_graph: Shared RDFLib Graph.
+            prefix: Prefix for the base URI.
+        """
 
         self.analyses = {}
         self.proj_name = proj_name
@@ -409,6 +520,12 @@ class AnalysisGroup:
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
 
     def get_context(self) -> dict:
+        """
+        Defines the JSON-LD context for the group metadata.
+
+        Returns:
+            dict: Prefix to namespace URI mappings.
+        """
         return {
             self.prefix: self.base_uri,
             "qudt": "http://qudt.org/schema/qudt/",
@@ -427,6 +544,15 @@ class AnalysisGroup:
         
 
     def run_and_track(self, func, *args, **kwargs):
+        """
+        Creates a new AnalysisTracker instance, executes a function, 
+        and stores the resulting metadata in the group registry.
+
+        Args:
+            func: The target function to track.
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+        """
         
         analysis = AnalysisTracker(
                         proj_name=self.proj_name, 
@@ -452,6 +578,13 @@ class AnalysisGroup:
             }
 
     def create_group_arg_df(self) -> pd.DataFrame:
+        """
+        Aggregates all individual analysis DataFrames into a single 
+        master DataFrame.
+
+        Returns:
+            pd.DataFrame: Concatenated data from all tracked analyses.
+        """
         
         if not self.analyses:
             warnings.warn("No analyses have been tracked in this group yet.")
@@ -472,6 +605,13 @@ class AnalysisGroup:
         return cast(pd.DataFrame, result)
 
     def create_metadata_template(self):
+        """
+        Automatically generates a metadata template by matching 
+        group data columns against the loaded ontology.
+
+        Returns:
+            tuple: (metadata_template, matched_log, unmatched_log)
+        """
         group_arg_df = self.create_group_arg_df()
 
         dummy_mdsdf = MatDatSciDf(df=group_arg_df, ontology_graph=self.ontology, metadata_template={})
@@ -480,6 +620,13 @@ class AnalysisGroup:
         return metadata_template, matched_log, unmatched_log
 
     def create_MatDatSciDf(self):
+        """
+        Converts the group data into a MatDatSciDf object, integrating 
+        ontology-mapped metadata.
+
+        Returns:
+            MatDatSciDf: The semantic-aware DataFrame object.
+        """
         metadata_template, matched_log, unmatched_log = self.create_metadata_template()
         arg_df = self.create_group_arg_df()
 
@@ -492,6 +639,12 @@ class AnalysisGroup:
         return arg_MatDatSciDf
 
     def create_group_report(self):
+        """
+        Consolidates individual analysis reports into one master Markdown document.
+
+        Returns:
+            str: A full Markdown report for the entire group.
+        """
 
         group_report = []
 
@@ -511,6 +664,9 @@ class AnalysisGroup:
         return "\n".join(group_report)
 
     def save_report(self):
+        """
+        Saves the consolidated group report to a dedicated group directory.
+        """
         report_dir = os.path.join(self.home_path, self.group_id)
         os.makedirs(report_dir, exist_ok=True)
         
@@ -521,6 +677,10 @@ class AnalysisGroup:
             f.write(self.create_group_report())
 
     def save_jsonld(self):
+        """
+        Serializes all individual analysis JSON-LDs and creates a 
+        master graph file that links all components to the group activity.
+        """
         combined_nodes = []
         # Create a list of references to show "Components" of the group
         analysis_refs = [{"@id": f"mds:{aid}"} for aid in self.analyses.keys()]

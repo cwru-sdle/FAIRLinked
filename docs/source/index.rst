@@ -15,5 +15,6 @@ FAIRLinked documentation
    installation
    quick-start
    user-guide
+   user-guide-MDS_DF
    command-line
    FAIRLinked
