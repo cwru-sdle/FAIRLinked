@@ -1,3 +1,7 @@
+# 0.3.3.1
+
+Include a decorator for the analysis group class
+
 # 0.3.3.0
 
 Version 0.3.3 now includes ways to directly interact and manage metadata programmatically.

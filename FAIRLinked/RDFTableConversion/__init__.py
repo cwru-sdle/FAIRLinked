@@ -7,11 +7,12 @@ from .csv_to_jsonld_mapper import jsonld_template_generator, jsonld_temp_gen_int
 from .csv_to_jsonld_template_filler import extract_data_from_csv, extract_from_folder, generate_prop_metadata_dict, extract_data_from_csv_interface
 from .jsonld_batch_converter import jsonld_directory_to_csv
 
-from .MDS_DF import MatDatSciDf, AnalysisGroup
+from .MDS_DF import MatDatSciDf, AnalysisGroup, AnalysisTracker
 
 
 __all__ = ["csv_to_jsonld_mapper", 
             "csv_to_jsonld_template_filler", 
             "jsonld_batch_converter", 
             "MatDatSciDf",
-            "AnalysisGroup"]
+            "AnalysisGroup",
+            "AnalysisTracker"]
