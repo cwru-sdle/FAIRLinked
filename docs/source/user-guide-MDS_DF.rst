@@ -129,6 +129,38 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
     for t in [300, 400, 500]:
         group.run_and_track(my_simulation_func, temp=t)
 
+
+**Batch Tracking with Decorators**
+
+.. code-block:: python
+
+    from fairlinked import AnalysisGroup
+
+    # 1. Initialize the Group
+    group = AnalysisGroup(proj_name="Temperature_Sweep", home_path="./batch_data")
+
+    # 2. Use the @group.track decorator
+    # Each call to this function will now trigger a new AnalysisTracker internally.
+    @group.track
+    def my_simulation_func(temp):
+        """
+        Performs a simulation at a specific temperature.
+        Inputs and outputs are automatically audited as separate runs.
+        """
+        result = temp * 0.0012 
+        return {"lattice_parameter": result}
+
+    # 3. Run multiple tracked iterations
+    # Each iteration receives a unique analysis_id and standalone JSON-LD graph.
+    for t in [300, 400, 500]:
+        my_simulation_func(temp=t)
+
+    # 4. Aggregate Results
+    # Flatten all independent runs into a single master DataFrame.
+    master_df = group.create_group_arg_df()
+
+---
+
 Semantic Integration
 ~~~~~~~~~~~~~~~~~~~~
 

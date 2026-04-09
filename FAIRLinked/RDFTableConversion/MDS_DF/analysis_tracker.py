@@ -541,6 +541,21 @@ class AnalysisGroup:
             "unit": "https://qudt.org/vocab/unit/",
             "obo": "http://purl.obolibrary.org/obo/"      
         }
+
+    def track(self, func):
+        """
+        A decorator to automatically wrap a function with provenance tracking.
+
+        Args:
+            func: The function to be decorated.
+
+        Returns:
+            function: The wrapped function that executes via run_and_track.
+        """
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return self.run_and_track(func, *args, **kwargs)
+        return wrapper
         
 
     def run_and_track(self, func, *args, **kwargs):
