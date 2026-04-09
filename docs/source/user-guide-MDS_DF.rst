@@ -147,7 +147,7 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
         Performs a simulation at a specific temperature.
         Inputs and outputs are automatically audited as separate runs.
         """
-        result = temp * 0.0012  # Simulated physics logic
+        result = temp * 0.0012 
         return {"lattice_parameter": result}
 
     # 3. Run multiple tracked iterations
