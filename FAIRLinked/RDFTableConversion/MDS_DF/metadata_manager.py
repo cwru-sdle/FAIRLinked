@@ -60,6 +60,17 @@ class Metadata:
             self.template_graph.bind("qudt", self.QUDT)
 
 
+        def _normalize_graph_structure(self, data: dict) -> dict:
+            """
+            Ensure the serialized JSON-LD always has a '@graph' list.
+            """
+            if "@graph" not in data:
+                context = data.pop("@context", {})
+                node = {k: v for k, v in data.items()}
+                return {"@context": context, "@graph": [node]}
+            return data
+
+
         def save_metadata(self, output_path: str, matched_log_path: Optional[str] = None, unmatched_log_path: Optional[str] = None):
             """
             Exports the synchronized metadata template and import logs to the file system.
@@ -167,7 +178,9 @@ class Metadata:
                 # We use a frame or context to keep the JSON-LD structure clean
                 context = self.metadata_temp.get("@context", {})
                 updated_json = self.template_graph.serialize(format="json-ld", context=context)
-                self.metadata_temp = json.loads(updated_json)
+
+                #self.metadata_temp = json.loads(updated_json)
+                self.metadata_temp = self._normalize_graph_structure(json.loads(updated_json))
 
                 print(f"✅ Successfully updated {field} for '{col_name}'.")
             
@@ -222,7 +235,8 @@ class Metadata:
             
             context = self.metadata_temp.get("@context", {})
             updated_json = self.template_graph.serialize(format="json-ld", context=context)
-            self.metadata_temp = json.loads(updated_json)
+            #self.metadata_temp = json.loads(updated_json)
+            self.metadata_temp = self._normalize_graph_structure(json.loads(updated_json))
 
             print(f"✅ Successfully added metadata for new column: '{col_name}'.")
 
