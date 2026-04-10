@@ -1,3 +1,9 @@
+# 0.3.3.2
+
+Fix invalid IRI creation in Analysis Tracker
+Return error if a function doesn't run with run_and_track
+
+
 # 0.3.3.1
 
 Include a decorator for the analysis group class
