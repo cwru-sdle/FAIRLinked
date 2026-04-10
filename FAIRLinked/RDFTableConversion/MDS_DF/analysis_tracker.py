@@ -14,7 +14,7 @@ from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import warnings
 import requests
 from ... import __version__
-from .utility import extract_terms_from_ontology, find_best_match, get_curie
+from .utility import extract_terms_from_ontology, find_best_match, get_curie, normalize
 
 class AnalysisTracker:
     """
@@ -167,31 +167,43 @@ class AnalysisTracker:
         # 2. Science Execution with OS-Level Auditing
         process = psutil.Process(os.getpid())
         
-        # Execute
-        result = func(*args, **kwargs)
-        
-        # 3. Capture open file handles at the moment of completion
-        # Note: Polling in a thread is better for short-lived files, 
-        # but this catches all currently active handles.
-        for file in process.open_files():
-            mode = getattr(file, 'mode', 'r')
-                
-            event_type = "read/import" if 'r' in mode else "write/modification"
-            self.file_events.append({
-                    "@id": f"{self.prefix}:file_event_{uuid4().hex[:8]}_{self.analysis_id}",
-                    "@type": "cco:ont00000958",
-                    "mds:fileName": os.path.basename(file.path),
-                    "mds:fileLocation": file.path,
-                    "mds:fileEvent": event_type,
-                    "prov:generatedAtTime": datetime.now().isoformat()
-                })
+        try:
+            # Execute
+            result = func(*args, **kwargs)
+            
+            # 3. Capture open file handles at the moment of completion
+            # Note: Polling in a thread is better for short-lived files, 
+            # but this catches all currently active handles.
+            for file in process.open_files():
+                mode = getattr(file, 'mode', 'r')
+                    
+                event_type = "read/import" if 'r' in mode else "write/modification"
+                self.file_events.append({
+                        "@id": f"{self.prefix}:file_event_{uuid4().hex[:8]}_{self.analysis_id}",
+                        "@type": "cco:ont00000958",
+                        "mds:fileName": os.path.basename(file.path),
+                        "mds:fileLocation": file.path,
+                        "mds:fileEvent": event_type,
+                        "prov:generatedAtTime": datetime.now().isoformat()
+                    })
 
-        if isinstance(result, tuple):
-            for i, item in enumerate(result):
-                self._route_data(f"{func.__name__}_output_{i}", item, parent_id=run_id)
-        else:
-            self._route_data(f"{func.__name__}_output", result, parent_id=run_id)
-        return result
+            if isinstance(result, tuple):
+                for i, item in enumerate(result):
+                    self._route_data(f"{func.__name__}_output_{i}", item, parent_id=run_id)
+            else:
+                self._route_data(f"{func.__name__}_output", result, parent_id=run_id)
+            return result
+
+        except Exception as e:
+            # --- THE FIX: Catch the error and move on ---
+            error_msg = f"Error in {func.__name__}: {str(e)}"
+            print(f"⚠️ {error_msg}")
+            
+            # Log the error as a "simple datatype" so it appears in the RDF graph
+            self._route_data(f"{func.__name__}_ERROR", error_msg, parent_id=run_id)
+            
+            # Return None or a custom error object so the loop can continue
+            return None
 
     def _route_data(self, name, val, parent_id=None):
         """
@@ -203,6 +215,8 @@ class AnalysisTracker:
             val: The data object to be tracked.
             parent_id: Optional identifier of the parent container for nesting.
         """
+
+        name = normalize(name)
         if isinstance(val, pd.DataFrame):
             self.track_dataframe(name, val, parent_id)
         elif isinstance(val, dict):
@@ -238,6 +252,7 @@ class AnalysisTracker:
 
         curie = get_curie(iri, bindings) 
 
+
         self.sources.append({
             "@id": f"{self.prefix}:{name}.{self.analysis_id}",
             "@type": f"{curie}",
@@ -259,6 +274,7 @@ class AnalysisTracker:
         """
 
         current_id = f"{name}.{self.analysis_id}"
+
         self.sources.append({
             "@id": f"{self.prefix}:{current_id}",
             "@type": "cco:ont00000958",
