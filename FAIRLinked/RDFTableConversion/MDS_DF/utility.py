@@ -208,7 +208,7 @@ def normalize(text):
     """
 
     text = text.lower().replace(" ", "_")
-    return re.sub(r'[^a-zA-Z0-_]', '', text.lower())
+    return re.sub(r'[^a-zA-Z0-_.]', '', text.lower())
 
 def get_local_name(uri):
         uri_str = str(uri)
