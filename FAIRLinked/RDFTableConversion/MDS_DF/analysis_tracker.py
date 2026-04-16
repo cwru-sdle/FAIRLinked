@@ -8,13 +8,24 @@ from uuid import uuid4
 from typing import Optional, cast
 import psutil
 import os
+import ast
 from .main import MatDatSciDf
+import importlib.metadata
+import importlib
+
+
+import pkgutil
+#from .import_detector import print_imports
 from rdflib import Graph, Namespace
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import warnings
 import requests
 from ... import __version__
 from .utility import extract_terms_from_ontology, find_best_match, get_curie
+
+def get_module_info(name):
+        return name
+
 
 class AnalysisTracker:
 
@@ -84,6 +95,64 @@ class AnalysisTracker:
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
         self.ontology.bind("mds", self.MDS)
+
+    
+
+    def detect_all_imports(self):
+        frame = inspect.currentframe()
+        while frame.f_back: #get calling frame
+            frame = frame.f_back
+        caller_file = inspect.getfile(frame)
+        print(caller_file)
+
+        with open(caller_file, 'r') as f:
+            source = f.read()
+    
+        tree = ast.parse(source)
+        
+        imports = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                print("::::Is import")
+                for alias in node.names:
+                    print("         ",alias.name)
+                    module_info = get_module_info(alias.name)
+                    imports.append({
+                        'type': 'import',
+                        'module': alias.name,
+                        'alias': alias.asname,
+                        'info': module_info
+                    })
+                    
+            elif isinstance(node, ast.ImportFrom):
+                print("::::Is relative")
+                module = node.module if node.module else '(relative)'
+            
+                for alias in node.names:
+                    print("         ",alias)
+                    full_name = f"{module}.{alias.name}" if module != '(relative)' else alias.name
+                    print("         --",full_name)
+                    if module and not module.startswith('.'):
+                        module_info = get_module_info(module)
+                    else:
+                        module_info = {
+                            'name': module,
+                            'top_level': module,
+                            'type': 'relative_import',
+                            'version': None,
+                            'file_path': None,
+                        }
+                    
+                    imports.append({
+                        'type': 'from',
+                        'module': module,
+                        'name': alias.name,
+                        'alias': alias.asname,
+                        'full_name': full_name,
+                        'info': module_info
+                    })
+        
+        return imports
         
         
 
@@ -565,7 +634,9 @@ class AnalysisGroup:
         
         with open(os.path.join(group_json_dir, filename), "w", encoding="utf-8") as f:
             json.dump(master_output, f, indent=2)
-    
+
+
+#print(detect_all_imports())
 
 
 
