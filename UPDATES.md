@@ -1,3 +1,9 @@
+## ✨ New in v0.3.3
+
+Version 0.3.3 now includes ways to directly interact and manage metadata programmatically, as well as ways to FAIRify the data analysis process.
+
+
+
 
 ## ✨ New in v0.3.2
 

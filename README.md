@@ -68,7 +68,215 @@ pip install .
 
 This section provides example runs of the serialization and deserialization processes. All example files can be found in the GitHub repository of `FAIRLinked` under `resources` or can be directly accessed [here](https://github.com/cwru-sdle/FAIRLinked/blob/main/resources). Command-line version of the functions below can be found [here](https://github.com/cwru-sdle/FAIRLinked/blob/main/resources/CLI_Examples.md) and in [updates](https://github.com/cwru-sdle/FAIRLinked/blob/main/UPDATES.md).
 
-### Serializing and deserializing with RDFTableConversion
+### Metadata management and analysis provenance with RDFTableConversion.MDS_DF
+
+#### Serializing and deserializing with RDFTableConversion.MDS_DF
+
+The `main.py` module contains the **MatDatSciDf** class, which serves as an object that contains both the data and metadata associated with that data. It bridges tabular Pandas DataFrames and Linked Data (RDF) by maintaining synchronized metadata templates and ontological mappings.
+
+A semantic wrapper for Pandas DataFrames that enforces FAIR principles by validating researcher identity (ORCID) and ensuring ontological consistency before serialization.
+
+Initialize the semantic wrapper. Setting `metadata_rows=True` instructs the class to ignore the first three rows. The method ``template_generator`` can be used to parse the metadata.
+
+```python
+import pandas as pd
+from FAIRLinked import MatDatSciDf
+
+# Load the microindentation data
+raw_df = pd.read_csv("resources/worked-example-RDFTableConversion/microindentation/sa17455_00.csv")
+
+mds_df = MatDatSciDf(
+    df=raw_df, 
+    metadata_template={}, 
+    orcid="0000-0001-2345-6789",
+    df_name="PMMA_Hardness_Test",
+    metadata_rows=True
+)
+
+template, matched, unmatched = mds_df.template_generator(skip_prompts=True)
+
+mds_df.metadata_template = template
+
+```
+
+To serialize the data, run ``serialize_row`` or ``serialize_bulk`` method:
+
+```python
+
+row_graphs = mds_df.serialize_row(
+    output_folder="resources/worked-example-RDFTableConversion.MDS_DF/individual_pmma_records",
+    format='json-ld',
+    row_key_cols=["Measurement", "Sample"], # Used to name files and generate IDs
+    license="CC0-1.0"                      # Defaults to public domain
+)
+
+master_graph = mds_df.serialize_bulk(
+    output_path="resources/worked-example-RDFTableConversion.MDS_DF/master_pmma_record.jsonld",
+    format='json-ld',
+    row_key_cols=["Measurement", "Sample"],
+    license="MIT" 
+)
+
+```
+
+To turn serialized JSON-LDs back into an MDS_DF, run ``from_rdf_dir``:
+```python
+import os
+from FAIRLinked import MatDatSciDf
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+
+# 1. Setup environment and load the reference ontology
+mds_graph = load_mds_ontology_graph()
+input_directory = "resources/worked-example-RDFTableConversion.MDS_DF/individual_pmma_records"
+
+# 3. Use the method to reconstruct.
+reconstructed_mds_df = MatDatSciDf.from_rdf_dir(
+    input_dir=input_directory,
+    orcid="0000-0001-2345-6789",
+    df_name="Restored_PMMA_Study",
+    ontology_graph=mds_graph
+)
+
+```
+
+| Method | Description | Key Arguments |
+| :--- | :--- | :--- |
+| `template_generator` | Parses the isolated first 3 rows of the CSV to map Types, Units, and Stages to the JSON-LD template. | `skip_prompts` |
+| `serialize_row` | Transforms each individual row of the DataFrame into its own RDF graph/file (e.g., `.jsonld`). | `output_folder`, `row_key_cols`, `license` |
+| `serialize_bulk` | Aggregates all row-level data into a **single master graph** file while preserving prefix context. | `output_path`, `row_key_cols`, `license` |
+| `from_rdf_dir` | A factory method that builds a new `MatDatSciDf` object from a directory of RDF files. | `input_dir`, `orcid`, `ontology_graph` |
+| `save_mds_df` | Exports the data to CSV (with semantic headers), Parquet, or Arrow. | `output_dir`, `metadata_in_output_df` |
+
+#### Metadata management
+
+Users can update their metadata template using ``update_metadata`` (which handles an already existing entry), ``add_column_metadata`` (which adds a new entry to the template), or ``delete_column_metadata`` (deletes an entry from the metadata template)
+
+```python
+
+
+mds_df.update_metadata(
+    col_name="Hardness (GPa)", 
+    field="definition", 
+    value="Vickers hardness value measured on PMMA sample."
+)
+
+mds_df.add_column_metadata(
+    col_name="YoungModulus",
+    rdf_type="mds:YoungsModulus",
+    unit="GigaPA",
+    definition="Elastic modulus of the polymer.",
+    study_stage="Result"
+)
+
+mds_df.add_column_metadata(
+    col_name="YoungModulus"
+)
+
+```
+
+| Method | Description | Key Arguments |
+| :--- | :--- | :--- |
+| `update_metadata` | Updates a specific semantic field (e.g., definition, unit, or type) for an existing column entry. | `col_name`, `field`, `value` |
+| `add_column_metadata` | Manually defines semantic metadata for a new column or one found during an audit. | `col_name`, `rdf_type`, `unit`, `definition` |
+| `delete_metadata` |Removes a column's entire semantic definition from the internal RDF graph and template. | `col_name` |
+| `view_metadata` | Renders the current metadata template as a table or raw JSON-LD. | `format` ("table" or "json") |
+| `validate_metadata` | Performs a two-way check to ensure DataFrame columns and metadata entries are aligned. | None |
+
+#### Data relations Management
+
+
+
+```python
+micro_relations = {
+    "is about": [
+        ("Hardness (GPa)", "Sample"), 
+        ("YoungModulus", "Sample")
+    ],
+    "mds:measuredBy": [
+        ("Hardness (GPa)", "Indenter_ID"),
+        ("Load (Newton)", "Indenter_ID")
+    ]
+}
+
+mds_df.add_relations(micro_relations)
+
+mds_df.delete_relation("mds:measuredBy", ("Hardness (GPa)", "Indenter_ID"))
+
+mds_df.delete_relation("is about")
+
+```
+| Method | Description | Key Arguments |
+| :--- | :--- | :--- |
+| `add_relations` | Ingests a dictionary of links (e.g., `Hardness` is about `Sample`) and validates them against the ontology. | `data_relations` (dict) |
+| `delete_relation` | Removes a specific subject-object pair or an entire property group. | `prop_key`, `pair` (optional) |
+| `view_data_relations` | Generates a visual validation report of all current semantic links. | None |
+| `get_relations` | Scans the active ontology to find all available OWL Object and Datatype properties. | None |
+| `validate_data_relations` | Verifies that predicates are ontologically valid and columns exist in the DataFrame. | None |
+
+#### Analysis Provenance
+
+**Batch Analysis with AnalysisGroup**
+The ``AnalysisGroup`` class allows you to execute a function multiple times while capturing the provenance and data metadata for every iteration. It then aggregates these into a master report and a unified JSON-LD graph.
+
+**Example: Batch Lattice Parameter Trend Analysis**
+In this scenario, we perform a linear regression on lattice parameter data across different temperature ranges and track each fitting step as a distinct event.
+
+```python
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from fairlinked import AnalysisGroup
+
+# 1. Initialize the Group
+# This will manage individual trackers and aggregate their results.
+group = AnalysisGroup(
+    proj_name="Lattice_Trend_Study", 
+    home_path="resources/worked-example-RDFTableConversion.MDS_DF/analysis/test_research_analysis_data",
+    orcid="0000-0001-2345-6789"
+)
+
+# 2. Define the Analysis Function
+def perform_regression(X_data, y_data):
+    """
+    Fits a linear model to lattice data and returns regression coefficients.
+    The tracker will automatically audit these inputs and the dictionary output.
+    """
+    model = LinearRegression()
+    X_reshaped = np.array(X_data).reshape(-1, 1)
+    model.fit(X_reshaped, y_data)
+    
+    return {
+        "slope": model.coef_[0],
+        "intercept": model.intercept_,
+        "r_squared": model.score(X_reshaped, y_data)
+    }
+
+# 3. Run the Batch
+# We simulate a rolling window of temperature data.
+temperatures = [300, 400, 500, 600]
+lattice_params = [3.98, 3.99, 4.01, 4.02]
+
+for i in range(len(temperatures)):
+    sub_x = temperatures[:i+2]
+    sub_y = lattice_params[:i+2]
+
+    # Use run_and_track to create a new tracker for this specific iteration.
+    group.run_and_track(perform_regression, X_data=sub_x, y_data=sub_y)
+
+# 4. Aggregate and Export Results
+# Flattens all run variables into a single tabular DataFrame.
+master_df = group.create_group_arg_df() 
+
+# Creates a semantic wrapper (MatDatSciDf) for the aggregated data.
+mds_obj = group.create_MatDatSciDf() 
+
+group.save_report() # Consolidates individual Markdown reports into one.
+group.save_jsonld() # Generates a master graph linking all runs.
+```
+
+
+
+
+### Serializing and deserializing with RDFTableConversion directly from CSV
 
 To start serializing with FAIRLinked, we first make a template using `jsonld_template_generator` from `FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper`. In your CSV, make sure to have some (possibly empty or partially filled) rows reserved for metadata about your variable. 
 

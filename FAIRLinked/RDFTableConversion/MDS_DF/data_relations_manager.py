@@ -81,6 +81,36 @@ class DataRelationsDict:
 
             print(f"✅ Integrated {len(data_relations)} property groups into the relation dictionary.")
 
+        def delete_relation(self, prop_key: str, pair: Optional[tuple] = None):
+            """
+            Removes semantic relationships from the dictionary.
+
+            Args:
+                prop_key (str): The property label, CURIE, or URI identifying the group.
+                pair (tuple, optional): A specific (subject_column, object_column) tuple 
+                    to remove. If None, the entire property group is deleted.
+            """
+            if prop_key not in self.prop_pair_dict:
+                print(f"⚠️ Property '{prop_key}' not found in the current relations.")
+                return
+
+            if pair is None:
+                # 1. Delete the entire property group
+                del self.prop_pair_dict[prop_key]
+                print(f"✅ Successfully deleted all relations for property: '{prop_key}'.")
+            else:
+                # 2. Delete a specific (subj, obj) pair
+                try:
+                    self.prop_pair_dict[prop_key].remove(pair)
+                    print(f"✅ Successfully deleted pair {pair} from property: '{prop_key}'.")
+                    
+                    # Clean up the key if the list is now empty
+                    if not self.prop_pair_dict[prop_key]:
+                        del self.prop_pair_dict[prop_key]
+                        
+                except ValueError:
+                    print(f"⚠️ Pair {pair} not found under property '{prop_key}'.")
+
         def validate_data_relations(self, 
                                     df: pd.DataFrame, 
                                     ontology_graph: Graph, 

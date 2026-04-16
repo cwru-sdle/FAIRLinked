@@ -1,3 +1,19 @@
+# 0.3.3.2
+
+Fix invalid IRI creation in Analysis Tracker
+Return error if a function doesn't run with run_and_track
+
+
+# 0.3.3.1
+
+Include a decorator for the analysis group class
+
+# 0.3.3.0
+
+Version 0.3.3 now includes ways to directly interact and manage metadata programmatically.
+
+Also includes new classes to keep track of the analysis process.
+
 # 0.3.2.13
 
 Deal with numpy data types for when user wants to use datatype properties to connect from instances to literals
