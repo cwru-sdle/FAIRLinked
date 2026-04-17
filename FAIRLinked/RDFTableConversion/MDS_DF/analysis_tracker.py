@@ -12,10 +12,9 @@ import ast
 from .main import MatDatSciDf
 import importlib.metadata
 import importlib
-
+import sys
 
 import pkgutil
-#from .import_detector import print_imports
 from rdflib import Graph, Namespace
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import warnings
@@ -23,8 +22,185 @@ import requests
 from ... import __version__
 from .utility import extract_terms_from_ontology, find_best_match, get_curie, normalize
 
-def get_module_info(name):
-        return name
+def categorize_imports(imports):
+    """Group imports by their type."""
+    categorized = {
+        'third_party': [],
+        'standard_library': [],
+        'user_modules': [],
+        'relative_imports': [],
+        'other': []
+    }
+    
+    for imp in imports:
+        module_info = imp['info']
+        
+        if module_info['type'] == 'third_party':
+            categorized['third_party'].append(imp)
+        elif module_info['type'] == 'standard_library':
+            categorized['standard_library'].append(imp)
+        elif module_info['type'] == 'user_module' or module_info['type'] == 'system_or_local':
+            categorized['user_modules'].append(imp)
+        elif module_info['type'] == 'relative_import':
+            categorized['relative_imports'].append(imp)
+        else:
+            categorized['other'].append(imp)
+    
+    return categorized
+
+def get_module_info(module_name):
+    """Get information about a module."""
+    top_level = module_name.split('.')[0]
+    
+    info = {
+        'name': module_name,
+        'top_level': top_level,
+        'type': 'unknown',
+        'version': None,
+        'file_path': None,
+        'is_stdlib': False,
+        'is_third_party': False,
+        'is_user_module': False,
+    }
+    
+    # Check if it's a standard library module
+    stdlib_modules = {
+        'ast', 'inspect', 'importlib', 'pkgutil', 'sys', 'os', 'json', 're', 
+        'collections', 'itertools', 'functools', 'typing', 'abc', 'warnings',
+        'datetime', 'math', 'random', 'string', 'pathlib', 'subprocess', 'io',
+        'time', 'threading', 'multiprocessing', 'socket', 'email', 'http',
+        'urllib', 'xml', 'html', 'csv', 'configparser', 'argparse', 'logging',
+        'unittest', 'doctest', 'pdb', 'traceback', 'gc', 'weakref', 'copy',
+        'pprint', 'enum', 'hashlib', 'uuid', 'shutil', 'tempfile', 'glob'
+    }
+    
+    if top_level in stdlib_modules:
+        info['type'] = 'standard_library'
+        info['is_stdlib'] = True
+    else:
+        # Try to import and get file path
+        try:
+            module = importlib.import_module(top_level)
+            if hasattr(module, '__file__') and module.__file__:
+                info['file_path'] = module.__file__
+                
+                # Check if user module (not in site-packages)
+                if 'site-packages' not in module.__file__ and 'dist-packages' not in module.__file__:
+                    # Check if in the current project directory
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    if current_dir in module.__file__:
+                        info['type'] = 'user_module'
+                        info['is_user_module'] = True
+                    else:
+                        info['type'] = 'system_or_local'
+                else:
+                    info['type'] = 'third_party'
+                    info['is_third_party'] = True
+                    
+                  
+                    
+                try: #try get version
+                    version = get_package_version(top_level)
+                    if version:
+                        info['version'] = version
+                except:
+                    pass
+                        
+        except (ImportError, AttributeError):
+            pass
+    
+    # handling for sys import
+    if top_level == 'sys':
+        info['version'] = sys.version.split()[0]
+        info['type'] = 'standard_library'
+        info['is_stdlib'] = True
+    
+    return info
+
+def get_package_version(package_name):
+    """Safely get the version of a package using multiple methods."""
+    top_level = package_name.split('.')[0]
+    
+    # attempt by check common attributes
+    try:
+        module = importlib.import_module(top_level)
+        version_attrs = ['__version__', 'version', 'VERSION', '__VERSION__', 'ver']
+        for attr in version_attrs:
+            if hasattr(module, attr):
+                version = getattr(module, attr)
+                if version and version != '0.0.post1':
+                    return str(version)
+    except ImportError:
+        pass
+    
+    # attempt by comparing with automatic package discovery
+    actual_package, version = find_package_by_import_name(top_level)
+    if version:
+        return version
+    
+    # attempt with importlib.metadata
+    try:
+        return importlib.metadata.version(top_level)
+    except:
+        pass
+    
+    return None
+
+def find_package_by_import_name(import_name):
+    """Find the actual installed package name for a given import name."""
+    top_level = import_name.split('.')[0]
+    
+    # check __version__ directly
+    try:
+        module = importlib.import_module(top_level)
+        version = getattr(module, '__version__', None)
+        if version:
+            return top_level, version
+    except ImportError:
+        pass
+    
+    # search all installed packages using importlib.metadata
+    try:
+        for dist in importlib.metadata.distributions():
+            package_name = dist.metadata['Name']
+            
+            # Check if this package provides the import name via top_level.txt
+            try:
+                top_level_content = dist.read_text('top_level.txt')
+                if top_level_content:
+                    top_levels = top_level_content.strip().split()
+                    if top_level in top_levels:
+                        return package_name, dist.version
+            except:
+                pass
+            
+            # Check matching files in top-level module
+            try:
+                files = dist.files
+                if files:
+                    for file in files:
+                        parts = file.parts
+                        if len(parts) > 0:
+                            top_file = parts[0]
+                            if top_file.endswith('.py'):
+                                module_candidate = top_file[:-3]
+                            else:
+                                module_candidate = top_file
+                            
+                            if module_candidate == top_level:
+                                return package_name, dist.version
+            except:
+                pass
+            
+            # check if package matches import name
+            if package_name.lower().replace('-', '_') == top_level.lower():
+                return package_name, dist.version
+                
+    except:
+        pass
+    
+    return None, None
+
 
 
 class AnalysisTracker:
@@ -127,6 +303,8 @@ class AnalysisTracker:
                         'alias': alias.asname,
                         'info': module_info
                     })
+
+                    print(f"DEG: import {module_info}")
                     
             elif isinstance(node, ast.ImportFrom):
                 print("::::Is relative")
