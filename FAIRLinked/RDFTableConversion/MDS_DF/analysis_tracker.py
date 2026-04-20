@@ -262,6 +262,7 @@ class AnalysisTracker:
         self.sources = []
         self.proj_name = proj_name
         self.file_events = []
+        self.imports =[]
         if ontology_graph is None:
             if MatDatSciDf.mds_graph is None:
                 print("MDS-Onto from source is not available, please parse ontology from a local file")
@@ -333,6 +334,7 @@ class AnalysisTracker:
                         'full_name': full_name,
                         'info': module_info
                     })
+        self.imports = imports       
         
         return imports
         
