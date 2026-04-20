@@ -73,6 +73,13 @@ def get_module_info(module_name):
         'unittest', 'doctest', 'pdb', 'traceback', 'gc', 'weakref', 'copy',
         'pprint', 'enum', 'hashlib', 'uuid', 'shutil', 'tempfile', 'glob'
     }
+
+    try: #try get version
+        version = get_package_version(top_level)
+        if version:
+            info['version'] = version
+    except:
+        print("error finding version for ", top_level)
     
     if top_level in stdlib_modules:
         info['type'] = 'standard_library'
@@ -96,15 +103,6 @@ def get_module_info(module_name):
                 else:
                     info['type'] = 'third_party'
                     info['is_third_party'] = True
-                    
-                  
-                    
-                try: #try get version
-                    version = get_package_version(top_level)
-                    if version:
-                        info['version'] = version
-                except:
-                    pass
                         
         except (ImportError, AttributeError):
             pass
@@ -294,9 +292,7 @@ class AnalysisTracker:
         imports = []
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
-                print("::::Is import")
                 for alias in node.names:
-                    print("         ",alias.name)
                     module_info = get_module_info(alias.name)
                     imports.append({
                         'type': 'import',
@@ -305,16 +301,11 @@ class AnalysisTracker:
                         'info': module_info
                     })
 
-                    print(f"DEG: import {module_info}")
-                    
             elif isinstance(node, ast.ImportFrom):
-                print("::::Is relative")
                 module = node.module if node.module else '(relative)'
             
                 for alias in node.names:
-                    print("         ",alias)
                     full_name = f"{module}.{alias.name}" if module != '(relative)' else alias.name
-                    print("         --",full_name)
                     if module and not module.startswith('.'):
                         module_info = get_module_info(module)
                     else:
@@ -648,11 +639,13 @@ class AnalysisTracker:
             "dcterms:source": self.sources,
             "dcterms:provenance": self.file_events,
             "dcterms:description": orcid_verification,
-            "mds:hasStudyStage": "Analysis"
+            "mds:hasStudyStage": "Analysis",
+            "mds:imports": self.imports if self.imports else []
             }
             ]
     
         }
+
         return json.dumps(output, indent=2)
 
     def serialize_analysis_jsonld(self):
@@ -707,6 +700,59 @@ class AnalysisTracker:
             report.append("| :--- | :--- | :--- |")
             for e in self.file_events:
                 report.append(f"| {e['mds:fileName']} | {e['mds:fileEvent']} | `{e['mds:fileLocation']}` |")
+
+
+
+        report.append("\n### 📂 System Imports")
+        if not self.imports:
+            report.append("_No imports tracked._")
+        else:
+            categorized = categorize_imports(self.imports)
+            report.append("\n#### THIRD PARTY MODULES")                               
+            for imp in categorized['third_party']:
+                if imp['type'] == 'import':                                    
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""   
+                    report.append(f"  import {imp['module']}{alias_str}")                
+                else: 
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
+                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+                if imp['info']['version']:                           
+                    report.append(f"    └─ Version: {imp['info']['version']}")
+                if imp['info']['file_path']:                        
+                    report.append(f"    └─ Path: {imp['info']['file_path']}")
+
+            report.append("\n#### STANDARD LIBRARY MODULES")                               
+            for imp in categorized['standard_library']:                       
+                if imp['type'] == 'import':                                    
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""   
+                    report.append(f"  import {imp['module']}{alias_str}")                
+                else:                                                             
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
+                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+                if imp['info']['version']:
+                    report.append(f"    └─ Version: {imp['info']['version']}")
+
+            if categorized['user_modules']:                                
+                report.append("\n#### USER/PROJECT MODULES")                                
+                for imp in categorized['user_modules']:                        
+                    if imp['type'] == 'import':                                 
+                        alias_str = f" as {imp['alias']}" if imp['alias'] else ""
+                        report.append(f"  import {imp['module']}{alias_str}")           
+                    else:                                                        
+                        alias_str = f" as {imp['alias']}" if imp['alias'] else "" 
+                        report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+                    if imp['info']['file_path']:
+                        report.append(f"    └─ Path: {imp['info']['file_path']}")
+                    if imp['info']['version']:
+                        report.append(f"    └─ Version: {imp['info']['version']}")
+
+
+            if categorized['relative_imports']:                               
+                report.append("\n#### RELATIVE IMPORTS")                                       
+                for imp in categorized['relative_imports']:                       
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
+                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+
 
         report.append("\n---")
         
@@ -1007,7 +1053,6 @@ class AnalysisGroup:
             json.dump(master_output, f, indent=2)
 
 
-#print(detect_all_imports())
 
 
 
