@@ -134,6 +134,7 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 # Appendix
 
 **Table 1:** Minimal CSV required for `RDFTableConversion`. Users should include 3 blank rows to make room for column metadata.
+
 | Sample | chemical_formula | processing_method | sample_depth | sample_id | sample_length | sample_width |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | &nbsp; | | | | | | |
@@ -149,7 +150,9 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 | EBM2 | Ti6Al4V | Electron Beam Melting | 0.87 | Ti64-EBM2 | 3.88 | 2.86 |
 | LENS2 | Ti6Al4V | Laser Engineered Net Shaping | 0.8 | Ti64-LENS2 | 3.76 | 2.79 |
 
+
 **Table 2:** Deserialized CSV with metadata included.
+
 | __Label__ | Sample | chemical_formula | processing_method | sample_depth | sample_id | sample_length | sample_width | __rowkey__ |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Type | mds:XraySample | mds:ChemicalFormula | mds:ProcessingMethod | cco:ont00000607 | mds:SampleID | cco:ont00000738 | cco:ont00000324 | |
