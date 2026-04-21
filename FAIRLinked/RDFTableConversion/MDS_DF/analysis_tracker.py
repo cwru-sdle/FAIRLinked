@@ -371,7 +371,7 @@ class AnalysisTracker:
         # Inspect the object...
         try:
             for attr_name, attr_val in vars(obj).items():
-                if not attr_name.startswith('_') and isinstance(attr_val, (int, float, str, bool)):
+                if not attr_name.startswith('_') and (isinstance(attr_val, (int, float, str, bool, dict, list, pd.DataFrame) or hasattr(attr_val, '__dict__'))):
                     self._route_data(f"{name}.{attr_name}", attr_val, parent_id=current_id)
         except TypeError:
             pass

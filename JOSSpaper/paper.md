@@ -105,7 +105,7 @@ The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by provid
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata as shown in Figure \ref{full_table}. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable but does not provide as much statistical contexts as `QBWorkflow`.
+The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable but does not provide as much statistical contexts as `QBWorkflow`.
 
 ![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](RDFTableConversion-Workflow.png){width=80%, height=80%}
 
@@ -133,9 +133,6 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 
 # Appendix
 
-![Minimal CSV required for `RDFTableConversion`. Users should include 3 blank rows to make room for column metadata. \label{min_table}](mintable600.png){width=150%, height=150%}
-
-![Deserialized CSV with metadata included. \label{full_table}](fulltable600.png){width=150%, height=150%}
 
 ![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate600.png){width=150%, height=150%}
 
