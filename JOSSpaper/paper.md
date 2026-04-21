@@ -105,7 +105,7 @@ The `InterfaceMDS` subpackage streamlines access to the large MDS-Onto by provid
 
 ## FAIRLinked Core Workflow (RDFTableConversion)
 
-The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata stored. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable but does not provide as much statistical contexts as `QBWorkflow`.
+The `RDFTableConversion` subpackage implements the core FAIRification workflow by guiding users through metadata template preparation, converting tabular datasets into JSON-LD, and enabling deserialization back into CSVs with relevant metadata. Each row of a CSV is transformed into an individual JSON-LD file with unique names created based on the study stages present in the data. Within these JSON-LDs, data are also linked with standardized QUDT units [@QUDTOnto] and ontology-backed terminology and definition. The workflow also supports iterative updates, allowing researchers to update JSON-LDs with new data obtained from analysis. Compared to the more complex RDF Data Cube approach, this provides a simpler path to making datasets FAIR and reusable but does not provide as much statistical contexts as `QBWorkflow`.
 
 ![FAIRification Workflow for materials science data, which includes four steps: metadata template generation, conversion to ontology-compliant JSON-LD files, deserialization back to CSV, and iterative data analysis and update. \label{FAIRLinked Core Workflow}](RDFTableConversion-Workflow.png){width=80%, height=80%}
 
@@ -132,43 +132,6 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 
 
 # Appendix
-
-**Table 1:** Minimal CSV required for `RDFTableConversion`. Users should include 3 blank rows to make room for column metadata.
-
-| Sample | chemical_formula | processing_method | sample_depth | sample_id | sample_length | sample_width |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| &nbsp; | | | | | | |
-| &nbsp; | | | | | | |
-| &nbsp; | | | | | | |
-| EBM3 | Ti6Al4V | Electron Beam Melting | 0.8 | Ti64-EBM3 | 3.78 | 2.81 |
-| PB1 | Ti6Al4V | Laser Powder Bed Fusion | 0.83 | Ti64-PB1 | 3.81 | 2.82 |
-| CeO2 | Ceria calibrant | | | CeO2 | | |
-| EBM1 | Ti6Al4V | Electron Beam Melting | 0.87 | Ti64-EBM1 | 3.97 | 2.86 |
-| LENS1 | Ti6Al4V | Laser Engineered Net Shaping | 0.8 | Ti64-LENS1 | 3.74 | 2.78 |
-| LENS2 | Ti6Al4V | Laser Engineered Net Shaping | 0.8 | Ti64-LENS2 | 3.76 | 2.79 |
-| PB2 | Ti6Al4V | Laser Powder Bed Fusion | 0.77 | Ti64-PB2 | 3.76 | 2.74 |
-| EBM2 | Ti6Al4V | Electron Beam Melting | 0.87 | Ti64-EBM2 | 3.88 | 2.86 |
-| LENS2 | Ti6Al4V | Laser Engineered Net Shaping | 0.8 | Ti64-LENS2 | 3.76 | 2.79 |
-
-
-**Table 2:** Deserialized CSV with metadata included.
-
-| __Label__ | Sample | chemical_formula | processing_method | sample_depth | sample_id | sample_length | sample_width | __rowkey__ |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Type | mds:XraySample | mds:ChemicalFormula | mds:ProcessingMethod | cco:ont00000607 | mds:SampleID | cco:ont00000738 | cco:ont00000324 | |
-| Units | {'@id': 'unit:AU'} | {'@id': 'unit:IN'} | {'@id': 'unit:'} | {'@id': 'unit:IN'} | {'@id': 'unit:'} | {'@id': 'unit:IN'} | {'@id': 'unit:IN'} | |
-| Study Stage | Recipe | Sample | Recipe | Recipe | Sample | Formulation | Modeling | |
-| &nbsp; | | | | | | | | |
-| 1 | EBM3 | Ti6Al4V | Electron Beam Melting | 0.8 | Ti64-EBM3 | 3.78 | 2.81 | REC217489_SA383167_FOR798209_MOD652672 |
-| 2 | PB1 | Ti6Al4V | Laser Powder Bed Fusion | 0.83 | Ti64-PB1 | 3.81 | 2.82 | REC621755_SA384821_FOR182060_MOD751747 |
-| 3 | CeO2 | Ceria calibrant | | | CeO2 | | | REC695244_SA884581_FOR386549_MOD386549 |
-| 4 | EBM1 | Ti6Al4V | Electron Beam Melting | 0.87 | Ti64-EBM1 | 3.97 | 2.86 | REC808835_SA805384_FOR159059_MOD223534 |
-| 5 | LENS1 | Ti6Al4V | Laser Engineered Net Shaping | 0.8 | Ti64-LENS1 | 3.74 | 2.78 | REC187098_SA754648_FOR720915_MOD162634 |
-| 6 | LENS2 | Ti6Al4V | Laser Engineered Net Shaping | 0.8 | Ti64-LENS2 | 3.76 | 2.79 | REC257872_SA789817_FOR696580_MOD716881 |
-| 7 | PB2 | Ti6Al4V | Laser Powder Bed Fusion | 0.77 | Ti64-PB2 | 3.76 | 2.74 | REC852382_SA827046_FOR696580_MOD689951 |
-| 8 | EBM2 | Ti6Al4V | Electron Beam Melting | 0.87 | Ti64-EBM2 | 3.88 | 2.86 | REC847839_SA130218_FOR190488_MOD223534 |
-| 9 | LENS2 | Ti6Al4V | Laser Engineered Net Shaping | 0.8 | Ti64-LENS2 | 3.76 | 2.79 | REC257872_SA789817_FOR696580_MOD716881 |
-
 
 
 ![RDF Data Cube Template for FAIRification using RDF Data Cube. Users can fill out the required metadata for correct serialization into RDF Data Cube JSON-LDs. \label{FAIRLinked RDF Data Cube Workflow}](QBWorkflowTemplate600.png){width=150%, height=150%}
