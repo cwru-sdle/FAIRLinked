@@ -8,13 +8,198 @@ from uuid import uuid4
 from typing import Optional, cast
 import psutil
 import os
+import ast
 from .main import MatDatSciDf
+import importlib.metadata
+import importlib
+import sys
+
+import pkgutil
 from rdflib import Graph, Namespace
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import warnings
 import requests
 from ... import __version__
 from .utility import extract_terms_from_ontology, find_best_match, get_curie, normalize
+
+def categorize_imports(imports):
+    """Group imports by their type."""
+    categorized = {
+        'third_party': [],
+        'standard_library': [],
+        'user_modules': [],
+        'relative_imports': [],
+        'other': []
+    }
+    
+    for imp in imports:
+        module_info = imp['info']
+        
+        if module_info['type'] == 'third_party':
+            categorized['third_party'].append(imp)
+        elif module_info['type'] == 'standard_library':
+            categorized['standard_library'].append(imp)
+        elif module_info['type'] == 'user_module' or module_info['type'] == 'system_or_local':
+            categorized['user_modules'].append(imp)
+        elif module_info['type'] == 'relative_import':
+            categorized['relative_imports'].append(imp)
+        else:
+            categorized['other'].append(imp)
+    
+    return categorized
+
+def get_module_info(module_name):
+    """Get information about a module."""
+    top_level = module_name.split('.')[0]
+    
+    info = {
+        'name': module_name,
+        'top_level': top_level,
+        'type': 'unknown',
+        'version': None,
+        'file_path': None,
+        'is_stdlib': False,
+        'is_third_party': False,
+        'is_user_module': False,
+    }
+    
+    # Check if it's a standard library module
+    stdlib_modules = {
+        'ast', 'inspect', 'importlib', 'pkgutil', 'sys', 'os', 'json', 're', 
+        'collections', 'itertools', 'functools', 'typing', 'abc', 'warnings',
+        'datetime', 'math', 'random', 'string', 'pathlib', 'subprocess', 'io',
+        'time', 'threading', 'multiprocessing', 'socket', 'email', 'http',
+        'urllib', 'xml', 'html', 'csv', 'configparser', 'argparse', 'logging',
+        'unittest', 'doctest', 'pdb', 'traceback', 'gc', 'weakref', 'copy',
+        'pprint', 'enum', 'hashlib', 'uuid', 'shutil', 'tempfile', 'glob'
+    }
+
+    try: #try get version
+        version = get_package_version(top_level)
+        if version:
+            info['version'] = version
+    except:
+        print("error finding version for ", top_level)
+    
+    if top_level in stdlib_modules:
+        info['type'] = 'standard_library'
+        info['is_stdlib'] = True
+    else:
+        # Try to import and get file path
+        try:
+            module = importlib.import_module(top_level)
+            if hasattr(module, '__file__') and module.__file__:
+                info['file_path'] = module.__file__
+                
+                # Check if user module (not in site-packages)
+                if 'site-packages' not in module.__file__ and 'dist-packages' not in module.__file__:
+                    # Check if in the current project directory
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    if current_dir in module.__file__:
+                        info['type'] = 'user_module'
+                        info['is_user_module'] = True
+                    else:
+                        info['type'] = 'system_or_local'
+                else:
+                    info['type'] = 'third_party'
+                    info['is_third_party'] = True
+                        
+        except (ImportError, AttributeError):
+            pass
+    
+    # handling for sys import
+    if top_level == 'sys':
+        info['version'] = sys.version.split()[0]
+        info['type'] = 'standard_library'
+        info['is_stdlib'] = True
+    
+    return info
+
+def get_package_version(package_name):
+    """Safely get the version of a package using multiple methods."""
+    top_level = package_name.split('.')[0]
+    
+    # attempt by check common attributes
+    try:
+        module = importlib.import_module(top_level)
+        version_attrs = ['__version__', 'version', 'VERSION', '__VERSION__', 'ver']
+        for attr in version_attrs:
+            if hasattr(module, attr):
+                version = getattr(module, attr)
+                if version and version != '0.0.post1':
+                    return str(version)
+    except ImportError:
+        pass
+    
+    # attempt by comparing with automatic package discovery
+    actual_package, version = find_package_by_import_name(top_level)
+    if version:
+        return version
+    
+    # attempt with importlib.metadata
+    try:
+        return importlib.metadata.version(top_level)
+    except:
+        pass
+    
+    return None
+
+def find_package_by_import_name(import_name):
+    """Find the actual installed package name for a given import name."""
+    top_level = import_name.split('.')[0]
+    
+    # check __version__ directly
+    try:
+        module = importlib.import_module(top_level)
+        version = getattr(module, '__version__', None)
+        if version:
+            return top_level, version
+    except ImportError:
+        pass
+    
+    # search all installed packages using importlib.metadata
+    try:
+        for dist in importlib.metadata.distributions():
+            package_name = dist.metadata['Name']
+            
+            # Check if this package provides the import name via top_level.txt
+            try:
+                top_level_content = dist.read_text('top_level.txt')
+                if top_level_content:
+                    top_levels = top_level_content.strip().split()
+                    if top_level in top_levels:
+                        return package_name, dist.version
+            except:
+                pass
+            
+            # Check matching files in top-level module
+            try:
+                files = dist.files
+                if files:
+                    for file in files:
+                        parts = file.parts
+                        if len(parts) > 0:
+                            top_file = parts[0]
+                            if top_file.endswith('.py'):
+                                module_candidate = top_file[:-3]
+                            else:
+                                module_candidate = top_file
+                            
+                            if module_candidate == top_level:
+                                return package_name, dist.version
+            except:
+                pass
+            
+            # check if package matches import name
+            if package_name.lower().replace('-', '_') == top_level.lower():
+                return package_name, dist.version
+                
+    except:
+        pass
+    
+    return None, None
+
+
 
 class AnalysisTracker:
     """
@@ -75,6 +260,7 @@ class AnalysisTracker:
         self.sources = []
         self.proj_name = proj_name
         self.file_events = []
+        self.imports =[]
         if ontology_graph is None:
             if MatDatSciDf.mds_graph is None:
                 print("MDS-Onto from source is not available, please parse ontology from a local file")
@@ -88,6 +274,60 @@ class AnalysisTracker:
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
         self.ontology.bind("mds", self.MDS)
+
+    
+
+    def detect_all_imports(self):
+        frame = inspect.currentframe()
+        while frame.f_back: #get calling frame
+            frame = frame.f_back
+        caller_file = inspect.getfile(frame)
+        print(caller_file)
+
+        with open(caller_file, 'r') as f:
+            source = f.read()
+    
+        tree = ast.parse(source)
+        
+        imports = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    module_info = get_module_info(alias.name)
+                    imports.append({
+                        'type': 'import',
+                        'module': alias.name,
+                        'alias': alias.asname,
+                        'info': module_info
+                    })
+
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module if node.module else '(relative)'
+            
+                for alias in node.names:
+                    full_name = f"{module}.{alias.name}" if module != '(relative)' else alias.name
+                    if module and not module.startswith('.'):
+                        module_info = get_module_info(module)
+                    else:
+                        module_info = {
+                            'name': module,
+                            'top_level': module,
+                            'type': 'relative_import',
+                            'version': None,
+                            'file_path': None,
+                        }
+                    
+                    imports.append({
+                        'type': 'from',
+                        'module': module,
+                        'name': alias.name,
+                        'alias': alias.asname,
+                        'full_name': full_name,
+                        'info': module_info
+                    })
+        self.imports = imports       
+        
+        return imports
         
         
 
@@ -399,11 +639,13 @@ class AnalysisTracker:
             "dcterms:source": self.sources,
             "dcterms:provenance": self.file_events,
             "dcterms:description": orcid_verification,
-            "mds:hasStudyStage": "Analysis"
+            "mds:hasStudyStage": "Analysis",
+            "mds:imports": self.imports if self.imports else []
             }
             ]
     
         }
+
         return json.dumps(output, indent=2)
 
     def serialize_analysis_jsonld(self):
@@ -458,6 +700,59 @@ class AnalysisTracker:
             report.append("| :--- | :--- | :--- |")
             for e in self.file_events:
                 report.append(f"| {e['mds:fileName']} | {e['mds:fileEvent']} | `{e['mds:fileLocation']}` |")
+
+
+
+        report.append("\n### 📂 System Imports")
+        if not self.imports:
+            report.append("_No imports tracked._")
+        else:
+            categorized = categorize_imports(self.imports)
+            report.append("\n#### THIRD PARTY MODULES")                               
+            for imp in categorized['third_party']:
+                if imp['type'] == 'import':                                    
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""   
+                    report.append(f"  import {imp['module']}{alias_str}")                
+                else: 
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
+                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+                if imp['info']['version']:                           
+                    report.append(f"    └─ Version: {imp['info']['version']}")
+                if imp['info']['file_path']:                        
+                    report.append(f"    └─ Path: {imp['info']['file_path']}")
+
+            report.append("\n#### STANDARD LIBRARY MODULES")                               
+            for imp in categorized['standard_library']:                       
+                if imp['type'] == 'import':                                    
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""   
+                    report.append(f"  import {imp['module']}{alias_str}")                
+                else:                                                             
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
+                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+                if imp['info']['version']:
+                    report.append(f"    └─ Version: {imp['info']['version']}")
+
+            if categorized['user_modules']:                                
+                report.append("\n#### USER/PROJECT MODULES")                                
+                for imp in categorized['user_modules']:                        
+                    if imp['type'] == 'import':                                 
+                        alias_str = f" as {imp['alias']}" if imp['alias'] else ""
+                        report.append(f"  import {imp['module']}{alias_str}")           
+                    else:                                                        
+                        alias_str = f" as {imp['alias']}" if imp['alias'] else "" 
+                        report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+                    if imp['info']['file_path']:
+                        report.append(f"    └─ Path: {imp['info']['file_path']}")
+                    if imp['info']['version']:
+                        report.append(f"    └─ Version: {imp['info']['version']}")
+
+
+            if categorized['relative_imports']:                               
+                report.append("\n#### RELATIVE IMPORTS")                                       
+                for imp in categorized['relative_imports']:                       
+                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
+                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+
 
         report.append("\n---")
         
@@ -756,7 +1051,8 @@ class AnalysisGroup:
         
         with open(os.path.join(group_json_dir, filename), "w", encoding="utf-8") as f:
             json.dump(master_output, f, indent=2)
-    
+
+
 
 
 
