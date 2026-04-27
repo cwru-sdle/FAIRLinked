@@ -353,7 +353,8 @@ class AnalysisTracker:
             "dcterms": "http://purl.org/dc/terms/",
             "cco": "https://www.commoncoreontologies.org/",
             "unit": "https://qudt.org/vocab/unit/",
-            "obo": "http://purl.obolibrary.org/obo/"      
+            "obo": "http://purl.obolibrary.org/obo/",
+            "@vocab": "https://cwrusdle.bitbucket.io/mds/" 
         }
 
     # --- WRAPPERS ---
