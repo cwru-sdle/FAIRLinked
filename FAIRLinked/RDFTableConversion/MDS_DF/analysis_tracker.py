@@ -903,6 +903,8 @@ class AnalysisGroup:
                 "dataframe": analysis_df
             }
 
+        return analysis_result
+
     def create_group_arg_df(self) -> pd.DataFrame:
         """
         Aggregates all individual analysis DataFrames into a single 
