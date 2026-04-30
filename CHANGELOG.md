@@ -1,6 +1,12 @@
+# 0.3.3.4
+
+Automatic discovery of relations in the data based on ontology
+Code refactoring: serialization utilizes MatDatSciDf class
+
 # 0.3.3.3
 
 Add return statement to group analysis run and track
+Add import detection functions
 
 # 0.3.3.2
 

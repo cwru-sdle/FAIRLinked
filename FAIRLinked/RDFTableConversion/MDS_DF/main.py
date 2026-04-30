@@ -8,6 +8,7 @@ import warnings
 from datetime import datetime, timezone
 import pandas as pd
 from rdflib import Graph, URIRef, Literal, Namespace, XSD
+from rdflib.collection import Collection
 from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
 from urllib.parse import quote
 import traceback
@@ -162,8 +163,11 @@ class MatDatSciDf:
         self.matched_log = matched_log
         self.unmatched_log = unmatched_log
 
+
         self.data_relations = DataRelationsDict(prop_col_pair_dict=data_relations_dict)
         self.metadata_obj = Metadata(metadata_template=self.metadata_template, matched_log=self.matched_log, unmatched_log=self.unmatched_log)
+        init_data_relations_dict = self.get_relation_pairs_onto()
+        self.add_relations(data_relations=init_data_relations_dict)
         
 
     def get_relations(self):
@@ -205,6 +209,77 @@ class MatDatSciDf:
 
 
     ### DATA RELATIONS DICT WRAPPER ###
+
+    def get_relation_pairs_onto(self):
+        """
+        Analyzes the ontology and metadata template to discover relationships 
+        between columns.
+        
+        Returns:
+            dict: { URI: [(subj_col, obj_col), ...] }
+        """
+        ontology = self.ontology
+        metadata_obj = self.metadata_obj
+        template_graph = metadata_obj.metadata_temp.get("@graph", [])
+        
+        # 1. Map column names (altLabels) to their expanded Ontology Class URIs
+        col_to_type = {}
+        for item in template_graph:
+            alt_label = item.get("skos:altLabel")
+            rdf_type = item.get("@type")
+            
+            if alt_label and rdf_type:
+                try:
+                    # Use the graph's namespace manager to expand CURIEs like 'mds:Result'
+                    type_uri = ontology.namespace_manager.expand_curie(rdf_type)
+                    col_to_type[alt_label] = type_uri
+                except Exception:
+                    continue
+
+        relation_dict = {}
+        columns = list(col_to_type.keys())
+
+        # Helper to extract classes from range (handling owl:unionOf)
+        def get_classes_in_range(prop_uri):
+            classes = set()
+            for r in ontology.objects(prop_uri, RDFS.range):
+                union_node = ontology.value(r, OWL.unionOf)
+                if union_node:
+                    classes.update(list(Collection(ontology, union_node)))
+                else:
+                    classes.add(r)
+            return classes
+
+        # 2. Iterate through columns and ontology to find valid links
+        for s_col in columns:
+            s_type = col_to_type[s_col]
+            s_hierarchy = list(ontology.transitive_objects(s_type, RDFS.subClassOf))
+            
+            for s_cls in s_hierarchy:
+                for prop in ontology.subjects(RDFS.domain, s_cls):
+                    if (prop, RDF.type, OWL.DatatypeProperty) in ontology:
+                        continue
+                    
+                    valid_ranges = get_classes_in_range(prop)
+                    
+                    for o_col in columns:
+                        if s_col == o_col: 
+                            continue
+                            
+                        o_type = col_to_type[o_col]
+                        o_hierarchy = set(ontology.transitive_objects(o_type, RDFS.subClassOf))
+                        
+                        if any(r_cls in o_hierarchy for r_cls in valid_ranges):
+                            prop_str = str(prop)
+                            
+                            if prop_str not in relation_dict:
+                                relation_dict[prop_str] = []
+                            
+                            pair = (s_col, o_col)
+                            if pair not in relation_dict[prop_str]:
+                                relation_dict[prop_str].append(pair)
+
+        return relation_dict
     
     def add_relations(self, data_relations: dict):
         data_rel_obj = self.data_relations
@@ -260,7 +335,9 @@ class MatDatSciDf:
         Top-level API to manually define semantic metadata for a new column.
         Useful for defining columns found in 'Discovery Warning' reports.
         """
-        self.metadata_obj.add_column_metadata(col_name, rdf_type, unit, definition, study_stage)
+        existing = self.metadata_obj.add_column_metadata(col_name, rdf_type, unit, definition, study_stage)
+        if existing:
+            print(f"⚠️ Metadata for '{col_name}' already exists. Use update_metadata instead.")
         self.metadata_template = self.metadata_obj.metadata_temp
 
     def delete_column_metadata(self, col_name: str):
@@ -810,6 +887,7 @@ class MatDatSciDf:
                                 g.add((subj_uri, pred_uri, obj_uri))
                             elif prop_type == "Datatype Property":
                                 g.add((subj_uri, pred_uri, Literal(obj_val)))
+
                 
                 triples_to_remove = []
                 for s, p, o in g:

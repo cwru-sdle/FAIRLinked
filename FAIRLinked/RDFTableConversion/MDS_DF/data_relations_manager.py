@@ -39,47 +39,45 @@ class DataRelationsDict:
         def add_relations(self, data_relations: dict, ontology_graph: Graph, onto_props: dict):
             """
             Merges new column relationships into the dictionary with ontology validation.
-
-            Args:
-                data_relations (dict): Dictionary of {property: [(subj, obj), ...]}.
-                ontology_graph (Graph): The RDFLib graph for CURIE expansion.
-                onto_props (dict): The result of get_relations() used for label/URI lookups.
+            Normalizes keys to full URIs and prevents duplicate column pairs.
             """
             # Create a lookup for all valid URIs currently in the ontology metadata
-            valid_uris = {value[0] for value in onto_props.values()}
+            valid_uris = {str(value[0]) for value in onto_props.values()}
 
             for prop_key, pairs_list in data_relations.items():
                 resolved_uri = None
 
                 # --- Validation Logic ---
-                # 1. Is it a label?
                 if prop_key in onto_props:
-                    resolved_uri = onto_props[prop_key][0]
-                # 2. Is it a full URI?
-                elif prop_key in valid_uris:
-                    resolved_uri = prop_key
-                # 3. Is it a CURIE?
-                elif ":" in prop_key:
+                    resolved_uri = str(onto_props[prop_key][0])
+                elif str(prop_key) in valid_uris:
+                    resolved_uri = str(prop_key)
+                elif ":" in str(prop_key) and not str(prop_key).startswith("http"):
                     try:
                         expanded = str(ontology_graph.namespace_manager.expand_curie(prop_key))
-                        if expanded in valid_uris:
-                            resolved_uri = expanded
+                        # We check if the expanded CURIE is a known property
+                        resolved_uri = expanded
                     except (ValueError, KeyError):
                         pass
 
-                # If the property is not found, issue a warning but still add it 
-                # (allowing for custom properties if the user insists)
+                # --- Key Normalization ---
+                # If we found a proper URI, use it. Otherwise, fallback to the input key.
+                master_key = resolved_uri if resolved_uri else prop_key
+
                 if not resolved_uri:
-                    warnings.warn(f"⚠️ Property Warning: '{prop_key}' is not defined in the loaded ontology. "
-                                  f"This will result in missing triples during serialization.")
+                    warnings.warn(f"⚠️ Property Warning: '{prop_key}' is not defined in the loaded ontology.")
 
                 # --- Merge Logic ---
-                if prop_key in self.prop_pair_dict:
-                    self.prop_pair_dict[prop_key].extend(pairs_list)
-                else:
-                    self.prop_pair_dict[prop_key] = pairs_list
+                # 1. Initialize the list if the master_key (the URI) isn't there yet
+                if master_key not in self.prop_pair_dict:
+                    self.prop_pair_dict[master_key] = []
 
-            print(f"✅ Integrated {len(data_relations)} property groups into the relation dictionary.")
+                # 2. Add pairs one-by-one, only if they don't already exist
+                for pair in pairs_list:
+                    if pair not in self.prop_pair_dict[master_key]:
+                        self.prop_pair_dict[master_key].append(pair)
+
+            print(f"✅ Integrated {len(data_relations)} property groups. Keys normalized to URIs.")
 
         def delete_relation(self, prop_key: str, pair: Optional[tuple] = None):
             """

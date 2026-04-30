@@ -19,6 +19,7 @@ import traceback
 import hashlib
 import requests
 from importlib import resources
+from .MDS_DF.main import MatDatSciDf
 
 def load_licenses():
     with resources.files(helper_data).joinpath("licenseinfo.json").open() as f:
@@ -105,242 +106,27 @@ def extract_data_from_csv(
     List[rdflib.Graph]
         List of RDFLib Graphs, one per row.
     """
-    
-    response = requests.get(f"https://pub.orcid.org/v3.0/{orcid}")
-    if(response):
-        pass         
-    else:
-        raise Exception("enter valid orcid ", orcid)
-   
+
     df = pd.read_csv(csv_file)
-    results = []
-    orcid = orcid.replace("-", "")
-    context = metadata_template.get("@context", {})
-    graph_template = metadata_template.get("@graph", [])
+    mds_df = MatDatSciDf(
+                df = df,
+                metadata_template=metadata_template,
+                orcid=orcid,
+                data_relations_dict=prop_column_pair_dict,
+                metadata_rows=True,
+                ontology_graph=ontology_graph,
+                base_uri=base_uri
+                )
 
-
-    if prop_column_pair_dict:
-        if ontology_graph is None:
-            raise ValueError("ontology_graph must be provided if prop_column_pair_dict is used")
-        prop_metadata_dict = generate_prop_metadata_dict(ontology_graph)
-    else:
-        prop_metadata_dict = {}
-
-    sskey = {
-        "Synthesis": "SYN", 
-        "Formulation": "FOR", 
-        "Material Processing": "MAT_PRO",
-        "Sample": "SA", 
-        "Tool": "TL", 
-        "Recipe": "REC", 
-        "Result": "RSLT", 
-        "Analysis": "AN", 
-        "Modeling": "MOD",
-        "": "UNK"}
-
-    rowpredicate = URIRef("https://cwrusdle.bitbucket.io/mds/row")
-    row_key = ""
-
-    #check license
-    if(not license):
-        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
-        print("No license provided. Default to CC0-1.0 (Public Domain)")
-
-    elif not license.startswith("http"):
-        # Load SPDX license list
-
-
-
-        spdx_data = load_licenses()
-
-        valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
-
-        # Check if the provided short ID is valid
-        if license not in valid_ids:
-            raise ValueError(
-                f"Invalid SPDX license ID '{license}'.\n"
-                f"Please use one from https://spdx.org/licenses/."
+    return mds_df.serialize_row(
+            output_folder=output_folder,
+            row_key_cols=row_key_cols,
+            id_cols=id_cols,
+            license=license,
+            write_files=True
             )
 
-        license_uri = f"https://spdx.org/licenses/{license}.html"
-        license_uri = URIRef(license_uri)
-        write_license_triple(output_folder, base_uri, license_uri)
 
-    else:
-        # Full URI provided; assume it's valid
-        license_uri = URIRef(license)
-        
-        write_license_triple(output_folder, base_uri, license_uri)
-    
-    for idx, row in df.iloc[3:].iterrows():
-
-
-        try:
-
-            # Deep copy the template and assign @id
-            template_copy = copy.deepcopy(graph_template)
-            subject_lookup = {}  # Maps skos:altLabel → generated @id
-
-            # generate row key
-            c = [item["skos:altLabel"] for item in template_copy ]
-            if(row_key_cols is None or not any(x in c for x in row_key_cols) ):
-                keys = {}
-                for item in template_copy:
-                    if "skos:altLabel" not in item or not item["skos:altLabel"]:
-                        raise ValueError("Missing skos:altLabel in template")
-                    col = item["skos:altLabel"]
-                    studystage = item["mds:hasStudyStage"]
-                    val = df.at[idx,col]
-
-                    if studystage not in keys:
-                        keys[studystage] = [val]
-                    else:
-                        keys[studystage].append(val)
-                row_key = ""
-                for key in keys:
-                    try:
-                        num = str(hash6("".join([str(x) for x in keys[key] if not pd.isna(x)])))
-                        row_key = row_key + sskey[key] + num + "_"
-                    except:
-                        traceback.print_exc()
-            else:
-                row_key = ""
-                for x in set(c) & set(row_key_cols):
-                    row_key = row_key + str(df.at[idx,x]).strip() + "_"
-            
-            timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-            full_row_key = f"{row_key}{orcid}-{timestamp}"
-            full_row_key = full_row_key.replace(" ", "")
-            
-
-            for item in template_copy: #prepare all fields
-                if "@type" not in item or not item["@type"]:
-                    warnings.warn(f"Missing or empty @type in template item: {item}")
-                    continue
-                if "skos:altLabel" not in item or not item["skos:altLabel"]:
-                    raise ValueError("Missing skos:altLabel in template")
-
-                prefix, localname = item["@type"].split(":")
-                if id_cols is not None and item["skos:altLabel"] in id_cols:
-                    raw_identifier = row.get(item["skos:altLabel"])
-                    if not raw_identifier:
-                        raise ValueError(f"Cannot find entity identifier in row {idx}")
-                    entity_identifier = re.sub(r'[^a-zA-Z0-9_\-\.]', '', raw_identifier)
-                    subject_uri = f"mds:{localname}.{entity_identifier}"
-                else:
-                    subject_uri = f"mds:{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"
-                item["@id"] = URIRef(subject_uri)
-                subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
-
-                if "prov:generatedAtTime" in item:
-                    item["prov:generatedAtTime"]["@value"] = datetime.utcnow().isoformat() + "Z"
-
-                if "qudt:hasUnit" in item and not item["qudt:hasUnit"].get("@id"):
-                    del item["qudt:hasUnit"]
-                if "qudt:hasQuantityKind" in item and not item["qudt:hasQuantityKind"].get("@id"):
-                    del item["qudt:hasQuantityKind"]
-
-            jsonld_data = {
-                "@context": context,
-                "@graph": template_copy
-            }
-
-            #convert to rdf graph
-            g = Graph(identifier=URIRef(f"{base_uri}{full_row_key}{idx}"))
-            g.parse(data=json.dumps(jsonld_data), format="json-ld")
-            QUDT = Namespace("http://qudt.org/schema/qudt/")
-            MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
-            g.bind("mds", MDS)
-            g.bind("qudt", QUDT)
-            g.bind("dcterms", DCTERMS)
-
-
-            #separate jsonld not needed
-            #write_license_triple(output_folder, base_uri, license_uri)
-
-            #add in triples from csv values
-            for alt_label, subj_uri in subject_lookup.items():
-                if alt_label in row:
-                    g.remove((subj_uri, QUDT.value, None))
-                    if pd.notna(row[alt_label]) and row[alt_label] != "":
-                        data_value = row[alt_label]
-                        if hasattr(data_value, 'item'):
-                            data_value = data_value.item()
-                        g.add((subj_uri, QUDT.value, Literal(data_value, datatype=XSD.string)))
-                    else:
-                        print(f"Skipping NA value for {alt_label} on row {idx} with row key {row_key}")
-                    g.add((subj_uri, rowpredicate, Literal(row_key[:-1]) ))
-                    g.add((subj_uri, DCTERMS.license, license_uri))
-
-            # Add object/datatype properties if given
-            if prop_column_pair_dict:
-                for key, column_pair_list in prop_column_pair_dict.items():
-                    # attempt to resolve via iri, then curie, then skip
-                    prop_uri, prop_type = resolve_predicate(key, ontology_graph)
-
-                    if prop_uri is None:
-                        #below attempts to create pred_uri based on the prop_metadata_dict
-                        prop_metadata = prop_metadata_dict.get(key)
-                        if not prop_metadata:
-                            continue
-                        prop_uri, prop_type = prop_metadata
-                        pred_uri = URIRef(prop_uri)
-                    else:
-                        pred_uri = URIRef(prop_uri)
-
-                    for subj_col, obj_col in column_pair_list:
-                        if subj_col not in row or pd.isna(row[subj_col]):
-                            continue
-                        alt_label = subj_col
-                        subj_uri = subject_lookup.get(alt_label)
-                        if not subj_uri:
-                            continue
-                        
-                        obj_val = row[obj_col]
-                        if hasattr(obj_val, 'item'):
-                            obj_val = obj_val.item()
-                        if pd.isna(obj_val):
-                            continue
-
-                        if prop_type == "Object Property":
-                            obj_uri = subject_lookup.get(obj_col)
-                            if obj_uri is None:
-                                obj_val_str = str(obj_val).strip()
-                                obj_uri = URIRef(f"{base_uri}{quote(obj_val_str, safe='')}")
-                            g.add((subj_uri, pred_uri, obj_uri))
-                        elif prop_type == "Datatype Property":
-                            g.add((subj_uri, pred_uri, Literal(obj_val)))
-            
-            triples_to_remove = []
-            for s, p, o in g:
-                if p == QUDT.value and len(str(o).strip()) == 0:
-                    if len(str(o).strip()) == 0:
-                        print(f"debug removing empty {s}, {p}, {o}")
-                        triples_to_remove.append((s, p, o))
-
-            for triple in triples_to_remove:
-                g.remove(triple)
-
-            # Save the RDF graph to file
-            random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
-            output_file = os.path.join(output_folder, f"{random_suffix}-{full_row_key}.jsonld")
-            # g.serialize(destination=output_file, format="json-ld", context=context, indent=2, auto_compact=True, encoding='utf-8')
-            raw_jsonld = g.serialize(format="json-ld", context=context)
-            clean_graph = Graph()
-            clean_graph.parse(data=raw_jsonld, format='json-ld')
-            clean_graph.serialize(
-                destination=output_file, 
-                format="json-ld", 
-                context=context, 
-                indent=2,
-                auto_compact=True
-                )
-            results.append(clean_graph)
-
-        except Exception as e:
-            warnings.warn(f"Error processing row {idx} with key {row_key if 'row_key' in locals() else 'N/A'}: {e}")
-
-    return results
 
 
 

@@ -183,6 +183,58 @@ class TestMatDatSciDfInit:
             base_uri="https://example.org/",
         )
         assert m.base_uri == "https://example.org/"
+    
+    def test_auto_relation_discovery(self):
+        """
+        Tests that get_relation_pairs_onto finds semantic links based on 
+        the ontology classes and inheritance.
+        """
+        # 1. Setup a mini ontology
+        # Measurement (Domain) -> measuredBy -> Tool (Range)
+        onto = Graph()
+        NS = "https://example.org/mds/"
+        MEASUREMENT = URIRef(NS + "Measurement")
+        TEMP_MEASUREMENT = URIRef(NS + "TemperatureMeasurement")
+        TOOL = URIRef(NS + "Tool")
+        PROP = URIRef(NS + "measuredBy")
+
+        onto.bind("mds", Namespace(NS))
+        onto.add((TEMP_MEASUREMENT, RDFS.subClassOf, MEASUREMENT))
+        onto.add((PROP, RDF.type, OWL.ObjectProperty))
+        onto.add((PROP, RDFS.domain, MEASUREMENT))
+        onto.add((PROP, RDFS.range, TOOL))
+
+        # 2. Setup a template where columns use these types
+        tmpl = {
+            "@context": {"mds": NS},
+            "@graph": [
+                {"skos:altLabel": "Temp_Col", "@type": "mds:TemperatureMeasurement"},
+                {"skos:altLabel": "Sensor_Col", "@type": "mds:Tool"}
+            ]
+        }
+
+        # 3. Initialize MatDatSciDf
+        df = pd.DataFrame({"Temp_Col": [100], "Sensor_Col": ["S1"]})
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=tmpl,
+            orcid="0000-0000-0000-0000",
+            ontology_graph=onto
+        )
+
+        # 4. Trigger the discovery and addition
+        # This is what you added to your __init__
+        discovered = m.get_relation_pairs_onto()
+        m.add_relations(data_relations=discovered)
+
+        # 5. Assertions
+        # Check that the property was found using its full URI string
+        prop_str = str(PROP)
+        assert prop_str in m.data_relations.prop_pair_dict
+        
+        # Check that the specific columns were linked
+        pairs = m.data_relations.prop_pair_dict[prop_str]
+        assert ("Temp_Col", "Sensor_Col") in pairs
 
 
 class TestGetRelations:
@@ -313,10 +365,15 @@ class TestMetadataWrappers:
 class TestDataRelationsWrappers:
     def test_add_relations_stored(self):
         m = make_mdsdf(cols=["Temperature", "Sensor_ID"])
+        # Define the expected URI based on your base_uri/ontology
+        expected_uri = "https://cwrusdle.bitbucket.io/mds/measuredBy"
+        
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             m.add_relations({"mds:measuredBy": [("Temperature", "Sensor_ID")]})
-        assert "mds:measuredBy" in m.data_relations.prop_pair_dict
+            
+        # Check for the URI, not the CURIE nickname
+        assert expected_uri in m.data_relations.prop_pair_dict
 
     def test_validate_data_relations_valid(self):
         m = make_mdsdf(cols=["Temperature", "Sensor_ID"])

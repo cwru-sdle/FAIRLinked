@@ -212,7 +212,7 @@ class Metadata:
             existing = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
             if existing:
                 print(f"⚠️ Metadata for '{col_name}' already exists. Use update_template instead.")
-                return
+                return existing
 
             # 2. Create the internal entry structure
             # We follow the exact format used in your template_generator
