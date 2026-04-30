@@ -198,6 +198,7 @@ class TestMatDatSciDfInit:
         TOOL = URIRef(NS + "Tool")
         PROP = URIRef(NS + "measuredBy")
 
+        onto.bind("mds", Namespace(NS))
         onto.add((TEMP_MEASUREMENT, RDFS.subClassOf, MEASUREMENT))
         onto.add((PROP, RDF.type, OWL.ObjectProperty))
         onto.add((PROP, RDFS.domain, MEASUREMENT))
