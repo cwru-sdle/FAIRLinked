@@ -364,10 +364,15 @@ class TestMetadataWrappers:
 class TestDataRelationsWrappers:
     def test_add_relations_stored(self):
         m = make_mdsdf(cols=["Temperature", "Sensor_ID"])
+        # Define the expected URI based on your base_uri/ontology
+        expected_uri = "https://cwrusdle.bitbucket.io/mds/measuredBy"
+        
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             m.add_relations({"mds:measuredBy": [("Temperature", "Sensor_ID")]})
-        assert "mds:measuredBy" in m.data_relations.prop_pair_dict
+            
+        # Check for the URI, not the CURIE nickname
+        assert expected_uri in m.data_relations.prop_pair_dict
 
     def test_validate_data_relations_valid(self):
         m = make_mdsdf(cols=["Temperature", "Sensor_ID"])
