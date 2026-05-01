@@ -13,8 +13,6 @@ from .main import MatDatSciDf
 import importlib.metadata
 import importlib
 import sys
-
-import pkgutil
 from rdflib import Graph, Namespace
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import warnings
@@ -23,7 +21,6 @@ from ... import __version__
 from .utility import extract_terms_from_ontology, find_best_match, get_curie, normalize
 
 def categorize_imports(imports):
-    """Group imports by their type."""
     categorized = {
         'third_party': [],
         'standard_library': [],
@@ -33,37 +30,36 @@ def categorize_imports(imports):
     }
     
     for imp in imports:
-        module_info = imp['info']
+        # imp['dcterms:source'] contains the module info dictionary
+        info = imp.get('dcterms:source', {})
+        pub = info.get('dcterms:publisher', '')
         
-        if module_info['type'] == 'third_party':
+        if pub == 'Third Party Package':
             categorized['third_party'].append(imp)
-        elif module_info['type'] == 'standard_library':
+        elif pub == 'Python Standard Library':
             categorized['standard_library'].append(imp)
-        elif module_info['type'] == 'user_module' or module_info['type'] == 'system_or_local':
+        elif pub in ['User Module', 'System/Local Environment']:
             categorized['user_modules'].append(imp)
-        elif module_info['type'] == 'relative_import':
+        elif info.get('dcterms:type') == 'relative_import':
             categorized['relative_imports'].append(imp)
         else:
             categorized['other'].append(imp)
-    
     return categorized
 
 def get_module_info(module_name):
-    """Get information about a module."""
+    """Get information about a module formatted for JSON-LD."""
     top_level = module_name.split('.')[0]
     
+    # Pre-define the structure using dcterms
     info = {
-        'name': module_name,
-        'top_level': top_level,
-        'type': 'unknown',
-        'version': None,
-        'file_path': None,
-        'is_stdlib': False,
-        'is_third_party': False,
-        'is_user_module': False,
+        'skos:prefLabel': module_name,
+        'dcterms:isPartOf': top_level,      # Better fit than 'requires' for submodules
+        'dcterms:type': 'Software',         # General category
+        'dcterms:hasVersion': 'Unknown',
+        'dcterms:identifier': 'Unknown',         # Will hold the file path
+        'dcterms:publisher': 'Unknown'      # Categorization (Stdlib, 3rd Party, User)
     }
     
-    # Check if it's a standard library module
     stdlib_modules = {
         'ast', 'inspect', 'importlib', 'pkgutil', 'sys', 'os', 'json', 're', 
         'collections', 'itertools', 'functools', 'typing', 'abc', 'warnings',
@@ -74,44 +70,38 @@ def get_module_info(module_name):
         'pprint', 'enum', 'hashlib', 'uuid', 'shutil', 'tempfile', 'glob'
     }
 
-    try: #try get version
-        version = get_package_version(top_level)
-        if version:
-            info['version'] = version
-    except:
-        print("error finding version for ", top_level)
-    
+    # 1. Determine Publisher Category
     if top_level in stdlib_modules:
-        info['type'] = 'standard_library'
-        info['is_stdlib'] = True
+        info['dcterms:publisher'] = 'Python Standard Library'
+        if top_level == 'sys':
+            info['dcterms:hasVersion'] = sys.version.split()[0]
     else:
-        # Try to import and get file path
         try:
             module = importlib.import_module(top_level)
             if hasattr(module, '__file__') and module.__file__:
-                info['file_path'] = module.__file__
+                f_path = module.__file__
+                info['dcterms:identifier'] = f_path
                 
-                # Check if user module (not in site-packages)
-                if 'site-packages' not in module.__file__ and 'dist-packages' not in module.__file__:
-                    # Check if in the current project directory
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    if current_dir in module.__file__:
-                        info['type'] = 'user_module'
-                        info['is_user_module'] = True
-                    else:
-                        info['type'] = 'system_or_local'
+                # Logic to determine if User Module or Third Party
+                if 'site-packages' in f_path or 'dist-packages' in f_path:
+                    info['dcterms:publisher'] = 'Third Party Package'
                 else:
-                    info['type'] = 'third_party'
-                    info['is_third_party'] = True
-                        
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    if current_dir in f_path:
+                        info['dcterms:publisher'] = 'User Module'
+                    else:
+                        info['dcterms:publisher'] = 'System/Local Environment'
         except (ImportError, AttributeError):
+            info['dcterms:publisher'] = 'Unresolved Module'
+
+    # 2. Attempt to fetch version for non-stdlib (if not already set)
+    if not info['dcterms:hasVersion']:
+        try:
+            version = get_package_version(top_level)
+            if version:
+                info['dcterms:hasVersion'] = version
+        except Exception:
             pass
-    
-    # handling for sys import
-    if top_level == 'sys':
-        info['version'] = sys.version.split()[0]
-        info['type'] = 'standard_library'
-        info['is_stdlib'] = True
     
     return info
 
@@ -139,7 +129,7 @@ def get_package_version(package_name):
     # attempt with importlib.metadata
     try:
         return importlib.metadata.version(top_level)
-    except:
+    except Exception:
         pass
     
     return None
@@ -169,7 +159,7 @@ def find_package_by_import_name(import_name):
                     top_levels = top_level_content.strip().split()
                     if top_level in top_levels:
                         return package_name, dist.version
-            except:
+            except Exception:
                 pass
             
             # Check matching files in top-level module
@@ -279,54 +269,68 @@ class AnalysisTracker:
 
     def detect_all_imports(self):
         frame = inspect.currentframe()
-        while frame.f_back: #get calling frame
+        while frame.f_back:
             frame = frame.f_back
         caller_file = inspect.getfile(frame)
-        print(caller_file)
 
         with open(caller_file, 'r') as f:
             source = f.read()
-    
+
         tree = ast.parse(source)
-        
         imports = []
+        
+        # Cache module info to avoid repeated lookups/imports
+        module_cache = {}
+
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    module_info = get_module_info(alias.name)
+                    m_name = alias.name
+                    if m_name not in module_cache:
+                        module_cache[m_name] = get_module_info(m_name)
+                        # Create stable ID for the Software itself
+                        module_cache[m_name]['@id'] = f'{self.prefix}:Software_{m_name.replace(".", "_")}'
+                    
+                    m_info = module_cache[m_name]
+                    
                     imports.append({
-                        'type': 'import',
-                        'module': alias.name,
-                        'alias': alias.asname,
-                        'info': module_info
+                        '@id': f'{self.prefix}:ImportEvent_{uuid4().hex[:8]}',
+                        'dcterms:type': 'import',
+                        'skos:prefLabel': m_name,
+                        'skos:altLabel': alias.asname,
+                        'dcterms:source': m_info  # This links the event to the software node
                     })
 
             elif isinstance(node, ast.ImportFrom):
-                module = node.module if node.module else '(relative)'
-            
+                module_name = node.module if node.module else '(relative)'
+                
+                # Skip get_module_info for relative imports to avoid ImportErrors
+                if module_name != '(relative)' and not node.level > 0:
+                    if module_name not in module_cache:
+                        module_cache[module_name] = get_module_info(module_name)
+                        module_cache[module_name]['@id'] = f'{self.prefix}:Software_{module_name.replace(".", "_")}'
+                    m_info = module_cache[module_name]
+                else:
+                    m_info = {
+                        '@id': f'{self.prefix}:Software_Relative_{uuid4().hex[:6]}',
+                        'skos:prefLabel': module_name,
+                        'dcterms:publisher': 'User Module',
+                        'dcterms:type': 'relative_import'
+                    }
+
                 for alias in node.names:
-                    full_name = f"{module}.{alias.name}" if module != '(relative)' else alias.name
-                    if module and not module.startswith('.'):
-                        module_info = get_module_info(module)
-                    else:
-                        module_info = {
-                            'name': module,
-                            'top_level': module,
-                            'type': 'relative_import',
-                            'version': None,
-                            'file_path': None,
-                        }
-                    
+                    full_name = f"{module_name}.{alias.name}"
                     imports.append({
-                        'type': 'from',
-                        'module': module,
-                        'name': alias.name,
-                        'alias': alias.asname,
-                        'full_name': full_name,
-                        'info': module_info
+                        '@id': f'{self.prefix}:ImportEvent_{uuid4().hex[:8]}',
+                        'dcterms:type': 'import from',
+                        'dcterms:isPartOf': module_name,
+                        'skos:prefLabel': alias.name,
+                        'skos:altLabel': alias.asname,
+                        'dcterms:title': full_name,
+                        'dcterms:source': m_info
                     })
+                    
         self.imports = imports       
-        
         return imports
         
         
@@ -353,8 +357,7 @@ class AnalysisTracker:
             "dcterms": "http://purl.org/dc/terms/",
             "cco": "https://www.commoncoreontologies.org/",
             "unit": "https://qudt.org/vocab/unit/",
-            "obo": "http://purl.obolibrary.org/obo/",
-            "@vocab": "https://cwrusdle.bitbucket.io/mds/" 
+            "obo": "http://purl.obolibrary.org/obo/"
         }
 
     # --- WRAPPERS ---
@@ -641,7 +644,7 @@ class AnalysisTracker:
             "dcterms:provenance": self.file_events,
             "dcterms:description": orcid_verification,
             "mds:hasStudyStage": "Analysis",
-            "mds:imports": self.imports if self.imports else []
+            "dcterms:requires": self.imports if self.imports else []
             }
             ]
     
@@ -709,50 +712,44 @@ class AnalysisTracker:
             report.append("_No imports tracked._")
         else:
             categorized = categorize_imports(self.imports)
-            report.append("\n#### THIRD PARTY MODULES")                               
-            for imp in categorized['third_party']:
-                if imp['type'] == 'import':                                    
-                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""   
-                    report.append(f"  import {imp['module']}{alias_str}")                
-                else: 
-                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
-                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
-                if imp['info']['version']:                           
-                    report.append(f"    └─ Version: {imp['info']['version']}")
-                if imp['info']['file_path']:                        
-                    report.append(f"    └─ Path: {imp['info']['file_path']}")
+            
+            sections = [
+                ('third_party', '#### THIRD PARTY MODULES'),
+                ('standard_library', '#### STANDARD LIBRARY MODULES'),
+                ('user_modules', '#### USER/PROJECT MODULES'),
+                ('relative_imports', '#### RELATIVE IMPORTS')
+            ]
 
-            report.append("\n#### STANDARD LIBRARY MODULES")                               
-            for imp in categorized['standard_library']:                       
-                if imp['type'] == 'import':                                    
-                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""   
-                    report.append(f"  import {imp['module']}{alias_str}")                
-                else:                                                             
-                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
-                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
-                if imp['info']['version']:
-                    report.append(f"    └─ Version: {imp['info']['version']}")
+            for cat_key, title in sections:
+                if not categorized.get(cat_key):
+                    continue
+                    
+                report.append(f"\n{title}")
+                for imp in categorized[cat_key]:
+                    # Extract data using the new JSON-LD keys
+                    imp_type = imp.get('dcterms:type')
+                    alias = imp.get('skos:altLabel')
+                    alias_str = f" as {alias}" if alias else ""
+                    
+                    # Nested module info
+                    info = imp.get('dcterms:source', {})
+                    version = info.get('dcterms:hasVersion')
+                    path = info.get('dcterms:identifier')
 
-            if categorized['user_modules']:                                
-                report.append("\n#### USER/PROJECT MODULES")                                
-                for imp in categorized['user_modules']:                        
-                    if imp['type'] == 'import':                                 
-                        alias_str = f" as {imp['alias']}" if imp['alias'] else ""
-                        report.append(f"  import {imp['module']}{alias_str}")           
-                    else:                                                        
-                        alias_str = f" as {imp['alias']}" if imp['alias'] else "" 
-                        report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
-                    if imp['info']['file_path']:
-                        report.append(f"    └─ Path: {imp['info']['file_path']}")
-                    if imp['info']['version']:
-                        report.append(f"    └─ Version: {imp['info']['version']}")
+                    # Formatting the import line
+                    if imp_type == 'import':
+                        module_name = imp.get('skos:prefLabel')
+                        report.append(f"  import {module_name}{alias_str}")
+                    else: # 'import from'
+                        parent_mod = imp.get('dcterms:isPartOf')
+                        member_name = imp.get('skos:prefLabel')
+                        report.append(f"  from {parent_mod} import {member_name}{alias_str}")
 
-
-            if categorized['relative_imports']:                               
-                report.append("\n#### RELATIVE IMPORTS")                                       
-                for imp in categorized['relative_imports']:                       
-                    alias_str = f" as {imp['alias']}" if imp['alias'] else ""      
-                    report.append(f"  from {imp['module']} import {imp['name']}{alias_str}")
+                    # Meta info
+                    if version and version != "Unknown":
+                        report.append(f"    └─ Version: {version}")
+                    if path and path != "Unknown":
+                        report.append(f"    └─ Path: {path}")
 
 
         report.append("\n---")
