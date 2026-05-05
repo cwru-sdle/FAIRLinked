@@ -16,7 +16,7 @@ from .metadata_manager import Metadata
 import warnings
 import requests
 from ... import __version__
-from .utility import normalize
+from .utility import normalize, extract_terms_from_ontology, find_best_match, get_curie, normalize
 from IPython.core.getipython import get_ipython
 import types
 
@@ -35,8 +35,8 @@ class AnalysisTracker:
     def __init__(self, 
                 proj_name: str, 
                 home_path: str, 
-                metadata_template: Optional[dict] = None,
                 orcid: Optional[str] = "0000-0000-0000-0000", 
+                metadata_template: Optional[dict] = None,
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
                 ontology_graph: Optional[Graph] = None, 
                 prefix: Optional[str] = "mds") -> None:
