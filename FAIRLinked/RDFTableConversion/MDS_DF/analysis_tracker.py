@@ -8,188 +8,21 @@ from uuid import uuid4
 from typing import Optional, cast
 import psutil
 import os
-import ast
 from .main import MatDatSciDf
-import importlib.metadata
-import importlib
 import sys
 from rdflib import Graph, Namespace
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from .metadata_manager import Metadata
 import warnings
 import requests
 from ... import __version__
-from .utility import extract_terms_from_ontology, find_best_match, get_curie, normalize
-
-def categorize_imports(imports):
-    categorized = {
-        'third_party': [],
-        'standard_library': [],
-        'user_modules': [],
-        'relative_imports': [],
-        'other': []
-    }
-    
-    for imp in imports:
-        # imp['dcterms:source'] contains the module info dictionary
-        info = imp.get('dcterms:source', {})
-        pub = info.get('dcterms:publisher', '')
-        
-        if pub == 'Third Party Package':
-            categorized['third_party'].append(imp)
-        elif pub == 'Python Standard Library':
-            categorized['standard_library'].append(imp)
-        elif pub in ['User Module', 'System/Local Environment']:
-            categorized['user_modules'].append(imp)
-        elif info.get('dcterms:type') == 'relative_import':
-            categorized['relative_imports'].append(imp)
-        else:
-            categorized['other'].append(imp)
-    return categorized
-
-def get_module_info(module_name):
-    """Get information about a module formatted for JSON-LD."""
-    top_level = module_name.split('.')[0]
-    
-    # Pre-define the structure using dcterms
-    info = {
-        'skos:prefLabel': module_name,
-        'dcterms:isPartOf': top_level,      # Better fit than 'requires' for submodules
-        'dcterms:type': 'Software',         # General category
-        'dcterms:hasVersion': 'Unknown',
-        'dcterms:identifier': 'Unknown',         # Will hold the file path
-        'dcterms:publisher': 'Unknown'      # Categorization (Stdlib, 3rd Party, User)
-    }
-    
-    stdlib_modules = {
-        'ast', 'inspect', 'importlib', 'pkgutil', 'sys', 'os', 'json', 're', 
-        'collections', 'itertools', 'functools', 'typing', 'abc', 'warnings',
-        'datetime', 'math', 'random', 'string', 'pathlib', 'subprocess', 'io',
-        'time', 'threading', 'multiprocessing', 'socket', 'email', 'http',
-        'urllib', 'xml', 'html', 'csv', 'configparser', 'argparse', 'logging',
-        'unittest', 'doctest', 'pdb', 'traceback', 'gc', 'weakref', 'copy',
-        'pprint', 'enum', 'hashlib', 'uuid', 'shutil', 'tempfile', 'glob'
-    }
-
-    # 1. Determine Publisher Category
-    if top_level in stdlib_modules:
-        info['dcterms:publisher'] = 'Python Standard Library'
-        if top_level == 'sys':
-            info['dcterms:hasVersion'] = sys.version.split()[0]
-    else:
-        try:
-            module = importlib.import_module(top_level)
-            if hasattr(module, '__file__') and module.__file__:
-                f_path = module.__file__
-                info['dcterms:identifier'] = f_path
-                
-                # Logic to determine if User Module or Third Party
-                if 'site-packages' in f_path or 'dist-packages' in f_path:
-                    info['dcterms:publisher'] = 'Third Party Package'
-                else:
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    if current_dir in f_path:
-                        info['dcterms:publisher'] = 'User Module'
-                    else:
-                        info['dcterms:publisher'] = 'System/Local Environment'
-        except (ImportError, AttributeError):
-            info['dcterms:publisher'] = 'Unresolved Module'
-
-    # 2. Attempt to fetch version for non-stdlib (if not already set)
-    if not info['dcterms:hasVersion']:
-        try:
-            version = get_package_version(top_level)
-            if version:
-                info['dcterms:hasVersion'] = version
-        except Exception:
-            pass
-    
-    return info
-
-def get_package_version(package_name):
-    """Safely get the version of a package using multiple methods."""
-    top_level = package_name.split('.')[0]
-    
-    # attempt by check common attributes
-    try:
-        module = importlib.import_module(top_level)
-        version_attrs = ['__version__', 'version', 'VERSION', '__VERSION__', 'ver']
-        for attr in version_attrs:
-            if hasattr(module, attr):
-                version = getattr(module, attr)
-                if version and version != '0.0.post1':
-                    return str(version)
-    except ImportError:
-        pass
-    
-    # attempt by comparing with automatic package discovery
-    actual_package, version = find_package_by_import_name(top_level)
-    if version:
-        return version
-    
-    # attempt with importlib.metadata
-    try:
-        return importlib.metadata.version(top_level)
-    except Exception:
-        pass
-    
-    return None
-
-def find_package_by_import_name(import_name):
-    """Find the actual installed package name for a given import name."""
-    top_level = import_name.split('.')[0]
-    
-    # check __version__ directly
-    try:
-        module = importlib.import_module(top_level)
-        version = getattr(module, '__version__', None)
-        if version:
-            return top_level, version
-    except ImportError:
-        pass
-    
-    # search all installed packages using importlib.metadata
-    try:
-        for dist in importlib.metadata.distributions():
-            package_name = dist.metadata['Name']
-            
-            # Check if this package provides the import name via top_level.txt
-            try:
-                top_level_content = dist.read_text('top_level.txt')
-                if top_level_content:
-                    top_levels = top_level_content.strip().split()
-                    if top_level in top_levels:
-                        return package_name, dist.version
-            except Exception:
-                pass
-            
-            # Check matching files in top-level module
-            try:
-                files = dist.files
-                if files:
-                    for file in files:
-                        parts = file.parts
-                        if len(parts) > 0:
-                            top_file = parts[0]
-                            if top_file.endswith('.py'):
-                                module_candidate = top_file[:-3]
-                            else:
-                                module_candidate = top_file
-                            
-                            if module_candidate == top_level:
-                                return package_name, dist.version
-            except:
-                pass
-            
-            # check if package matches import name
-            if package_name.lower().replace('-', '_') == top_level.lower():
-                return package_name, dist.version
-                
-    except:
-        pass
-    
-    return None, None
+from .utility import normalize
+from IPython.core.getipython import get_ipython
+import types
 
 
+
+##### ANALYSIS TRACKER ######
 
 class AnalysisTracker:
     """
@@ -202,7 +35,8 @@ class AnalysisTracker:
     def __init__(self, 
                 proj_name: str, 
                 home_path: str, 
-                orcid: str = "0000-0000-0000-0000", 
+                metadata_template: Optional[dict] = None,
+                orcid: Optional[str] = "0000-0000-0000-0000", 
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
                 ontology_graph: Optional[Graph] = None, 
                 prefix: Optional[str] = "mds") -> None:
@@ -246,11 +80,12 @@ class AnalysisTracker:
                 self.orcid_verified = False
         self.base_uri = base_uri
         self.prefix = prefix
-        self.analysis_id = f"run_{uuid4().hex[:12]}"
+        self.analysis_id = f"run{str(uuid4().int)[-15:].zfill(15)}"
         self.sources = []
         self.proj_name = proj_name
         self.file_events = []
         self.imports =[]
+        self.activity_log = []
         if ontology_graph is None:
             if MatDatSciDf.mds_graph is None:
                 print("MDS-Onto from source is not available, please parse ontology from a local file")
@@ -265,73 +100,14 @@ class AnalysisTracker:
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
         self.ontology.bind("mds", self.MDS)
 
-    
-
-    def detect_all_imports(self):
-        frame = inspect.currentframe()
-        while frame.f_back:
-            frame = frame.f_back
-        caller_file = inspect.getfile(frame)
-
-        with open(caller_file, 'r') as f:
-            source = f.read()
-
-        tree = ast.parse(source)
-        imports = []
+        if metadata_template:
+            self.metadata_template = metadata_template
+        else:
+            self.metadata_template = {}
         
-        # Cache module info to avoid repeated lookups/imports
-        module_cache = {}
+        self.metadata_obj = Metadata(self.metadata_template)
 
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    m_name = alias.name
-                    if m_name not in module_cache:
-                        module_cache[m_name] = get_module_info(m_name)
-                        # Create stable ID for the Software itself
-                        module_cache[m_name]['@id'] = f'{self.prefix}:Software_{m_name.replace(".", "_")}'
-                    
-                    m_info = module_cache[m_name]
-                    
-                    imports.append({
-                        '@id': f'{self.prefix}:ImportEvent_{uuid4().hex[:8]}',
-                        'dcterms:type': 'import',
-                        'skos:prefLabel': m_name,
-                        'skos:altLabel': alias.asname,
-                        'dcterms:source': m_info  # This links the event to the software node
-                    })
 
-            elif isinstance(node, ast.ImportFrom):
-                module_name = node.module if node.module else '(relative)'
-                
-                # Skip get_module_info for relative imports to avoid ImportErrors
-                if module_name != '(relative)' and not node.level > 0:
-                    if module_name not in module_cache:
-                        module_cache[module_name] = get_module_info(module_name)
-                        module_cache[module_name]['@id'] = f'{self.prefix}:Software_{module_name.replace(".", "_")}'
-                    m_info = module_cache[module_name]
-                else:
-                    m_info = {
-                        '@id': f'{self.prefix}:Software_Relative_{uuid4().hex[:6]}',
-                        'skos:prefLabel': module_name,
-                        'dcterms:publisher': 'User Module',
-                        'dcterms:type': 'relative_import'
-                    }
-
-                for alias in node.names:
-                    full_name = f"{module_name}.{alias.name}"
-                    imports.append({
-                        '@id': f'{self.prefix}:ImportEvent_{uuid4().hex[:8]}',
-                        'dcterms:type': 'import from',
-                        'dcterms:isPartOf': module_name,
-                        'skos:prefLabel': alias.name,
-                        'skos:altLabel': alias.asname,
-                        'dcterms:title': full_name,
-                        'dcterms:source': m_info
-                    })
-                    
-        self.imports = imports       
-        return imports
         
         
 
@@ -359,6 +135,138 @@ class AnalysisTracker:
             "unit": "https://qudt.org/vocab/unit/",
             "obo": "http://purl.obolibrary.org/obo/"
         }
+    # --- IMPORT DETECTION ---
+
+    @staticmethod
+    def _get_module_info(module_name: str):
+        """
+        Pure utility to extract metadata from a loaded module.
+        Type-safe for Pyright/Pylance.
+        """
+        
+        root_name = module_name.split('.')[0]
+        mod = sys.modules.get(root_name)
+        
+        info = {
+            'skos:prefLabel': root_name,
+            'dcterms:type': 'Software',
+            'dcterms:hasVersion': 'Unknown',
+            'dcterms:identifier': 'Unknown',
+            'dcterms:publisher': 'Unknown'
+        }
+
+        # 1. Check Standard Library
+        if root_name in sys.builtin_module_names:
+            info['dcterms:publisher'] = 'Python Standard Library'
+            if root_name == 'sys':
+                info['dcterms:hasVersion'] = sys.version.split()[0]
+        
+        # 2. Check Filesystem Modules
+        elif mod:
+            # Safely get the file path to satisfy the type checker
+            f_path = getattr(mod, '__file__', None)
+            
+            if f_path: # This check fixes the Pyright error
+                info['dcterms:identifier'] = f_path
+                info['dcterms:hasVersion'] = getattr(mod, '__version__', 
+                                            getattr(mod, 'version', 'Unknown'))
+                
+                # Now Pyright knows f_path is a string
+                if 'site-packages' in f_path or 'dist-packages' in f_path:
+                    info['dcterms:publisher'] = 'Third Party Package'
+                else:
+                    # Use os.getcwd() to identify local project modules
+                    if os.getcwd() in f_path:
+                        info['dcterms:publisher'] = 'User Module'
+                    else:
+                        info['dcterms:publisher'] = 'System/Local Environment'
+            else:
+                # Handle modules that exist in memory but have no file (e.g., dynamically created)
+                info['dcterms:publisher'] = 'In-Memory Module'
+        
+        return info
+
+    @staticmethod
+    def _categorize_imports(software_list: list):
+        """
+        Groups the flat software list into meaningful categories for the report.
+        """
+        categorized = {
+            'third_party': [],
+            'standard_library': [],
+            'user_modules': [],
+            'other': []
+        }
+        
+        for sw in software_list:
+            pub = sw.get('dcterms:publisher', 'Unknown')
+            
+            if pub == 'Third Party Package':
+                categorized['third_party'].append(sw)
+            elif pub == 'Python Standard Library':
+                categorized['standard_library'].append(sw)
+            elif pub == 'User Module':
+                categorized['user_modules'].append(sw)
+            else:
+                categorized['other'].append(sw)
+                
+        return categorized
+
+    def detect_all_imports(self):
+        """
+        Unified Environment Scanner for Jupyter and standard scripts.
+        Identifies top-level software dependencies currently available in the session.
+        """
+
+        # 1. Access the current live namespace
+        try:
+            shell = get_ipython()
+            # Use Jupyter's user namespace if available, otherwise fallback to globals
+            namespace = shell.user_ns if shell else globals()
+        except ImportError:
+            namespace = globals()
+
+        found_software = []
+        seen_packages = set()
+
+        # 2. Iterate through every object currently accessible to the user
+        for name, obj in namespace.items():
+            # Ignore private variables and internal Jupyter tools
+            if name.startswith('_') or name == 'get_ipython':
+                continue
+                
+            source_module = None
+            
+            # Check if the object is a module (import pandas as pd)
+            if isinstance(obj, types.ModuleType):
+                source_module = obj.__name__
+            # Check if the object is an entity from a module (from pandas import DataFrame)
+            elif hasattr(obj, '__module__'):
+                source_module = getattr(obj, '__module__')
+
+            if source_module:
+                # Extract the root package name (e.g., 'pandas' from 'pandas.core.frame')
+                root_pkg = source_module.split('.')[0]
+                
+                # 3. Only log unique, valid packages present in sys.modules
+                if root_pkg in sys.modules and root_pkg not in seen_packages:
+                    # Skip the tracker itself and standard built-ins to reduce noise
+                    if root_pkg == self.__class__.__module__ or root_pkg == 'builtins':
+                        continue
+                    
+                    # Fetch metadata using the static utility method
+                    software_info = self._get_module_info(root_pkg)
+                    
+                    # Assign a stable FAIR identifier
+                    software_info['@id'] = f'{self.prefix}:Software_{root_pkg}'
+                    
+                    found_software.append(software_info)
+                    seen_packages.add(root_pkg)
+
+        self.imports = found_software
+
+    
+
 
     # --- WRAPPERS ---
 
@@ -378,76 +286,119 @@ class AnalysisTracker:
         return wrapper
 
     def run_and_track(self, func, *args, **kwargs):
-
         """
-        Executes a function while auditing arguments, results, and file system events.
+        Executes a function while auditing arguments, results, and environment.
 
-        This method captures:
-        1. Function input arguments and default values.
-        2. OS-level file handles (reads/writes) active during execution.
-        3. The function's return value.
+        This method acts as a high-level provenance wrapper. It captures the 
+        "top-most" (direct) input IRIs from the function signature and the 
+        direct output IRIs from the return value. While all internal data 
+        structures (like nested dictionary keys) are routed and saved to the 
+        global metadata log, only the direct IRIs are linked to the Activity 
+        node via CCO and PROV-O properties.
+
+        The method performs the following audit steps:
+            1. Generates a unique 15-digit numeric activity ID.
+            2. Binds and routes direct function arguments to capture input IRIs.
+            3. Triggers a live environment scan (imports/sys.modules).
+            4. Executes the function while monitoring OS-level file handles.
+            5. Routes and captures return value IRIs.
+            6. Finalizes a Linked Data Activity node with prov:used and prov:generated.
 
         Args:
-            func: The target function to execute.
-            *args: Positional arguments for the function.
-            **kwargs: Keyword arguments for the function.
+            func (callable): The scientific function or method to be executed.
+            *args: Positional arguments to be passed to the target function.
+            **kwargs: Keyword arguments to be passed to the target function.
 
         Returns:
-            Any: The original return value of the tracked function.
+            Any: The original return value of the wrapped function. If an 
+                exception occurs, it returns None after logging the error 
+                as a provenance event.
         """
-        # 1. Log Arguments
+        # 1. Setup Activity Identity
+        activity_num = str(uuid4().int)[-15:]
+        run_id = f"{func.__name__}_activity{activity_num}_{self.analysis_id}"
+        activity_iri = f"{self.prefix}:{run_id}"
+        start_time = datetime.now().isoformat()
+        
+        # Trackers for direct IRIs only
+        direct_input_iris = []
+        direct_output_iris = []
+
+        # 2. Capture Direct Input IRIs from Signature
         sig = inspect.signature(func)
         bound_args = sig.bind(*args, **kwargs)
         bound_args.apply_defaults()
 
-        run_id = f"{func.__name__}.{self.analysis_id}"
         for name, val in bound_args.arguments.items():
             if name == 'self':
-                self.track_other("instance_attr", val, parent_id=run_id)
-            else:
-                # Regular arguments (dataframes, floats, etc.)
-                self._route_data(name, val, parent_id=run_id)
+                continue
+            
+            # Capture the IRI string returned by the routing logic
+            iri = self._route_data(name, val, parent_id=run_id)
+            if iri:
+                direct_input_iris.append(iri)
         
-        # 2. Science Execution with OS-Level Auditing
+        # 3. Environment Audit
+        self.detect_all_imports()
         process = psutil.Process(os.getpid())
         
         try:
             # Execute
             result = func(*args, **kwargs)
+            end_time = datetime.now().isoformat()
+
+            # 4. Capture Direct Output IRIs
+            if isinstance(result, tuple):
+                for i, item in enumerate(result):
+                    out_iri = self._route_data(f"{func.__name__}_output_{i}", item, parent_id=run_id)
+                    if out_iri: 
+                        direct_output_iris.append(out_iri)
+            else:
+                out_iri = self._route_data(f"{func.__name__}_output", result, parent_id=run_id)
+                if out_iri: 
+                    direct_output_iris.append(out_iri)
+
+            # 5. Finalize Activity with Direct Links
+            self.activity_log.append({
+                "@id": activity_iri,
+                "@type": "cco:ont00000366", # Act of Information Processing
+                "rdfs:label": "Act of Information Processing",
+                "skos:altLabel": f"Execution of function {func.__name__}",
+                "prov:startedAtTime": start_time,
+                "prov:endedAtTime": end_time,
+                "cco:ont00001921": direct_input_iris,      # Direct IRIs list
+                "cco:ont00001986": direct_output_iris  # Direct IRIs list
+            })
             
-            # 3. Capture open file handles at the moment of completion
-            # Note: Polling in a thread is better for short-lived files, 
-            # but this catches all currently active handles.
+            # 6. Capture File Events linked to this Activity
             for file in process.open_files():
                 mode = getattr(file, 'mode', 'r')
-                    
                 event_type = "read/import" if 'r' in mode else "write/modification"
                 self.file_events.append({
-                        "@id": f"{self.prefix}:file_event_{uuid4().hex[:8]}_{self.analysis_id}",
+                        "@id": f"{self.prefix}:fileEvent{str(uuid4().int)[-15:]}_{self.analysis_id}",
                         "@type": "cco:ont00000958",
                         "mds:fileName": os.path.basename(file.path),
                         "mds:fileLocation": file.path,
                         "mds:fileEvent": event_type,
+                        "prov:wasInformedBy": activity_iri,
                         "prov:generatedAtTime": datetime.now().isoformat()
                     })
 
-            if isinstance(result, tuple):
-                for i, item in enumerate(result):
-                    self._route_data(f"{func.__name__}_output_{i}", item, parent_id=run_id)
-            else:
-                self._route_data(f"{func.__name__}_output", result, parent_id=run_id)
             return result
 
         except Exception as e:
-            # --- THE FIX: Catch the error and move on ---
             error_msg = f"Error in {func.__name__}: {str(e)}"
             print(f"⚠️ {error_msg}")
-            
-            # Log the error as a "simple datatype" so it appears in the RDF graph
-            self._route_data(f"{func.__name__}_ERROR", error_msg, parent_id=run_id)
-            
-            # Return None or a custom error object so the loop can continue
+            err_iri = self._route_data(f"{func.__name__}_ERROR", error_msg, parent_id=run_id)
+            self.activity_log.append({
+                "@id": activity_iri,
+                "prov:startedAtTime": start_time,
+                "cco:ont00001921": direct_input_iris,
+                "cco:ont00001986": [err_iri] if err_iri else []
+            })
             return None
+        
+        
 
     def _route_data(self, name, val, parent_id=None):
         """
@@ -462,15 +413,15 @@ class AnalysisTracker:
 
         name = normalize(name)
         if isinstance(val, pd.DataFrame):
-            self.track_dataframe(name, val, parent_id)
+            return self.track_dataframe(name, val, parent_id)
         elif isinstance(val, dict):
-            self.track_dict(name, val, parent_id)
+            return self.track_dict(name, val, parent_id)
         elif isinstance(val, (list, np.ndarray)):
-            self.track_list_array(name, val, parent_id)
+            return self.track_list_array(name, val, parent_id)
         elif isinstance(val, (str, int, float, bool)):
-            self.track_simple_datatype(name, val, parent_id)
+            return self.track_simple_datatype(name, val, parent_id)
         else:
-            self.track_other(name, val, parent_id)
+            return self.track_other(name, val, parent_id)
 
 
     # --- TRACKING METHODS ---
@@ -485,27 +436,33 @@ class AnalysisTracker:
             val: The primitive value.
             parent_id: ID of the containing process or object.
         """
+        metadata_template = self.metadata_obj.metadata_temp
 
-        onto_terms = extract_terms_from_ontology(self.ontology)
+        graph_template = metadata_template.get("@graph", [])
+
+        semantic_type = "cco:ont00000958"
         
-        match = find_best_match(name, ontology_terms=onto_terms)
-
-        bindings = self.get_context()
-
-        iri = match['iri'] if match else None
-
-        curie = get_curie(iri, bindings) 
+        if graph_template:
+            for item in graph_template:
+                # We check if the altLabel in the template matches our variable name
+                if item.get('skos:altLabel') == name:
+                    semantic_type = item.get('@type', semantic_type)
+                    break 
 
 
         self.sources.append({
             "@id": f"{self.prefix}:{name}.{self.analysis_id}",
-            "@type": f"{curie}",
+            "@type": f"{semantic_type}",
             "mds:argumentIdentifier": f"{name}.{self.analysis_id}",
             "skos:altLabel": name,
             "mds:argumentType": type(val).__name__,
             "qudt:value": val,
-            "mds:containerIdentifier": parent_id 
+            "mds:containerIdentifier": {
+                "@id": f"{self.prefix}:{parent_id}"
+            }
         })
+
+        return f"{self.prefix}:{name}.{self.analysis_id}"
 
     def track_dict(self, name, val, parent_id=None):
         """
@@ -526,11 +483,15 @@ class AnalysisTracker:
             "skos:altLabel": name, 
             "mds:argumentType": "dictionary", 
             "mds:keys": list(val.keys()),
-            "mds:containerIdentifier": parent_id # Links to its container
+            "mds:containerIdentifier": {
+                "@id": f"{self.prefix}:{parent_id}"
+            } # Links to its container
         })
         for k, v in val.items():
             # Recursively pass the current dict as the new parent
-            self._route_data(f"{name}.{k}", v, parent_id=current_id)
+            self._route_data(f"{name}/{k}", v, parent_id=current_id)
+        
+        return f"{self.prefix}:{current_id}"
 
     def track_dataframe(self, name, df, parent_id=None):
         """
@@ -550,8 +511,12 @@ class AnalysisTracker:
             "mds:argumentType": "dataframe", 
             "mds:columnsList": list(df.columns), 
             "mds:numberOfRows": len(df),
-            "mds:containerIdentifier": parent_id
+            "mds:containerIdentifier": {
+                "@id": f"{self.prefix}:{parent_id}"
+            }
         })
+
+        return f"{self.prefix}:{name}.{self.analysis_id}"
 
     def track_list_array(self, name, data, parent_id = None):
         """
@@ -587,8 +552,12 @@ class AnalysisTracker:
             "mds:argumentType": type(data).__name__,
             "mds:listSize": len(data),
             "mds:arrayShape": shape_str,
-            "mds:containerIdentifier": parent_id
+            "mds:containerIdentifier": {
+                "@id": f"{self.prefix}:{parent_id}"
+            }
         })
+
+        return f"{self.prefix}:{name}.{self.analysis_id}"
 
     def track_other(self, name, obj, parent_id=None):
         """
@@ -609,16 +578,22 @@ class AnalysisTracker:
             "mds:argumentIdentifier": current_id,
             "skos:altLabel": name, 
             "mds:argumentType": type(obj).__name__, 
-            "mds:containerIdentifier": parent_id
+            "mds:containerIdentifier": {
+                "@id": f"{self.prefix}:{parent_id}"
+            }
         })
 
         # Inspect the object...
         try:
             for attr_name, attr_val in vars(obj).items():
                 if not attr_name.startswith('_') and (isinstance(attr_val, (int, float, str, bool, dict, list, pd.DataFrame) or hasattr(attr_val, '__dict__'))):
-                    self._route_data(f"{name}.{attr_name}", attr_val, parent_id=current_id)
+                    self._route_data(f"{name}/{attr_name}", attr_val, parent_id=current_id)
         except TypeError:
             pass
+
+        return f"{self.prefix}:{current_id}"
+
+    
 
     def create_analysis_jsonld(self):
         """
@@ -644,7 +619,8 @@ class AnalysisTracker:
             "dcterms:provenance": self.file_events,
             "dcterms:description": orcid_verification,
             "mds:hasStudyStage": "Analysis",
-            "dcterms:requires": self.imports if self.imports else []
+            "dcterms:requires": self.imports if self.imports else [],
+            "obo:BFO_0000117": self.activity_log
             }
             ]
     
@@ -669,6 +645,8 @@ class AnalysisTracker:
         
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(jsonld_data)
+
+        print(f"JSON-LD saved at {full_path}")
 
     def create_report(self) -> str:
         """
@@ -695,7 +673,56 @@ class AnalysisTracker:
                 val_info = f" = `{s.get('qudt:value')}`" if 'qudt:value' in s else ""
                 report.append(f"* **{s['skos:altLabel']}** ({s['mds:argumentType']}){shape_info}{val_info}")
 
-        # 2. File System Events (The "Paper Trail")
+        # 2. Activity report
+        report.append('\n### 🕹️ Activity Report')
+        if not self.activity_log:
+            report.append('_No activity tracked_')
+        else:
+            for act in self.activity_log:
+                activity_info = f"{act.get('skos:altLabel')}"
+                start = f"{act.get('prov:startedAtTime')}"
+                end = f"{act.get('prov:endedAtTime')}"
+                report.append(f"* **{activity_info}**; Started at time **{start}**; Ended at time **{end}**; Performed by **{self.orcid}**")
+
+
+        # 3. System Imports
+        report.append("\n### 📂 Software Environment")
+        if not self.imports:
+            report.append("_No software environment tracked._")
+        else:
+            categorized = self._categorize_imports(self.imports)
+            
+            sections = [
+                ('third_party', '#### THIRD PARTY PACKAGES'),
+                ('standard_library', '#### STANDARD LIBRARY'),
+                ('user_modules', '#### USER/PROJECT MODULES'),
+                ('other', '#### OTHER MODULES')
+            ]
+
+            for cat_key, title in sections:
+                if not categorized.get(cat_key):
+                    continue
+                    
+                report.append(f"\n{title}")
+                for sw in categorized[cat_key]:
+                    # Extract data directly from the software node
+                    name = sw.get('skos:prefLabel')
+                    version = sw.get('dcterms:hasVersion')
+                    path = sw.get('dcterms:identifier')
+                    alias = sw.get('skos:altLabel')
+                    
+                    # Formatting the summary line
+                    alias_info = f" (accessed as '{alias}')" if alias else ""
+                    report.append(f"  • **{name}**{alias_info}")
+
+                    # Meta info
+                    if version and version != "Unknown":
+                        report.append(f"    └─ Version: {version}")
+                    if path and path != "Unknown" and path != "Built-in":
+                        report.append(f"    └─ Location: {path}")
+        
+
+        # 4. File System Events (The "Paper Trail")
         report.append("\n### 📂 File System Activity")
         if not self.file_events:
             report.append("_No file system events detected._")
@@ -704,52 +731,6 @@ class AnalysisTracker:
             report.append("| :--- | :--- | :--- |")
             for e in self.file_events:
                 report.append(f"| {e['mds:fileName']} | {e['mds:fileEvent']} | `{e['mds:fileLocation']}` |")
-
-
-
-        report.append("\n### 📂 System Imports")
-        if not self.imports:
-            report.append("_No imports tracked._")
-        else:
-            categorized = categorize_imports(self.imports)
-            
-            sections = [
-                ('third_party', '#### THIRD PARTY MODULES'),
-                ('standard_library', '#### STANDARD LIBRARY MODULES'),
-                ('user_modules', '#### USER/PROJECT MODULES'),
-                ('relative_imports', '#### RELATIVE IMPORTS')
-            ]
-
-            for cat_key, title in sections:
-                if not categorized.get(cat_key):
-                    continue
-                    
-                report.append(f"\n{title}")
-                for imp in categorized[cat_key]:
-                    # Extract data using the new JSON-LD keys
-                    imp_type = imp.get('dcterms:type')
-                    alias = imp.get('skos:altLabel')
-                    alias_str = f" as {alias}" if alias else ""
-                    
-                    # Nested module info
-                    info = imp.get('dcterms:source', {})
-                    version = info.get('dcterms:hasVersion')
-                    path = info.get('dcterms:identifier')
-
-                    # Formatting the import line
-                    if imp_type == 'import':
-                        module_name = imp.get('skos:prefLabel')
-                        report.append(f"  import {module_name}{alias_str}")
-                    else: # 'import from'
-                        parent_mod = imp.get('dcterms:isPartOf')
-                        member_name = imp.get('skos:prefLabel')
-                        report.append(f"  from {parent_mod} import {member_name}{alias_str}")
-
-                    # Meta info
-                    if version and version != "Unknown":
-                        report.append(f"    └─ Version: {version}")
-                    if path and path != "Unknown":
-                        report.append(f"    └─ Path: {path}")
 
 
         report.append("\n---")
@@ -768,6 +749,8 @@ class AnalysisTracker:
         
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(self.create_report())
+
+        print(f"Report saved at {full_path}")
 
     def create_arg_df(self):
         """
@@ -824,7 +807,7 @@ class AnalysisGroup:
         self.base_uri = base_uri
         self.ontology = ontology_graph
         self.prefix = prefix
-        self.group_id = f"run_group_{uuid4().hex[:12]}"
+        self.group_id = f"runGroup{str(uuid4().int)[-15:].zfill(15)}"
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
 
@@ -1001,6 +984,8 @@ class AnalysisGroup:
         
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(self.create_group_report())
+        
+        print(f"Report saved at {full_path}")
 
     def save_jsonld(self):
         """
@@ -1051,6 +1036,8 @@ class AnalysisGroup:
         
         with open(os.path.join(group_json_dir, filename), "w", encoding="utf-8") as f:
             json.dump(master_output, f, indent=2)
+
+        print(f"JSON-LD saved at {os.path.join(group_json_dir, filename)}")
 
 
 

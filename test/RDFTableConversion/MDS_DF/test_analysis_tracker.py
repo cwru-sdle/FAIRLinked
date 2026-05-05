@@ -118,7 +118,7 @@ class TestAnalysisTrackerInit:
         assert t.home_path == "/data"
         assert t.sources == []
         assert t.file_events == []
-        assert t.analysis_id.startswith("run_")
+        assert t.analysis_id.startswith("run")
 #
 #
 ## ===========================================================================
@@ -164,7 +164,7 @@ class TestRouteData:
         labels = [s["skos:altLabel"] for s in t.sources]
         assert "opts" in labels
         # Nested items should also be tracked
-        assert "opts.key1" in labels or "opts.key2" in labels
+        assert "opts/key1" in labels or "opts/key2" in labels
 #
     def test_routes_list(self):
         t = make_tracker()
@@ -213,9 +213,9 @@ class TestTrackSimpleDatatype:
 #
     def test_parent_id_stored(self):
         t = make_tracker()
-        t.track_simple_datatype("x", 1.0, parent_id="run_abc")
+        t.track_simple_datatype("x", 1.0, parent_id="run123")
         entry = next(s for s in t.sources if s["skos:altLabel"] == "x")
-        assert entry["mds:containerIdentifier"] == "run_abc"
+        assert entry["mds:containerIdentifier"] == "run123"
 #
 #
 #lass TestTrackDataframe:
@@ -270,8 +270,8 @@ class TestTrackOther:
  
         t.track_other("cfg", Config())
         labels = [s["skos:altLabel"] for s in t.sources]
-        assert "cfg.lr" in labels
-        assert "cfg.epochs" in labels
+        assert "cfg/lr" in labels
+        assert "cfg/epochs" in labels
 
 
 
@@ -491,7 +491,7 @@ class TestAnalysisGroup:
     def test_init_empty(self, tmp_path):
         g = self.make_group(tmp_path)
         assert g.analyses == {}
-        assert g.group_id.startswith("run_group_")
+        assert g.group_id.startswith("runGroup")
 #
     def test_run_and_track_stores_analysis(self, tmp_path):
         g = self.make_group(tmp_path)

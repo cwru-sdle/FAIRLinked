@@ -63,7 +63,7 @@ class MatDatSciDf:
     
     def __init__(self, 
                 df: pd.DataFrame, 
-                metadata_template: dict,
+                metadata_template: Optional[dict] = None,
                 matched_log: Optional[list]= None,
                 unmatched_log: Optional[list] = None,
                 data_relations_dict: Optional[dict] = None, 
@@ -77,10 +77,10 @@ class MatDatSciDf:
 
         Args:
             df (pd.DataFrame): The source DataFrame containing experimental results.
-            metadata_template (dict): The initial JSON-LD dictionary defining column contexts.
-            matched_log (list): A historical record of columns successfully mapped to 
+            metadata_template (dict, optional): The initial JSON-LD dictionary defining column contexts.
+            matched_log (list, optional): A historical record of columns successfully mapped to 
                 ontology terms during the initialization process.
-            unmatched_log (list): A record of columns that failed to find an automated 
+            unmatched_log (list, optional): A record of columns that failed to find an automated 
                 match in the reference ontology.
             data_relations_dict (dict, optional): A dictionary of Subject-Predicate-Object 
                 mappings to link columns. Defaults to an empty dict.
@@ -110,7 +110,17 @@ class MatDatSciDf:
 
         self.df = df.iloc[skip_rows:]
 
-        self.metadata_template = metadata_template
+        
+        if not metadata_template or metadata_template == {}:
+            template, matched, unmatched = self.template_generator(skip_prompts=True)
+            self.metadata_template = template
+            self.matched_log = matched
+            self.unmatched_log = unmatched
+        else:
+            self.metadata_template = metadata_template
+            self.matched_log = matched_log
+            self.unmatched_log = unmatched_log
+
 
         if orcid == "0000-0000-0000-0000":
             self.orcid = orcid
@@ -144,7 +154,10 @@ class MatDatSciDf:
 
         if ontology_graph is None:
             if MatDatSciDf.mds_graph is None:
-                print("MDS-Onto from source is not available, please parse ontology from a local file")
+                print("""
+                MDS-Onto from source is not available, please parse ontology from a local file.
+                Run MDS_DF_instance.ontology.parse('path/to/ontology')
+                """)
                 user_defined_onto = Graph()
                 self.ontology = user_defined_onto
             else:
@@ -159,9 +172,6 @@ class MatDatSciDf:
         self.ontology.bind("mds", self.MDS)
         if data_relations_dict is None:
             data_relations_dict = {}
-
-        self.matched_log = matched_log
-        self.unmatched_log = unmatched_log
 
 
         self.data_relations = DataRelationsDict(prop_col_pair_dict=data_relations_dict)
@@ -354,7 +364,8 @@ class MatDatSciDf:
     def view_metadata(self, format: str = "table"):
         """
         Wrapper to print the current metadata template as a 
-        formatted table or raw JSON-LD.
+        formatted table or raw JSON-LD. Change to format = 'json-ld' 
+        to view metadata template in JSON-LD format.
         """
         self.metadata_obj.print_template(format=format)
 

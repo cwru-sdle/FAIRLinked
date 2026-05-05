@@ -2,6 +2,7 @@
 
 Automatic discovery of relations in the data based on ontology
 Code refactoring: serialization utilizes MatDatSciDf class
+Import detection continued development
 
 # 0.3.3.3
 

@@ -87,21 +87,12 @@ raw_df = pd.read_csv("resources/worked-example-RDFTableConversion/microindentati
 
 mds_df = MatDatSciDf(
     df=raw_df, 
-    metadata_template={}, 
     orcid="0000-0001-2345-6789",
     df_name="PMMA_Hardness_Test",
     metadata_rows=True
 )
 
-template, matched, unmatched = mds_df.template_generator(skip_prompts=True)
-
-mds_df = MatDatSciDf(
-    df=raw_df, 
-    metadata_template=template, 
-    orcid="0000-0001-2345-6789",
-    df_name="PMMA_Hardness_Test",
-    metadata_rows=True
-)
+mds_df.view_metadata()
 
 ```
 
