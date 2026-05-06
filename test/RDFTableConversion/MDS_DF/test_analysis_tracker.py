@@ -215,7 +215,7 @@ class TestTrackSimpleDatatype:
         t = make_tracker()
         t.track_simple_datatype("x", 1.0, parent_id="run123")
         entry = next(s for s in t.sources if s["skos:altLabel"] == "x")
-        assert entry["mds:containerIdentifier"]["@id"] == "run123"
+        assert entry["mds:containerIdentifier"]["@id"].split(':')[1] == "run123"
 #
 #
 #lass TestTrackDataframe:
