@@ -54,8 +54,8 @@ class AnalysisTracker:
         """
         
         self.home_path = home_path
-        if orcid == "0000-0000-0000-0000":
-            self.orcid = orcid
+        if orcid == "0000-0000-0000-0000" or orcid is None:
+            self.orcid = "0000-0000-0000-0000"
             self.orcid_verified = False
             print("⚠️ Using Placeholder ORCID. This is not recommended for data publication.")
         else:
@@ -107,9 +107,6 @@ class AnalysisTracker:
         
         self.metadata_obj = Metadata(self.metadata_template)
 
-
-        
-        
 
     def get_context(self) -> dict:
 
@@ -266,7 +263,7 @@ class AnalysisTracker:
         self.imports = found_software
 
     
-
+    
 
     # --- WRAPPERS ---
 
@@ -593,7 +590,61 @@ class AnalysisTracker:
 
         return f"{self.prefix}:{current_id}"
 
-    
+    #### METADATA OBJECT WRAPPERS ####
+    def update_metadata(self, col_name: str, field: str, value: str):
+        """
+        Wrapper to update a metadata property (unit, type, definition, etc.) 
+        for a specific column.
+        """
+        self.metadata_obj.update_template(col_name, field, value)
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def add_column_metadata(self, col_name: str, rdf_type: str, unit: str = "UNITLESS", 
+                            definition: str = "No definition provided", study_stage: str = "UNK"):
+        """
+        Top-level API to manually define semantic metadata for a new column.
+        Useful for defining columns found in 'Discovery Warning' reports.
+        """
+        existing = self.metadata_obj.add_column_metadata(col_name, rdf_type, unit, definition, study_stage)
+        if existing:
+            print(f"⚠️ Metadata for '{col_name}' already exists. Use update_metadata instead.")
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def overwrite_metadata(self, metadata_template: dict):
+        """
+        Wrapper to delete and replace metadata information. WARNING: THIS WILL DELETE ALL CURRENT METADATA
+        """
+        new_metadata_obj = Metadata(metadata_template=metadata_template)
+        self.metadata_obj = new_metadata_obj
+        self.metadata_template = metadata_template
+
+    def delete_column_metadata(self, col_name: str):
+        """
+        Top-level API to remove a column's semantic metadata definition.
+        Useful for cleaning up incorrect mappings or unwanted discovery columns.
+
+        Args:
+            col_name (str): The column label to remove from the metadata template.
+        """
+        self.metadata_obj.delete_column_metadata(col_name)
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def view_metadata(self, format: str = "table"):
+        """
+        Wrapper to print the current metadata template as a 
+        formatted table or raw JSON-LD. Change to format = 'json-ld' 
+        to view metadata template in JSON-LD format.
+        """
+        self.metadata_obj.print_template(format=format)
+
+    def save_metadata(self, output_path: str, matched_log_path: Optional[str] = None, 
+                           unmatched_log_path: Optional[str] = None):
+        """
+        Wrapper to export the JSON-LD template and the status logs 
+        (matched/unmatched columns) to files.
+        """
+        self.metadata_obj.save_metadata(output_path, matched_log_path, unmatched_log_path)
+
 
     def create_analysis_jsonld(self):
         """
@@ -773,6 +824,24 @@ class AnalysisTracker:
         # Wrapping row_data in a list [] tells Pandas this is one row of data
         return pd.DataFrame([row_data])
 
+    def create_metadata_template(self):
+        """
+        Automatically generates a metadata template by matching 
+        group data columns against the loaded ontology.
+
+        Returns:
+            tuple: (metadata_template, matched_log, unmatched_log)
+        """
+        arg_df = self.create_arg_df()
+
+        dummy_mdsdf = MatDatSciDf(df=arg_df, ontology_graph=self.ontology, metadata_template={})
+        metadata_template, matched_log, unmatched_log = dummy_mdsdf.template_generator(skip_prompts=True)
+
+        return metadata_template, matched_log, unmatched_log
+
+    
+
+
 
 class AnalysisGroup:
 
@@ -784,7 +853,8 @@ class AnalysisGroup:
     def __init__(self,
                 proj_name: str, 
                 home_path: str, 
-                orcid: str = "0000-0000-0000-0000", 
+                orcid: Optional[str] = "0000-0000-0000-0000", 
+                metadata_template: Optional[dict] = None,
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
                 ontology_graph: Optional[Graph] = None, 
                 prefix: Optional[str] = "mds") -> None:
@@ -810,6 +880,12 @@ class AnalysisGroup:
         self.group_id = f"runGroup{str(uuid4().int)[-15:].zfill(15)}"
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+        if metadata_template:
+            self.metadata_template = metadata_template
+        else:
+            self.metadata_template = {}
+        
+        self.metadata_obj = Metadata(self.metadata_template)
 
     def get_context(self) -> dict:
         """
@@ -865,6 +941,7 @@ class AnalysisGroup:
                         proj_name=self.proj_name, 
                         home_path=self.home_path, 
                         orcid=self.orcid,
+                        metadata_template = self.metadata_template,
                         base_uri=self.base_uri,
                         ontology_graph=self.ontology,
                         prefix=self.prefix
@@ -1038,6 +1115,61 @@ class AnalysisGroup:
             json.dump(master_output, f, indent=2)
 
         print(f"JSON-LD saved at {os.path.join(group_json_dir, filename)}")
+
+    #### METADATA OBJECT WRAPPERS ####
+    def update_metadata(self, col_name: str, field: str, value: str):
+        """
+        Wrapper to update a metadata property (unit, type, definition, etc.) 
+        for a specific column.
+        """
+        self.metadata_obj.update_template(col_name, field, value)
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def add_column_metadata(self, col_name: str, rdf_type: str, unit: str = "UNITLESS", 
+                            definition: str = "No definition provided", study_stage: str = "UNK"):
+        """
+        Top-level API to manually define semantic metadata for a new column.
+        Useful for defining columns found in 'Discovery Warning' reports.
+        """
+        existing = self.metadata_obj.add_column_metadata(col_name, rdf_type, unit, definition, study_stage)
+        if existing:
+            print(f"⚠️ Metadata for '{col_name}' already exists. Use update_metadata instead.")
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def overwrite_metadata(self, metadata_template: dict):
+        """
+        Wrapper to delete and replace metadata information. WARNING: THIS WILL DELETE ALL CURRENT METADATA
+        """
+        new_metadata_obj = Metadata(metadata_template=metadata_template)
+        self.metadata_obj = new_metadata_obj
+        self.metadata_template = metadata_template
+
+    def delete_column_metadata(self, col_name: str):
+        """
+        Top-level API to remove a column's semantic metadata definition.
+        Useful for cleaning up incorrect mappings or unwanted discovery columns.
+
+        Args:
+            col_name (str): The column label to remove from the metadata template.
+        """
+        self.metadata_obj.delete_column_metadata(col_name)
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def view_metadata(self, format: str = "table"):
+        """
+        Wrapper to print the current metadata template as a 
+        formatted table or raw JSON-LD. Change to format = 'json-ld' 
+        to view metadata template in JSON-LD format.
+        """
+        self.metadata_obj.print_template(format=format)
+
+    def save_metadata(self, output_path: str, matched_log_path: Optional[str] = None, 
+                           unmatched_log_path: Optional[str] = None):
+        """
+        Wrapper to export the JSON-LD template and the status logs 
+        (matched/unmatched columns) to files.
+        """
+        self.metadata_obj.save_metadata(output_path, matched_log_path, unmatched_log_path)
 
 
 

@@ -1,11 +1,9 @@
 import json
-import os
-import warnings
 import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import MagicMock, patch, call
-from rdflib import Graph, URIRef, Literal, Namespace
+from unittest.mock import MagicMock, patch
+from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import RDF, RDFS, OWL
 from FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker import AnalysisTracker, AnalysisGroup
 
@@ -119,6 +117,97 @@ class TestAnalysisTrackerInit:
         assert t.sources == []
         assert t.file_events == []
         assert t.analysis_id.startswith("run")
+
+## ===========================================================================
+## Import Detection
+## ===========================================================================
+
+class TestImportDetection:
+    def test_categorize_imports_groups_correctly(self):
+        t = make_tracker()
+        software_list = [
+            {'skos:prefLabel': 'os', 'dcterms:publisher': 'Python Standard Library'},
+            {'skos:prefLabel': 'pandas', 'dcterms:publisher': 'Third Party Package'},
+            {'skos:prefLabel': 'FAIRmaterials', 'dcterms:publisher': 'User Module'},
+            {'skos:prefLabel': 'unknown_pkg', 'dcterms:publisher': 'Unknown'}
+        ]
+        
+        categorized = t._categorize_imports(software_list)
+        
+        assert len(categorized['standard_library']) == 1
+        assert categorized['standard_library'][0]['skos:prefLabel'] == 'os'
+        assert len(categorized['third_party']) == 1
+        assert categorized['third_party'][0]['skos:prefLabel'] == 'pandas'
+        assert len(categorized['user_modules']) == 1
+        assert categorized['user_modules'][0]['skos:prefLabel'] == 'FAIRmaterials'
+        assert len(categorized['other']) == 1
+
+    def test_detect_all_imports_populates_list(self, monkeypatch):
+        # Setup a mock namespace simulating active imports
+        import types
+        mock_pd = types.ModuleType("pandas")
+        mock_plt = types.ModuleType("matplotlib")
+        
+        # We simulate the user namespace (e.g. what's in a Jupyter cell)
+        fake_ns = {
+            "pd": mock_pd,
+            "plt": mock_plt,
+            "some_variable": 42
+        }
+        
+        # Patch get_ipython to return our fake namespace
+        mock_shell = MagicMock()
+        mock_shell.user_ns = fake_ns
+        monkeypatch.setattr("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.get_ipython", lambda: mock_shell)
+
+        t = make_tracker()
+        
+        # Mock _get_module_info to avoid actual sys.modules/disk lookups
+        with patch.object(t, '_get_module_info', return_value={'dcterms:publisher': 'Mocked'}):
+            t.detect_all_imports()
+            
+        assert len(t.imports) > 0
+        # Verify identifiers are assigned correctly
+        assert all(imp['@id'].startswith("mds:Software_") for imp in t.imports)
+
+    def test_detect_all_imports_ignores_private_and_builtins(self, monkeypatch):
+        import types
+        fake_ns = {
+            "_internal_mod": types.ModuleType("secret"),
+            "get_ipython": lambda: None,
+            "builtins": types.ModuleType("builtins")
+        }
+        
+        mock_shell = MagicMock()
+        mock_shell.user_ns = fake_ns
+        monkeypatch.setattr("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.get_ipython", lambda: mock_shell)
+
+        t = make_tracker()
+        t.detect_all_imports()
+        
+        # Imports should be empty because we ignore names starting with '_' and 'builtins'
+        assert t.imports == []
+
+    def test_detect_all_imports_deduplicates_packages(self, monkeypatch):
+        # Simulating 'from pandas import DataFrame, Series' -> two objects, one root package
+        mock_df = MagicMock()
+        mock_df.__module__ = "pandas.core.frame"
+        mock_series = MagicMock()
+        mock_series.__module__ = "pandas.core.series"
+        
+        fake_ns = {"df": mock_df, "series": mock_series}
+        
+        mock_shell = MagicMock()
+        mock_shell.user_ns = fake_ns
+        monkeypatch.setattr("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.get_ipython", lambda: mock_shell)
+
+        t = make_tracker()
+        with patch.object(t, '_get_module_info', return_value={'skos:prefLabel': 'pandas'}):
+            t.detect_all_imports()
+            
+        # Should only record pandas once despite multiple objects in namespace
+        assert len(t.imports) == 1
+        assert t.imports[0]['skos:prefLabel'] == 'pandas'
 #
 #
 ## ===========================================================================

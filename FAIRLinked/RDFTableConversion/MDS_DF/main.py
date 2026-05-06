@@ -328,8 +328,6 @@ class MatDatSciDf:
         )
 
 
-
-
     #### METADATA OBJECT WRAPPERS ####
     def update_metadata(self, col_name: str, field: str, value: str):
         """
@@ -360,6 +358,14 @@ class MatDatSciDf:
         """
         self.metadata_obj.delete_column_metadata(col_name)
         self.metadata_template = self.metadata_obj.metadata_temp
+
+    def overwrite_metadata(self, metadata_template: dict):
+        """
+        Wrapper to delete and replace metadata information. WARNING: THIS WILL DELETE ALL CURRENT METADATA
+        """
+        new_metadata_obj = Metadata(metadata_template=metadata_template)
+        self.metadata_obj = new_metadata_obj
+        self.metadata_template = metadata_template
 
     def view_metadata(self, format: str = "table"):
         """
