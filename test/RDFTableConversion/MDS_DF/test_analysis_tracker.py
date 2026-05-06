@@ -61,12 +61,12 @@ def patch_psutil():
 
 
 # ── Silence ontology-matching helpers ───────────────────────────────────────
-@pytest.fixture(autouse=True)
-def patch_matchers():
-    with patch("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.extract_terms_from_ontology", return_value=[]), \
-         patch("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.find_best_match", return_value=None), \
-         patch("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.get_curie", return_value="mds:unknown"):
-        yield
+# @pytest.fixture(autouse=True)
+# def patch_matchers():
+#     with patch("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.extract_terms_from_ontology", return_value=[]), \
+#          patch("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.find_best_match", return_value=None), \
+#          patch("FAIRLinked.RDFTableConversion.MDS_DF.analysis_tracker.get_curie", return_value="mds:unknown"):
+#         yield
 
 
 # ---------------------------------------------------------------------------
@@ -215,7 +215,7 @@ class TestTrackSimpleDatatype:
         t = make_tracker()
         t.track_simple_datatype("x", 1.0, parent_id="run123")
         entry = next(s for s in t.sources if s["skos:altLabel"] == "x")
-        assert entry["mds:containerIdentifier"] == "run123"
+        assert entry["mds:containerIdentifier"]["@id"] == "run123"
 #
 #
 #lass TestTrackDataframe:

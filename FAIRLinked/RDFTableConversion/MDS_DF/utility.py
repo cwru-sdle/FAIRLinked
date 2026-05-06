@@ -210,6 +210,20 @@ def normalize(text):
     text = text.lower().replace(" ", "_")
     return re.sub(r'[^a-zA-Z0-_.]', '', text.lower())
 
+def normalize_iri(text):
+    """
+    Normalize a text string by converting it to lowercase and removing non-alphanumeric characters.
+
+    Args:
+        text (str): Input text to normalize.
+
+    Returns:
+        str: Normalized string.
+    """
+
+    text = text.lower().replace(" ", "_")
+    return re.sub(r'[^a-zA-Z0-_./]', '', text.lower())
+
 def get_local_name(uri):
         uri_str = str(uri)
         # Split by / or # and get the last part

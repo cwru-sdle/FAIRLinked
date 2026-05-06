@@ -16,7 +16,7 @@ from .metadata_manager import Metadata
 import warnings
 import requests
 from ... import __version__
-from .utility import normalize, extract_terms_from_ontology, find_best_match, get_curie, normalize
+from .utility import normalize_iri
 from IPython.core.getipython import get_ipython
 import types
 
@@ -411,7 +411,7 @@ class AnalysisTracker:
             parent_id: Optional identifier of the parent container for nesting.
         """
 
-        name = normalize(name)
+        name = normalize_iri(name)
         if isinstance(val, pd.DataFrame):
             return self.track_dataframe(name, val, parent_id)
         elif isinstance(val, dict):
