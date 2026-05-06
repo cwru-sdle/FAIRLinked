@@ -35,15 +35,13 @@ You can initialize the firewall with a standard DataFrame. If your CSV includes 
     # Initialize with researcher identity
     mds_df = MatDatSciDf(
         df=df,
-        metadata_template={},
         orcid="0000-0001-2345-6789",
         df_name="PMMA_Indentation_Study",
         metadata_rows=True  # Isolates the first 3 rows as semantic headers
     )
 
-    # Generate metadata via fuzzy matching or header parsing
-    template, matched, unmatched = mds_df.template_generator(skip_prompts=True)
-    mds_df.metadata_template = template
+    mds_df.view_metadata()
+
 
 Validation and Relations
 ~~~~~~~~~~~~~~~~~~~~~~~~
