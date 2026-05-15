@@ -12,8 +12,17 @@ def sample_jsonld_dir(tmp_path):
     input_dir = tmp_path / "jsonld_input"
     input_dir.mkdir()
 
+    # ADD A CONTEXT so the RDF parser recognizes the prefixes
+    context = {
+        "skos": "http://www.w3.org/2004/02/skos/core#",
+        "qudt": "http://qudt.org/schema/qudt/",
+        "ex": "http://example.org/",
+        "unit": "http://qudt.org/vocab/unit/"
+    }
+
     #sample jsonld
     sample_data_1 = {
+        "@context": context,
         "@graph": [
             {
                 "skos:altLabel": "Value1",
