@@ -31,8 +31,7 @@ Initialize the semantic wrapper. Setting ``metadata_rows=True`` instructs the cl
        metadata_rows=True
    )
 
-   template, matched, unmatched = mds_df.template_generator(skip_prompts=True)
-   mds_df.metadata_template = template
+   mds_df.view_metadata()
 
 
 Setting `metadata_rows=False` is the default, and this instructs the MatDatSciDf to treat the data as a normal data frame.

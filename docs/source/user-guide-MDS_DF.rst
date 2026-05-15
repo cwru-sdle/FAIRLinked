@@ -23,7 +23,23 @@ An instance of ``MatDatSciDf`` manages three synchronized components:
 Initialization & Metadata Ingestion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can initialize the firewall with a standard DataFrame. If your CSV includes the optional 3-row header (Type, Unit, Study Stage), the tracker can ingest them automatically.
+You can initialize a MatDatSciDf instance with a standard DataFrame. If your CSV includes the optional 3-row header (Type, Unit, Study Stage), the tracker can ingest them automatically.
+
+.. code-block:: python
+  import pandas as pd
+  from FAIRLinked import MatDatSciDf
+
+  # Load the microindentation data
+  raw_df = pd.read_csv("rresources/worked-example-RDFTableConversion.MDS_DF/pmma_no_metadata_rows.csv")
+
+  mds_df = MatDatSciDf(
+      df=raw_df, 
+      orcid="0000-0001-2345-6789",
+      df_name="PMMA_Hardness_Test"
+  )
+
+  mds_df.view_metadata()
+
 
 .. code-block:: python
 
