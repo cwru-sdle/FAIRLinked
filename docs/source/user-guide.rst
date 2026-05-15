@@ -113,7 +113,7 @@ Save results to Turtle:
 .. code-block:: python
 
    term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"], 
-                       ttl_extr=1, ttl_path="path/to/output.ttl")
+                       ttl_extr=True, ttl_path="path/to/output.ttl")
 
 
 ## Add a new term to Ontology
