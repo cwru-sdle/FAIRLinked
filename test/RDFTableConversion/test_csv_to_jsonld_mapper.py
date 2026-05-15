@@ -1,17 +1,11 @@
-import os
-import json
-import pandas as pd
-import pytest
-import rdflib
-from rdflib import Graph, Namespace, RDF, RDFS, OWL, URIRef, Literal
-import sys
-import FAIRLinked.RDFTableConversion
-from FAIRLinked.RDFTableConversion import extract_data_from_csv, extract_from_folder
-from unittest.mock import patch, MagicMock
-from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-import json
 
-from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import prompt_for_missing_fields, normalize, jsonld_template_generator, extract_qudt_units
+import json
+import pytest
+from rdflib import Graph, Namespace, RDF, RDFS, OWL, Literal
+from FAIRLinked.RDFTableConversion import extract_data_from_csv
+from unittest.mock import patch
+from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
+from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import prompt_for_missing_fields, jsonld_template_generator
 
 
 @pytest.fixture
@@ -92,112 +86,97 @@ def test_extract_data_with_properties(sample_metadata_template, sample_csv, tmp_
 
 
 
-units = extract_qudt_units()
-
 @pytest.fixture
-def standard_mock_kinds():
+def mock_units():
+    """Returns a subset of QUDT-like data for controlled testing"""
     return {
-        'temperature': ['celsius', 'fahrenheit'],
-        'pressure': ['pascal']
+        'DEG_C': {'label': 'Celsius', 'ucum_code': 'Cel'},
+        'M': {'label': 'Meter', 'ucum_code': 'm'},
+        'PA': {'label': 'Pascal', 'ucum_code': 'Pa'}
     }
 
-# test prompting for user input
-def test_prompt_standard(standard_mock_kinds):
-    mock_inputs = ['temperature', 'celsius', 'recipe', 'p']
+# --- Test 1: Standard successful input ---
+def test_prompt_standard(mock_units):
+    # Inputs: 1. Unit Label, 2. Study Stage, 3. Notes
+    mock_inputs = ['Celsius', 'Recipe', 'Initial sample notes']
     
-    with patch('FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper.extract_quantity_kinds', return_value=standard_mock_kinds):
-        with patch('builtins.input', side_effect=mock_inputs):
-            with patch('builtins.print'):
-                prompt_for_missing_fields('col', 'stage', None, None, units )
+    with patch('builtins.input', side_effect=mock_inputs):
+        with patch('builtins.print'):
+            unit, stage, notes = prompt_for_missing_fields('col', None, None, None, mock_units)
+            
+    assert unit == 'DEG_C'
+    assert stage == 'Recipe'
+    assert notes == 'Initial sample notes'
 
-
-# test invalid inputs forces multiple retries
-@pytest.mark.parametrize("invalid_count,valid_type", [
-    (1, 'temperature'),
-    (2, 'pressure'),
-    (3, 'mass'),
-])
-def test_retry_logic(invalid_count, valid_type):
-    mock_kinds = {valid_type: ['unit1']}
-    mock_inputs = ['invalid'] * invalid_count + [valid_type, 'unit1', 'recipe','pushing']
-
-    
-    with patch('FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper.extract_quantity_kinds', return_value=mock_kinds):
-        with patch('builtins.input', side_effect=mock_inputs):
-            with patch('builtins.print'):
-                prompt_for_missing_fields('col', 'stage', None, None,units)
-
-#test valid study stage
-def test_valid_study_stage(standard_mock_kinds):
-    mock_inputs = ['temperature', 'celsius', 'blob', 'invalid', 'recipe', 'p']
-    
-    with patch('FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper.extract_quantity_kinds', return_value=standard_mock_kinds):
-        with patch('builtins.input', side_effect=mock_inputs):
-            with patch('builtins.print'):
-                prompt_for_missing_fields('col', 'stage', None, None,units)
-
-
-
-
-#standard input for template generator
-def test_jsonld_template_generator(sample_csv, standard_mock_kinds):
-    
-    mock_inputs = ['temperature', 'celsius', 'recipe', 'p'] * 12
-
-    data = sample_csv 
-    out = 'test/out/template_generator/out/out.json'
-    matched = 'test/out/template_generator/log/matched.txt'
-    unmatched = 'test/out/template_generator/log/unmatched.txt'
-    op = load_mds_ontology_graph()
-
-    with patch('FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper.extract_quantity_kinds', return_value=standard_mock_kinds):
-        with patch('builtins.input', side_effect=mock_inputs):
-            with patch('builtins.print'):
-                jsonld_template_generator(data, op, out, matched, unmatched )
-
-
-
-# test template generator uses correct units
-def test_template_generator_with_extracted_units(tmp_path, sample_ontology_graph, sample_csv):
-    
-    mock_inputs = ['width', 'IN', 'recipe', 'p'] * 12
-    graph  = load_mds_ontology_graph()
-    units = extract_qudt_units()
-    bindings_dict = {prefix: str(namespace) for prefix, namespace in graph.namespaces()}
-
-    data = sample_csv #'../fairlinked/data/xrd_mock_data/XRD_data_demo_valid.csv'
-    out =  tmp_path / "test/out/template_generator/out/out.json"
-    matched = tmp_path / "test/out/template_generator/log/matched.txt"
-    unmatched = tmp_path / "test/out/template_generator/log/matched.txt"
-    op = sample_ontology_graph
+# --- Test 2: Retry logic for units and study stages ---
+@pytest.mark.parametrize("invalid_unit_count", [1, 2])
+def test_retry_logic(invalid_unit_count, mock_units):
+    # Inputs: some junk units, then a real UCUM code, then a junk stage, then real stage, then notes
+    mock_inputs = (['garbage'] * invalid_unit_count) + ['Pa', 'not-a-stage', 'Synthesis', 'some note']
 
     with patch('builtins.input', side_effect=mock_inputs):
         with patch('builtins.print'):
-            jsonld_template_generator(data, op, out, matched, unmatched )
-    
-    success = 1
+            unit, stage, notes = prompt_for_missing_fields('col', None, None, None, mock_units)
+            
+    assert unit == 'PA'
+    assert stage == 'Synthesis'
 
-    with open(out, 'r') as f:
+# --- Test 3: Defaulting to UNITLESS via 'exit' or 'enter' ---
+@pytest.mark.parametrize("exit_command", ['exit', 'stop', 'skip', ''])
+def test_unitless_fallback(exit_command, mock_units):
+    # User exits unit search immediately, then hits enter for stage and notes
+    mock_inputs = [exit_command, '', '']
+    
+    with patch('builtins.input', side_effect=mock_inputs):
+        with patch('builtins.print'):
+            unit, stage, notes = prompt_for_missing_fields('col', None, None, None, mock_units)
+            
+    assert unit == 'UNITLESS'
+    assert stage == '' # Empty string is a valid member of your valid_study_stages
+
+# --- Test 4: Integration with JSON-LD Template Generator ---
+def test_jsonld_template_generator(sample_csv, sample_ontology_graph, mock_units):
+    # Mock enough inputs for every column in the CSV (Unit, Stage, Notes)
+    # Using 'm' (UCUM) which maps to 'M' in our mock_units
+    mock_inputs = ['m', 'Result', 'auto-generated'] * 20 
+
+    out = 'test/out/template_generator/out/out.json'
+    matched = 'test/out/template_generator/log/matched.txt'
+    unmatched = 'test/out/template_generator/log/unmatched.txt'
+
+    with patch('builtins.input', side_effect=mock_inputs):
+        with patch('builtins.print'):
+            # Ensure your generator passes mock_units to the prompt function
+            jsonld_template_generator(sample_csv, sample_ontology_graph, out, matched, unmatched)
+
+# --- Test 5: Validation of Generated JSON-LD Content ---
+def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sample_csv, mock_units):
+    # Setup paths
+    out_file = tmp_path / "out.json"
+    
+    # Inputs to choose 'Meter' (M) for every column
+    mock_inputs = ['Meter', 'Analysis', 'notes'] * 20
+    
+    graph = sample_ontology_graph
+    bindings_dict = {prefix: str(namespace) for prefix, namespace in graph.namespaces()}
+
+    with patch('builtins.input', side_effect=mock_inputs):
+        with patch('builtins.print'):
+            jsonld_template_generator(sample_csv, graph, str(out_file), "matched.txt", "unmatched.txt")
+    
+    with open(out_file, 'r') as f:
         doc = json.load(f)
         
-        context = doc['@context']
-        for i in doc['@graph']:
-            s = i['qudt:hasUnit']['@id']
-            t = i['@id']
-            print("id: ", t) 
-            tags = t.split(":")
-            frags = s.split(":")
-            if frags[0] not in bindings_dict:
-                success = 0
-                print("fail here one")
-            if frags[1] not in units:
-                success = 0
-                print("fail here two")
-                print("missed units ", frags[1])
-            if tags[0] not in bindings_dict:
-                success = 0
-                print("fail here three")
-    assert success == 1
+        for item in doc.get('@graph', []):
+            # Check Unit Mapping
+            unit_id = item['qudt:hasUnit']['@id'] # e.g. "unit:M"
+            prefix, unit_key = unit_id.split(":")
+            
+            assert prefix in bindings_dict, f"Prefix {prefix} not in graph namespaces"
+            assert (unit_key in mock_units or unit_key == "UNITLESS"), f"Unit {unit_key} not in QUDT mock"
+            
+            # Check Study Stage
+            assert item.get('study_stage') == 'Analysis'
 
 
 

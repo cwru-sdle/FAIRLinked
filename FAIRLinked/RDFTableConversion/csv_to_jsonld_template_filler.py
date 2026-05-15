@@ -1,23 +1,14 @@
 import os
 import json
-import re
 from pyld import jsonld
-import copy
-import random
-import string
-import warnings
-from datetime import datetime
 import uuid
 import pandas as pd
-import numpy as np
-from rdflib import Graph, URIRef, Literal, Namespace, XSD
+from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import RDF, OWL, RDFS, DCTERMS
-from urllib.parse import quote, urlparse
+from urllib.parse import urlparse
 from ..InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 from .. import helper_data as helper_data
-import traceback
 import hashlib
-import requests
 from importlib import resources
 from .MDS_DF.main import MatDatSciDf
 
@@ -428,7 +419,7 @@ def extract_data_from_csv_interface(args):
 
     # Load ontology if given
     ontology_graph = None
-    if args.ontology_path == "default" or args.ontology_path == None:
+    if args.ontology_path == "default" or args.ontology_path is None:
         ontology_graph = load_mds_ontology_graph()
     else:
         ontology_graph = Graph()
