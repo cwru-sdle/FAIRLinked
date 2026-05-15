@@ -153,6 +153,8 @@ def test_jsonld_template_generator(sample_csv, sample_ontology_graph, mock_units
 def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sample_csv, mock_units):
     # Setup paths
     out_file = tmp_path / "out.json"
+    matched_log = tmp_path / "matched.txt"
+    unmatched_log = tmp_path / "unmatched.txt"
     
     # Inputs to choose 'Meter' (M) for every column
     mock_inputs = ['Meter', 'Analysis', 'notes'] * 20
@@ -162,7 +164,14 @@ def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sa
 
     with patch('builtins.input', side_effect=mock_inputs):
         with patch('builtins.print'):
-            jsonld_template_generator(sample_csv, graph, str(out_file), "matched.txt", "unmatched.txt")
+            # Pass absolute strings
+            jsonld_template_generator(
+                sample_csv, 
+                graph, 
+                str(out_file), 
+                str(matched_log), 
+                str(unmatched_log)
+            )
     
     with open(out_file, 'r') as f:
         doc = json.load(f)
@@ -176,7 +185,7 @@ def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sa
             assert (unit_key in mock_units or unit_key == "UNITLESS"), f"Unit {unit_key} not in QUDT mock"
             
             # Check Study Stage
-            assert item.get('study_stage') == 'Analysis'
+            assert item.get('mds:hasStudyStage') == 'Analysis'
 
 
 
