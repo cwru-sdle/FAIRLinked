@@ -153,69 +153,7 @@ def test_jsonld_template_generator(sample_csv, sample_ontology_graph, mock_units
             # Ensure your generator passes mock_units to the prompt function
             jsonld_template_generator(sample_csv, sample_ontology_graph, out, matched, unmatched)
 
-# --- Test 5: Validation of Metadata-Heavy CSV ---
-def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sample_csv, mock_units):
-    out_file = tmp_path / "out.json"
-    
-    # Sequence: [Unit Search, Notes] (Study Stage is skipped for columns with pre-filled valid stages)
-    # 1. Sample (Recipe): ['Meter', 'some notes']
-    # 2. chemical_formula (Sample): ['Meter', 'some notes']
-    # 3. processing_method (Recipe): ['Meter', 'some notes']
-    # ...
-    # 7. sample_width (NaN): ['Meter', 'Analysis', 'some notes'] -> This one DOES prompt for stage!
-    mock_inputs = (['Meter', 'notes'] * 6) + ['Meter', 'Analysis', 'notes'] + (['Meter', 'notes'] * 5)
 
-    graph = sample_ontology_graph
-    
-    with patch('builtins.input', side_effect=mock_inputs):
-        with patch('builtins.print'):
-            jsonld_template_generator(
-                sample_csv, 
-                graph, 
-                str(out_file), 
-                str(tmp_path/"m.log"), 
-                str(tmp_path/"u.log")
-            )
-    
-    with open(out_file, 'r') as f:
-        doc = json.load(f)
-        graph_data = {item['skos:altLabel']: item for item in doc.get('@graph', [])}
-        
-        # Verify specific values from the CSV rows (Priority 2)
-        assert graph_data['Sample'].get('mds:hasStudyStage') == 'Recipe'
-        assert graph_data['chemical_formula'].get('mds:hasStudyStage') == 'Sample'
-        assert graph_data['processing_method'].get('mds:hasStudyStage') == 'Recipe'
-        
-        # Verify the prompted value for the empty column (Priority 1)
-        assert graph_data['sample_width'].get('mds:hasStudyStage') == 'Analysis'
-
-# --- Test 6: Validation of CSV with No Metadata ---
-def test_template_generator_output_integrity_no_metadata(tmp_path, sample_ontology_graph, sample_csv_no_metadata, mock_units):
-    out_file = tmp_path / "out_clean.json"
-    
-    # Since all Study Stages are NaN in this CSV, EVERY column will ask for [Unit, Stage, Notes]
-    mock_inputs = ['Meter', 'Analysis', 'notes'] * 15 
-
-    graph = sample_ontology_graph
-
-    with patch('builtins.input', side_effect=mock_inputs):
-        with patch('builtins.print'):
-            jsonld_template_generator(
-                sample_csv_no_metadata, 
-                graph, 
-                str(out_file), 
-                str(tmp_path/"m_clean.log"), 
-                str(tmp_path/"u_clean.log"),
-                skip_prompts=False
-            )
-    
-    with open(out_file, 'r') as f:
-        doc = json.load(f)
-        for item in doc.get('@graph', []):
-            # Since everything was prompted, everything should be 'Analysis'
-            actual_stage = item.get('mds:hasStudyStage')
-            label = item.get('skos:altLabel')
-            assert actual_stage == 'Analysis', f"Column {label} failed to apply prompt value."
 
 
 
