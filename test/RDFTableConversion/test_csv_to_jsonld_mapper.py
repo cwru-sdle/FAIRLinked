@@ -170,7 +170,8 @@ def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sa
                 graph, 
                 str(out_file), 
                 str(matched_log), 
-                str(unmatched_log)
+                str(unmatched_log),
+                skip_prompts=False
             )
     
     with open(out_file, 'r') as f:
