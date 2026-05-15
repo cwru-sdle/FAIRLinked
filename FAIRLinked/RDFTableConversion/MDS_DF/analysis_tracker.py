@@ -749,7 +749,7 @@ class AnalysisTracker:
 
         return json.dumps(output, indent=2)
 
-    def serialize_analysis_jsonld(self):
+    def serialize_analysis_jsonld(self, license: Optional[str]):
         """
         Writes the JSON-LD metadata to a physical file within the analysis directory.
         """
@@ -762,7 +762,7 @@ class AnalysisTracker:
         full_path = os.path.join(json_dir, filename)
 
         # 3. Get the JSON-LD data and write to disk
-        jsonld_data = self.create_analysis_jsonld()
+        jsonld_data = self.create_analysis_jsonld(license=license)
         
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(jsonld_data)

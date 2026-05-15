@@ -278,6 +278,10 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
 
     metadata_template, matched_log, unmatched_log = mds_df.template_generator(skip_prompts=skip_prompts)
 
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(os.path.dirname(matched_log_path), exist_ok=True)
+    os.makedirs(os.path.dirname(unmatched_log_path), exist_ok=True)
+
     # Write JSON-LD
     with open(output_path, "w") as f:
         json.dump(metadata_template, f, indent=2)
