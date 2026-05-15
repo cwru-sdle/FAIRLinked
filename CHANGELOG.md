@@ -1,8 +1,9 @@
 # 0.3.3.4
 
 Automatic discovery of relations in the data based on ontology
-Code refactoring: serialization utilizes MatDatSciDf class
+Code refactoring: serialization and template generator utilizes MatDatSciDf class
 Import detection continued development
+AnalysisGroup can now accept a pre-existing AnalysisTracker instance
 
 # 0.3.3.3
 
