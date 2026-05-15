@@ -22,6 +22,9 @@ def sample_metadata_template():
 def sample_csv(tmp_path):
     return "./test/test_data/XRD_data_demo_valid.csv"
 
+def sample_csv_no_metadata(tmp_path):
+    return "./test/test_data/XRD_data_demo_valid_no_metadata.csv"
+
 
 
 @pytest.fixture
@@ -167,6 +170,44 @@ def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sa
             # Pass absolute strings
             jsonld_template_generator(
                 sample_csv, 
+                graph, 
+                str(out_file), 
+                str(matched_log), 
+                str(unmatched_log),
+                skip_prompts=False
+            )
+    
+    with open(out_file, 'r') as f:
+        doc = json.load(f)
+        
+        for item in doc.get('@graph', []):
+            # Check Unit Mapping
+            unit_id = item['qudt:hasUnit']['@id'] # e.g. "unit:M"
+            prefix, unit_key = unit_id.split(":")
+            
+            assert prefix in bindings_dict, f"Prefix {prefix} not in graph namespaces"
+            assert (unit_key in mock_units or unit_key == "UNITLESS"), f"Unit {unit_key} not in QUDT mock"
+            
+            # Check Study Stage
+            assert item.get('mds:hasStudyStage') == 'Recipe'
+
+def test_template_generator_output_integrity_no_metadata(tmp_path, sample_ontology_graph, sample_csv_no_metadata, mock_units):
+    # Setup paths
+    out_file = tmp_path / "out.json"
+    matched_log = tmp_path / "matched.txt"
+    unmatched_log = tmp_path / "unmatched.txt"
+    
+    # Inputs to choose 'Meter' (M) for every column
+    mock_inputs = ['Meter', 'Analysis', 'notes'] * 20
+    
+    graph = sample_ontology_graph
+    bindings_dict = {prefix: str(namespace) for prefix, namespace in graph.namespaces()}
+
+    with patch('builtins.input', side_effect=mock_inputs):
+        with patch('builtins.print'):
+            # Pass absolute strings
+            jsonld_template_generator(
+                sample_csv_no_metadata, 
                 graph, 
                 str(out_file), 
                 str(matched_log), 
