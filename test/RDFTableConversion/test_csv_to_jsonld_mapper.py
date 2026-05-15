@@ -22,6 +22,7 @@ def sample_metadata_template():
 def sample_csv(tmp_path):
     return "./test/test_data/XRD_data_demo_valid.csv"
 
+@pytest.fixture
 def sample_csv_no_metadata(tmp_path):
     return "./test/test_data/XRD_data_demo_valid_no_metadata.csv"
 
@@ -173,8 +174,7 @@ def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sa
                 graph, 
                 str(out_file), 
                 str(matched_log), 
-                str(unmatched_log),
-                skip_prompts=False
+                str(unmatched_log)
             )
     
     with open(out_file, 'r') as f:
