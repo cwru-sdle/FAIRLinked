@@ -28,7 +28,7 @@ You can initialize the firewall with a standard DataFrame. If your CSV includes 
 .. code-block:: python
 
     import pandas as pd
-    from fairlinked import MatDatSciDf
+    from FAIRLinked import MatDatSciDf
 
     df = pd.read_csv("experimental_data.csv")
 
@@ -101,7 +101,7 @@ The ``AnalysisTracker`` monitors a specific analysis event, generating a unique 
 
 .. code-block:: python
 
-    from fairlinked import AnalysisTracker
+    from FAIRLinked import AnalysisTracker
 
     tracker = AnalysisTracker(proj_name="Hardness_Fit", home_path="./results")
 
@@ -119,7 +119,7 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
 
 .. code-block:: python
 
-    from fairlinked import AnalysisGroup
+    from FAIRLinked import AnalysisGroup
 
     group = AnalysisGroup(proj_name="Temperature_Sweep", home_path="./batch_data")
 
@@ -127,12 +127,27 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
     for t in [300, 400, 500]:
         group.run_and_track(my_simulation_func, temp=t)
 
+``AnalysisGroup`` also allows using the same ``AnalysisTracker`` instance to track a workflow.
+
+.. code-block:: python
+
+    from FAIRLinked import AnalysisGroup
+    from FAIRLinked import AnalysisTracker
+
+    group = AnalysisGroup(proj_name="Temperature_Sweep", home_path="./batch_data")
+
+    # Run multiple tracked iterations
+    for t in [300, 400, 500]:
+      tracker = AnalysisTracker(proj_name=f'Temperature_Sweep_{t}', home_path="./batch_data")
+      group.run_and_track(my_simulation_func, temp=t, tracker=tracker)
+      group.run_and_track(my_simulation_func_2, temp=t, tracker=tracker)
+
 
 **Batch Tracking with Decorators**
 
 .. code-block:: python
 
-    from fairlinked import AnalysisGroup
+    from FAIRLinked import AnalysisGroup
 
     # 1. Initialize the Group
     group = AnalysisGroup(proj_name="Temperature_Sweep", home_path="./batch_data")
