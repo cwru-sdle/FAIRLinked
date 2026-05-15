@@ -691,7 +691,7 @@ class AnalysisTracker:
         self.metadata_obj.save_metadata(output_path, matched_log_path, unmatched_log_path)
 
 
-    def create_analysis_jsonld(self, license: Optional[str]= None):
+    def create_analysis_jsonld(self, license: Optional[str] = None):
         """
         Assembles all tracked data and file events into a valid JSON-LD string.
 
@@ -749,7 +749,7 @@ class AnalysisTracker:
 
         return json.dumps(output, indent=2)
 
-    def serialize_analysis_jsonld(self, license: Optional[str]):
+    def serialize_analysis_jsonld(self, license: Optional[str] = None):
         """
         Writes the JSON-LD metadata to a physical file within the analysis directory.
         """
