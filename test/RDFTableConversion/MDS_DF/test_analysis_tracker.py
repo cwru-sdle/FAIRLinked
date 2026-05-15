@@ -79,6 +79,7 @@ def make_tracker(proj_name="TestProj", home_path="/tmp/tracker_test",
         home_path=home_path,
         orcid=orcid,
         ontology_graph=onto,
+        file_events=True
     )
 
 

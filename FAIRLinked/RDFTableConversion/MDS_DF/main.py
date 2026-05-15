@@ -24,7 +24,8 @@ from .utility import (
     extract_terms_from_ontology, 
     find_best_match, 
     extract_qudt_units, 
-    prompt_for_missing_fields
+    prompt_for_missing_fields,
+    load_units
 )
 import ast
 from tqdm import tqdm
@@ -71,7 +72,8 @@ class MatDatSciDf:
                 df_name: Optional[str] = None,
                 metadata_rows: Optional[bool] = False,
                 ontology_graph: Optional[Graph] = None, 
-                base_uri="https://cwrusdle.bitbucket.io/mds/"):
+                base_uri="https://cwrusdle.bitbucket.io/mds/",
+                local_unit_file: Optional[bool] = True):
         """
         Initializes the MatDatSciDf instance, validates identity, and constructs semantic objects.
 
@@ -92,6 +94,7 @@ class MatDatSciDf:
             ontology_graph (Graph, optional): Custom RDFLib Graph. If None, uses the 
                 package-level MDS ontology.
             base_uri (str, optional): Base URI for RDF @id generation.
+            local_unit_file: (bool, optional): Get units directly from QUDT units file in package or get from QUDT website
 
         Raises:
             warnings.warn: If the ORCID cannot be verified via API due to connection 
@@ -108,8 +111,27 @@ class MatDatSciDf:
 
         skip_rows = self.metadata_rows_skip
 
-        self.df = df.iloc[skip_rows:]
+        if local_unit_file:
+            self.units = load_units()
+        else:
+            self.units = extract_qudt_units()
 
+
+        self.df = df.iloc[skip_rows:]
+        self.metadata_template = metadata_template if metadata_template else {}
+
+        if ontology_graph is None:
+            if MatDatSciDf.mds_graph is None:
+                print("""
+                MDS-Onto from source is not available, please parse ontology from a local file.
+                Run MDS_DF_instance.ontology.parse('path/to/ontology')
+                """)
+                user_defined_onto = Graph()
+                self.ontology = user_defined_onto
+            else:
+                self.ontology = MatDatSciDf.mds_graph
+        else:
+            self.ontology = ontology_graph
         
         if not metadata_template or metadata_template == {}:
             template, matched, unmatched = self.template_generator(skip_prompts=True)
@@ -152,18 +174,7 @@ class MatDatSciDf:
         else:
             self.df_name = df_name
 
-        if ontology_graph is None:
-            if MatDatSciDf.mds_graph is None:
-                print("""
-                MDS-Onto from source is not available, please parse ontology from a local file.
-                Run MDS_DF_instance.ontology.parse('path/to/ontology')
-                """)
-                user_defined_onto = Graph()
-                self.ontology = user_defined_onto
-            else:
-                self.ontology = MatDatSciDf.mds_graph
-        else:
-            self.ontology = ontology_graph
+
         
 
         self.base_uri = base_uri
@@ -178,6 +189,7 @@ class MatDatSciDf:
         self.metadata_obj = Metadata(metadata_template=self.metadata_template, matched_log=self.matched_log, unmatched_log=self.unmatched_log)
         init_data_relations_dict = self.get_relation_pairs_onto()
         self.add_relations(data_relations=init_data_relations_dict)
+  
         
 
     def get_relations(self):
@@ -329,6 +341,13 @@ class MatDatSciDf:
 
 
     #### METADATA OBJECT WRAPPERS ####
+    def update_metadata_bulk(self, metadata_template: dict):
+        """
+        Wrapper to update metadata template in bulk for multiple columns
+        """
+        self.metadata_obj.update_bulk(metadata_template)
+        self.metadata_template = self.metadata_obj.metadata_temp
+
     def update_metadata(self, col_name: str, field: str, value: str):
         """
         Wrapper to update a metadata property (unit, type, definition, etc.) 
@@ -523,12 +542,13 @@ class MatDatSciDf:
             "xsd": "http://www.w3.org/2001/XMLSchema#",
             "prov": "http://www.w3.org/ns/prov#",
             "dcterms": "http://purl.org/dc/terms/",
-            "cco": "https://www.commoncoreontologies.org/"      
+            "cco": "https://www.commoncoreontologies.org/",
+            "obo": "http://purl.obolibrary.org/obo/"      
         },
         "@graph": []
         }   
 
-        units = extract_qudt_units()
+        units = self.units
 
         for col in columns:
             if col == "__source_file__" or col == "__Label__" or col == "__rowkey__":
@@ -563,7 +583,7 @@ class MatDatSciDf:
             else: #csv included type:
                 binding, iri_fragment = typ.split(":")
                 if(binding == "mds"):
-                    #if term in mds ontology, get study stage and def from ontologyt
+                    #if term in mds ontology, get study stage and def from ontology
                     definition = str(match["definition"]) if match else "Definition not available"
                     study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
                 else:
@@ -653,6 +673,36 @@ class MatDatSciDf:
         return metadata_template, matched_log, unmatched_log
 
     #### SERIALIZE INTO LINKED DATA #####     
+    def semantic_remapping(self, data_graph: Graph):
+        """
+        Validates types against the reference ontology and remaps 
+        unrecognized types to the base BFO Entity class.
+        """
+        
+        # 1. Define the OBO Namespace and the BFO Entity class
+        OBO = Namespace("http://purl.obolibrary.org/obo/")
+        BFO_ENTITY = OBO.BFO_0000001
+        
+        # 2. Ensure OBO is bound for clean serialization
+        if data_graph.namespace_manager.store.prefix(URIRef("http://purl.obolibrary.org/obo/")) is None:
+            data_graph.bind("obo", OBO)
+
+        # 3. Cache valid classes from your reference ontology for speed
+        ref_classes = set(self.ontology.subjects(predicate=RDF.type, object=OWL.Class))
+        ref_classes.update(self.ontology.subjects(predicate=RDF.type, object=RDFS.Class))
+
+        # 4. Find all subjects that have an rdf:type
+        # We iterate over triples to identify which specific subjects need remapping
+        for s, p, o in data_graph.triples((None, RDF.type, None)):
+            if o not in ref_classes:
+                print(f"⚠️ Warning: {o} not in reference ontology. Remapping {s} to obo:BFO_0000001")
+                
+                # .set() removes all existing (s, RDF.type, ...) and adds (s, RDF.type, BFO_ENTITY)
+                data_graph.set((s, RDF.type, BFO_ENTITY))
+    
+        return data_graph
+
+                
 
     def serialize_row(self, 
                     output_folder: str, 
@@ -839,9 +889,11 @@ class MatDatSciDf:
                 g.parse(data=json.dumps(jsonld_data), format="json-ld")
                 QUDT = Namespace("http://qudt.org/schema/qudt/")
                 MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+                OBO = Namespace("http://purl.obolibrary.org/obo/")
                 g.bind("mds", MDS)
                 g.bind("qudt", QUDT)
                 g.bind("dcterms", DCTERMS)
+                g.bind("obo", OBO)
 
 
                 #separate jsonld not needed
@@ -920,6 +972,7 @@ class MatDatSciDf:
                 random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
                 output_file = os.path.join(output_folder, f"{random_suffix}-{full_row_key}.jsonld")
                 # g.serialize(destination=output_file, format="json-ld", context=context, indent=2, auto_compact=True, encoding='utf-8')
+                g = self.semantic_remapping(g)
                 raw_jsonld = g.serialize(format="json-ld", context=context)
 
                 clean_graph = Graph()

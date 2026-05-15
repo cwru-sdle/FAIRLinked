@@ -16,6 +16,76 @@ def load_licenses():
         spdx_data = json.load(f)
     return spdx_data
 
+_CACHED_UNITS = None
+
+def load_units():
+    """
+    Optimized unit loader using single-pass regex and global caching.
+    """
+    global _CACHED_UNITS
+    
+    # 1. Return cached data if already loaded
+    if _CACHED_UNITS is not None:
+        return _CACHED_UNITS
+
+    try:
+        # 2. Access the file via importlib.resources
+        with resources.files(helper_data).joinpath("qudt_unit.ttl").open() as f:
+            content = f.read()
+
+        # 3. Optimized Single-Pass Regex: 
+        # Captures the unit name AND its associated block in one go
+        # This prevents scanning the entire file for every unit
+        unit_blocks = re.findall(
+            r'unit:([A-Z0-9_\-]+)\s*\n(.*?)(?=\nunit:|$)', 
+            content, 
+            re.DOTALL
+        )
+        
+        unit_details = {}
+        
+        for unit_name, block in unit_blocks:
+            # 4. Extract details ONLY from the local block string
+            # This is significantly faster than searching the whole file
+            
+            # Extract symbol
+            symbol_match = re.search(r'qudt:symbol\s+"([^"]+)"', block)
+            symbol = symbol_match.group(1) if symbol_match else None
+            
+            # Extract label(s)
+            label_matches = re.findall(r'rdfs:label\s+"([^"]+)"(?:@\w+)?', block)
+            label = label_matches[0] if label_matches else unit_name
+            
+            # Extract description
+            desc_match = re.search(r'dcterms:description\s+"([^"]+)"', block)
+            description = desc_match.group(1) if desc_match else None
+            
+            # Extract UCUM code
+            ucum_match = re.search(r'qudt:ucumCode\s+"([^"]+)"', block)
+            ucum_code = ucum_match.group(1) if ucum_match else None
+            
+            # Extract conversion multiplier
+            conv_match = re.search(r'qudt:conversionMultiplier\s+([\d.E\-+]+)', block)
+            conversion = conv_match.group(1) if conv_match else None
+            
+            unit_details[unit_name] = {
+                'name': unit_name,
+                'label': label,
+                'symbol': symbol,
+                'ucum_code': ucum_code,
+                'conversion_multiplier': conversion,
+                'description': description[:100] + '...' if description and len(description) > 100 else description
+            }
+        
+        # 5. Store in global cache for future calls
+        _CACHED_UNITS = unit_details
+        return _CACHED_UNITS
+
+    except Exception as e:
+        print(f"⚠️ Unit loading failed: {e}. Returning empty dictionary.")
+        return {}
+
+
 def hash6(s):
     """
     Takes any string and returns a 6-digit number (100000-999999).
@@ -392,55 +462,67 @@ def extract_quantity_kinds():
 
 
 def prompt_for_missing_fields(col, unit, study_stage, ontology_graph, units):
-    print(f"--Enter terms for {col} --")
-    if(unit not in units):
-        userinput = normalize(input("Please select the type of quantity (eg. length, density, unitless, etc) or hit 'enter' to skip:  "))
-        if(userinput in ["unitless", ""]):
-            match userinput:
-                case "unitless":
-                    unit = "UNITLESS"
-                case "":
-                    unit = "UNITLESS"
-        else:
-            kinds = extract_quantity_kinds()
-            ty = userinput
-            while ty not in kinds and ty != "":
-                ty = normalize(input("Please enter the type of quantity this is or hit 'enter' to skip: "))
-
-            if not ty:
-                unit = "UNITLESS"
-            else:
-                print("Valid Units: ",kinds[ty])
-                while True:
-                    unit = input("Please enter valid units (or hit 'enter' to skip): ")
-
-                    if unit == "":
-                        unit = "UNITLESS"
-                        break
-
-                    if unit in kinds[ty]:
-                        break
-
-                    print(f"'{unit}' is not a recognized unit for {ty}. Please try again.")
+    print(f"\n-- Getting metadata for column: {col} --")
+    print("(Type 'skip' or 'exit' to default to UNITLESS)")
     
+    # --- Part 1: Unit Selection Loop ---
+    while True:
+        user_input = input(f"Search unit/UCUM for '{col}': ").strip()
+        
+        # If user wants to stop or skip, default to UNITLESS and break the loop
+        if user_input.lower() in ['exit', 'quit', 'stop', 'skip', '']:
+            unit = "UNITLESS"
+            break
 
+        # Search Logic
+        matches = []
+        for key, details in units.items():
+            if (user_input == details.get('ucum_code') or 
+                user_input.lower() == details.get('label').lower()):
+                matches.append(key)
 
+        if len(matches) == 1:
+            unit = matches[0]
+            break # Found it! Move on to next fields
+        
+        elif len(matches) > 1:
+            print("\nMultiple matches found. Select a number or type 'back':")
+            for i, m in enumerate(matches, 1):
+                print(f"  {i}. {units[m]['label']} ({m})")
+            
+            choice = input("> ")
+            if choice.lower() == 'back':
+                continue 
+            if choice.isdigit() and 1 <= int(choice) <= len(matches):
+                unit = matches[int(choice) - 1]
+                break
+        else:
+            print(f"No match for '{user_input}'. Try again or type 'exit' to use UNITLESS.")
+
+    # --- Part 2: Study Stage ---
     valid_study_stages = [
-        "Synthesis", "Formulation", "Material Processing","Sample", 
-        "Tool", "Recipe", "Result", "Analysis", "Modeling", ""]
-
+        "Synthesis", "Formulation", "Material Processing", "Sample", 
+        "Tool", "Recipe", "Result", "Analysis", "Modeling", ""
+    ]
     norm_study_stages = [normalize(ss) for ss in valid_study_stages]
 
-
-    if( not study_stage or normalize(study_stage) not in norm_study_stages):
-        print("Please enter a valid study stage from options below or press 'Enter' to skip: ")
+    # Initial check
+    if not study_stage or normalize(study_stage) not in norm_study_stages:
+        print("\nPlease enter a valid study stage or press 'enter' to skip: ")
         for ss in valid_study_stages:
-            print(ss)
-        study_stage = input("Please enter valid study stage or press 'Enter' to skip: ")
-    while(normalize(study_stage) not in norm_study_stages):
-        study_stage = input("Please enter valid study stage or press 'Enter' to skip: ")
+            if ss: 
+                print(f" - {ss}")
+        
+        study_stage = input("Stage: ")
+        
+        # Keep asking until valid
+        while normalize(study_stage) not in norm_study_stages:
+            study_stage = input("Invalid stage. Please try again (or 'enter' to skip): ")
+
+    # Normalize back to the pretty-print version
     study_stage = valid_study_stages[norm_study_stages.index(normalize(study_stage))]
 
+    # --- Part 3: Notes ---
     notes = input("Please enter notes or press 'Enter' to skip: ")
 
     return unit, study_stage, notes

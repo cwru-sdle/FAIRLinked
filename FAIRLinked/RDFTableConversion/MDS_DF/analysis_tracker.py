@@ -16,7 +16,7 @@ from .metadata_manager import Metadata
 import warnings
 import requests
 from ... import __version__
-from .utility import normalize_iri
+from .utility import normalize_iri,load_licenses
 from IPython.core.getipython import get_ipython
 import types
 
@@ -39,7 +39,8 @@ class AnalysisTracker:
                 metadata_template: Optional[dict] = None,
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
                 ontology_graph: Optional[Graph] = None, 
-                prefix: Optional[str] = "mds") -> None:
+                prefix: Optional[str] = "mds",
+                file_events: Optional[bool] = False) -> None:
         """
         Initializes the tracker with project metadata and researcher identity.
 
@@ -48,12 +49,15 @@ class AnalysisTracker:
             home_path: Root directory for storing all analysis artifacts.
             orcid: Researcher's ORCID iD for provenance attribution. 
                    Attempts to verify via Public API.
+            metadata_template: Metadata information about analysis parameters.
             base_uri: The base URI for semantic namespace generation.
             ontology_graph: A custom RDFLib Graph. Defaults to MDS ontology.
             prefix: The prefix used for the base_uri in JSON-LD.
+            file_events: Option to save file events. Default to False.
         """
         
         self.home_path = home_path
+        self.file_events_store = file_events
         if orcid == "0000-0000-0000-0000" or orcid is None:
             self.orcid = "0000-0000-0000-0000"
             self.orcid_verified = False
@@ -86,25 +90,24 @@ class AnalysisTracker:
         self.file_events = []
         self.imports =[]
         self.activity_log = []
+        self.ontology = ontology_graph
         if ontology_graph is None:
-            if MatDatSciDf.mds_graph is None:
-                print("MDS-Onto from source is not available, please parse ontology from a local file")
+            if AnalysisTracker.mds_graph is None:
+                print("""
+                MDS-Onto from source is not available, please parse ontology from a local file.
+                Run Analysis_instance.ontology.parse('path/to/ontology')
+                """)
                 user_defined_onto = Graph()
                 self.ontology = user_defined_onto
             else:
-                self.ontology = MatDatSciDf.mds_graph
+                self.ontology = AnalysisTracker.mds_graph
         else:
             self.ontology = ontology_graph
         
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
         self.ontology.bind("mds", self.MDS)
-
-        if metadata_template:
-            self.metadata_template = metadata_template
-        else:
-            self.metadata_template = {}
-        
+        self.metadata_template = metadata_template if metadata_template else {}
         self.metadata_obj = Metadata(self.metadata_template)
 
 
@@ -354,6 +357,8 @@ class AnalysisTracker:
                 out_iri = self._route_data(f"{func.__name__}_output", result, parent_id=run_id)
                 if out_iri: 
                     direct_output_iris.append(out_iri)
+            
+
 
             # 5. Finalize Activity with Direct Links
             self.activity_log.append({
@@ -368,18 +373,23 @@ class AnalysisTracker:
             })
             
             # 6. Capture File Events linked to this Activity
-            for file in process.open_files():
-                mode = getattr(file, 'mode', 'r')
-                event_type = "read/import" if 'r' in mode else "write/modification"
-                self.file_events.append({
-                        "@id": f"{self.prefix}:fileEvent{str(uuid4().int)[-15:]}_{self.analysis_id}",
-                        "@type": "cco:ont00000958",
-                        "mds:fileName": os.path.basename(file.path),
-                        "mds:fileLocation": file.path,
-                        "mds:fileEvent": event_type,
-                        "prov:wasInformedBy": activity_iri,
-                        "prov:generatedAtTime": datetime.now().isoformat()
-                    })
+            if self.file_events_store:
+                for file in process.open_files():
+                    mode = getattr(file, 'mode', 'r')
+                    event_type = "read/import" if 'r' in mode else "write/modification"
+                    self.file_events.append({
+                            "@id": f"{self.prefix}:fileEvent{str(uuid4().int)[-15:]}_{self.analysis_id}",
+                            "@type": "cco:ont00000958",
+                            "mds:fileName": os.path.basename(file.path),
+                            "mds:fileLocation": file.path,
+                            "mds:fileEvent": event_type,
+                            "prov:wasInformedBy": activity_iri,
+                            "prov:generatedAtTime": datetime.now().isoformat()
+                        })
+
+            metadata_template, matched_log, unmatched_log = self.create_metadata_template()
+            self.metadata_obj.update_bulk(metadata_template)
+            self.semantic_remapping(unmatched_log)
 
             return result
 
@@ -395,7 +405,46 @@ class AnalysisTracker:
             })
             return None
         
-        
+    def semantic_remapping(self, unmatched_log):
+            """
+            Refines simple Python types by matching them against the 
+            current metadata template's semantic types.
+            """
+            # 1. Pre-process the template into a quick-lookup dictionary
+            # This prevents nested loops and significantly speeds up the process
+            metadata_template = self.metadata_obj.metadata_temp
+            graph_template = metadata_template.get("@graph", [])
+            
+            # Create a map of {altLabel: semantic_type}
+            ontology_map = {
+                item.get('skos:altLabel'): item.get('@type') 
+                for item in graph_template 
+                if item.get('skos:altLabel')
+            }
+
+            updated_sources = []
+            
+            for entry in self.sources:
+                arg_type = entry.get("mds:argumentType")
+                var_name = entry.get("skos:altLabel")
+
+                # Check if it's a simple type and we have a semantic match
+                if arg_type in ('int', 'float', 'str', 'bool'):
+                    if var_name in unmatched_log:
+                        semantic_type = "cco:ont00000958"
+                    else:
+                        semantic_type = ontology_map.get(var_name)
+                    
+                    if semantic_type:
+                        # Upgrade from generic cco:ont00000958 to ontology-backed terms if matched
+                        entry['@type'] = semantic_type
+                
+                # Always append the entry so we don't lose provenance data
+                updated_sources.append(entry)
+
+            self.sources = updated_sources
+            print(f"✅ Semantic remapping complete. Checked {len(self.sources)} entries.")
+
 
     def _route_data(self, name, val, parent_id=None):
         """
@@ -433,23 +482,12 @@ class AnalysisTracker:
             val: The primitive value.
             parent_id: ID of the containing process or object.
         """
-        metadata_template = self.metadata_obj.metadata_temp
 
-        graph_template = metadata_template.get("@graph", [])
-
-        semantic_type = "cco:ont00000958"
-        
-        if graph_template:
-            for item in graph_template:
-                # We check if the altLabel in the template matches our variable name
-                if item.get('skos:altLabel') == name:
-                    semantic_type = item.get('@type', semantic_type)
-                    break 
 
 
         self.sources.append({
             "@id": f"{self.prefix}:{name}.{self.analysis_id}",
-            "@type": f"{semantic_type}",
+            "@type": "cco:ont00000958",
             "mds:argumentIdentifier": f"{name}.{self.analysis_id}",
             "skos:altLabel": name,
             "mds:argumentType": type(val).__name__,
@@ -591,6 +629,13 @@ class AnalysisTracker:
         return f"{self.prefix}:{current_id}"
 
     #### METADATA OBJECT WRAPPERS ####
+    def update_metadata_bulk(self, metadata_template: dict):
+        """
+        Wrapper to update metadata template in bulk for multiple columns
+        """
+        self.metadata_obj.update_bulk(metadata_template=metadata_template)
+        self.metdata_template = self.metadata_obj.metadata_temp
+
     def update_metadata(self, col_name: str, field: str, value: str):
         """
         Wrapper to update a metadata property (unit, type, definition, etc.) 
@@ -646,7 +691,7 @@ class AnalysisTracker:
         self.metadata_obj.save_metadata(output_path, matched_log_path, unmatched_log_path)
 
 
-    def create_analysis_jsonld(self):
+    def create_analysis_jsonld(self, license: Optional[str] = None):
         """
         Assembles all tracked data and file events into a valid JSON-LD string.
 
@@ -655,6 +700,29 @@ class AnalysisTracker:
         """
 
         orcid_verification = "ORCID iD verified." if self.orcid_verified else "ORCID iD not verified."
+        if(not license):
+            license_uri = "https://spdx.org/licenses/CC0-1.0.html"
+            print("No license provided. Default to CC0-1.0 (Public Domain)")
+
+        elif not license.startswith("http"):
+            # Load SPDX license list
+
+            spdx_data = load_licenses()
+
+            valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
+
+            # Check if the provided short ID is valid
+            if license not in valid_ids:
+                raise ValueError(
+                    f"Invalid SPDX license ID '{license}'.\n"
+                    f"Please use one from https://spdx.org/licenses/."
+                )
+
+            license_uri = f"https://spdx.org/licenses/{license}.html"
+
+        else:
+            # Full URI provided; assume it's valid
+            license_uri = license
 
         output = {
             "@context": self.get_context(),
@@ -671,15 +739,17 @@ class AnalysisTracker:
             "dcterms:description": orcid_verification,
             "mds:hasStudyStage": "Analysis",
             "dcterms:requires": self.imports if self.imports else [],
-            "obo:BFO_0000117": self.activity_log
-            }
+            "obo:BFO_0000117": self.activity_log,
+            "dcterms:license": {"@id": license_uri}
+            },
+
             ]
     
         }
 
         return json.dumps(output, indent=2)
 
-    def serialize_analysis_jsonld(self):
+    def serialize_analysis_jsonld(self, license: Optional[str] = None):
         """
         Writes the JSON-LD metadata to a physical file within the analysis directory.
         """
@@ -688,11 +758,11 @@ class AnalysisTracker:
         os.makedirs(json_dir, exist_ok=True)
 
         # 2. Construct the specific filename
-        filename = f"{self.proj_name}_{self.analysis_id}_arguments.json"
+        filename = f"{self.proj_name}_{self.analysis_id}.json"
         full_path = os.path.join(json_dir, filename)
 
         # 3. Get the JSON-LD data and write to disk
-        jsonld_data = self.create_analysis_jsonld()
+        jsonld_data = self.create_analysis_jsonld(license=license)
         
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(jsonld_data)
@@ -833,8 +903,9 @@ class AnalysisTracker:
             tuple: (metadata_template, matched_log, unmatched_log)
         """
         arg_df = self.create_arg_df()
+        ontology = self.ontology
 
-        dummy_mdsdf = MatDatSciDf(df=arg_df, ontology_graph=self.ontology, metadata_template={})
+        dummy_mdsdf = MatDatSciDf(df=arg_df, ontology_graph=ontology)
         metadata_template, matched_log, unmatched_log = dummy_mdsdf.template_generator(skip_prompts=True)
 
         return metadata_template, matched_log, unmatched_log
@@ -849,6 +920,7 @@ class AnalysisGroup:
     Manages a collection of related AnalysisTracker instances, facilitating 
     group-level reporting and master graph generation.
     """
+    mds_graph = load_mds_ontology_graph()
 
     def __init__(self,
                 proj_name: str, 
@@ -857,17 +929,20 @@ class AnalysisGroup:
                 metadata_template: Optional[dict] = None,
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
                 ontology_graph: Optional[Graph] = None, 
-                prefix: Optional[str] = "mds") -> None:
+                prefix: Optional[str] = "mds",
+                file_events: Optional[bool] = False) -> None:
         """
         Initializes the group with shared project metadata.
 
         Args:
             proj_name: Name of the project group.
             home_path: Root directory for all child analyses.
+            metadata_template: Metadata information about analysis parameters.
             orcid: Researcher's ORCID iD.
             base_uri: Base URI for semantic namespaces.
             ontology_graph: Shared RDFLib Graph.
             prefix: Prefix for the base URI.
+            file_events: Option to save file events. Default to False.
         """
 
         self.analyses = {}
@@ -876,6 +951,18 @@ class AnalysisGroup:
         self.orcid = orcid
         self.base_uri = base_uri
         self.ontology = ontology_graph
+        if ontology_graph is None:
+            if AnalysisGroup.mds_graph is None:
+                print("""
+                MDS-Onto from source is not available, please parse ontology from a local file.
+                Run AnalysisGroup_instance.ontology.parse('path/to/ontology')
+                """)
+                user_defined_onto = Graph()
+                self.ontology = user_defined_onto
+            else:
+                self.ontology = AnalysisGroup.mds_graph
+        else:
+            self.ontology = ontology_graph
         self.prefix = prefix
         self.group_id = f"runGroup{str(uuid4().int)[-15:].zfill(15)}"
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
@@ -886,6 +973,7 @@ class AnalysisGroup:
             self.metadata_template = {}
         
         self.metadata_obj = Metadata(self.metadata_template)
+        self.store_file_events = file_events
 
     def get_context(self) -> dict:
         """
@@ -926,41 +1014,42 @@ class AnalysisGroup:
         return wrapper
         
 
-    def run_and_track(self, func, *args, **kwargs):
+    def run_and_track(self, func, *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
         """
-        Creates a new AnalysisTracker instance, executes a function, 
-        and stores the resulting metadata in the group registry.
-
-        Args:
-            func: The target function to track.
-            *args: Positional arguments.
-            **kwargs: Keyword arguments.
+        Executes a function and stores metadata. Can use an existing tracker
+        to group multiple functions under one ID, or create a new one.
         """
         
-        analysis = AnalysisTracker(
+        # 1. Option: Use the injected tracker or create a new instance
+        analysis = tracker if tracker is not None else AnalysisTracker(
                         proj_name=self.proj_name, 
                         home_path=self.home_path, 
                         orcid=self.orcid,
-                        metadata_template = self.metadata_template,
+                        metadata_template=self.metadata_template,
                         base_uri=self.base_uri,
                         ontology_graph=self.ontology,
-                        prefix=self.prefix
+                        prefix=self.prefix,
+                        file_events=self.store_file_events
                         )
 
+        # 2. Execute the function via the tracker
         analysis_result = analysis.run_and_track(func, *args, **kwargs)
-        analysis_jsonld = analysis.create_analysis_jsonld()
-        analysis_report = analysis.create_report()
-        analysis_df = analysis.create_arg_df()
-
         
+        # 3. Update Group-level registries
+        # We use the analysis_id as the key. If using the same tracker, 
+        # this will update the existing entry rather than creating a new row.
         self.analyses[analysis.analysis_id] = {
                 "analysis_obj": analysis,
                 "result": analysis_result,
-                "jsonld": analysis_jsonld,
-                "report": analysis_report,
-                "dataframe": analysis_df
+                "jsonld": analysis.create_analysis_jsonld(),
+                "report": analysis.create_report(),
+                "dataframe": analysis.create_arg_df()
             }
-
+        
+        # Generate and update semantic metadata
+        analysis_temp, _, _ = analysis.create_metadata_template()
+        self.metadata_obj.update_bulk(analysis_temp)
+        
         return analysis_result
 
     def create_group_arg_df(self) -> pd.DataFrame:

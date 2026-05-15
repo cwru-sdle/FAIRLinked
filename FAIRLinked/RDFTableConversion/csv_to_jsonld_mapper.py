@@ -3,12 +3,11 @@ import json
 import re
 import os
 import difflib
-from datetime import datetime
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 from ..InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import requests
-import ast
+from .MDS_DF.main import MatDatSciDf
 
 def normalize(text):
     """
@@ -189,56 +188,68 @@ def extract_quantity_kinds():
 
 
 
-def prompt_for_missing_fields(col,unit, study_stage, ontology_graph, units):
-    print(f"--Enter terms for {col} --")
-    if(unit not in units):
-        userinput = normalize(input("Please select the type of quantity (eg. length, density, unitless, etc) or hit 'enter' to skip:  "))
-        if(userinput in ["unitless", ""]):
-            match userinput:
-                case "unitless":
-                    unit = "UNITLESS"
-                case "":
-                    unit = "UNITLESS"
-        else:
-            kinds = extract_quantity_kinds()
-            ty = userinput
-            while ty not in kinds and ty != "":
-                ty = normalize(input("Please enter the type of quantity this is or hit 'enter' to skip: "))
-
-            if not ty:
-                unit = "UNITLESS"
-            else:
-                print("Valid Units: ",kinds[ty])
-                while True:
-                    unit = input("Please enter valid units (or hit 'enter' to skip): ")
-
-                    if unit == "":
-                        unit = "UNITLESS"
-                        break
-
-                    if unit in kinds[ty]:
-                        break
-
-                    print(f"'{unit}' is not a recognized unit for {ty}. Please try again.")
+def prompt_for_missing_fields(col, unit, study_stage, ontology_graph, units):
+    print(f"\n-- Getting metadata for column: {col} --")
+    print("(Type 'skip' or 'exit' to default to UNITLESS)")
     
+    # --- Part 1: Unit Selection Loop ---
+    while True:
+        user_input = input(f"Search unit/UCUM for '{col}': ").strip()
+        
+        # If user wants to stop or skip, default to UNITLESS and break the loop
+        if user_input.lower() in ['exit', 'quit', 'stop', 'skip', '']:
+            unit = "UNITLESS"
+            break
 
+        # Search Logic
+        matches = []
+        for key, details in units.items():
+            if (user_input == details.get('ucum_code') or 
+                user_input.lower() == details.get('label').lower()):
+                matches.append(key)
 
+        if len(matches) == 1:
+            unit = matches[0]
+            break # Found it! Move on to next fields
+        
+        elif len(matches) > 1:
+            print("\nMultiple matches found. Select a number or type 'back':")
+            for i, m in enumerate(matches, 1):
+                print(f"  {i}. {units[m]['label']} ({m})")
+            
+            choice = input("> ")
+            if choice.lower() == 'back':
+                continue 
+            if choice.isdigit() and 1 <= int(choice) <= len(matches):
+                unit = matches[int(choice) - 1]
+                break
+        else:
+            print(f"No match for '{user_input}'. Try again or type 'exit' to use UNITLESS.")
+
+    # --- Part 2: Study Stage ---
     valid_study_stages = [
-        "Synthesis", "Formulation", "Material Processing","Sample", 
-        "Tool", "Recipe", "Result", "Analysis", "Modeling", ""]
-
+        "Synthesis", "Formulation", "Material Processing", "Sample", 
+        "Tool", "Recipe", "Result", "Analysis", "Modeling", ""
+    ]
     norm_study_stages = [normalize(ss) for ss in valid_study_stages]
 
-
-    if( not study_stage or normalize(study_stage) not in norm_study_stages):
-        print("Please enter a valid study stage from options below or press 'Enter' to skip: ")
+    # Initial check
+    if not study_stage or normalize(study_stage) not in norm_study_stages:
+        print("\nPlease enter a valid study stage or press 'enter' to skip: ")
         for ss in valid_study_stages:
-            print(ss)
-        study_stage = input("Please enter valid study stage or press 'Enter' to skip: ")
-    while(normalize(study_stage) not in norm_study_stages):
-        study_stage = input("Please enter valid study stage or press 'Enter' to skip: ")
+            if ss: 
+                print(f" - {ss}")
+        
+        study_stage = input("Stage: ")
+        
+        # Keep asking until valid
+        while normalize(study_stage) not in norm_study_stages:
+            study_stage = input("Invalid stage. Please try again (or 'enter' to skip): ")
+
+    # Normalize back to the pretty-print version
     study_stage = valid_study_stages[norm_study_stages.index(normalize(study_stage))]
 
+    # --- Part 3: Notes ---
     notes = input("Please enter notes or press 'Enter' to skip: ")
 
     return unit, study_stage, notes
@@ -259,165 +270,21 @@ def jsonld_template_generator(csv_path, ontology_graph, output_path, matched_log
         skip_prompts (bool): Allow users to skip metadata prompts
     """
     df = pd.read_csv(csv_path)
-    columns = list(df.columns)
-    ontology_terms = extract_terms_from_ontology(ontology_graph)
+    mds_df = MatDatSciDf(
+            df = df,
+            metadata_rows=True,
+            ontology_graph=ontology_graph
+            )
 
-    # Load all possible bindings 
-    bindings_dict = {prefix: str(namespace) for prefix, namespace in ontology_graph.namespaces()}
-    if "mds" not in bindings_dict:
-        bindings_dict["mds"] = "https://cwrusdle.bitbucket.io/mds/"
+    metadata_template, matched_log, unmatched_log = mds_df.template_generator(skip_prompts=skip_prompts)
 
-    matched_log = []
-    unmatched_log = []
-    bindings = {}
-
-
-    # Construct the base JSON-LD structure
-    jsonld = {
-        "@context": {
-            "qudt": "http://qudt.org/schema/qudt/",
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
-            "skos": "http://www.w3.org/2004/02/skos/core#",
-            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
-            "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
-            "owl": "http://www.w3.org/2002/07/owl#",
-            "xsd": "http://www.w3.org/2001/XMLSchema#",
-            "prov": "http://www.w3.org/ns/prov#",
-            "dcterms": "http://purl.org/dc/terms/",
-            "cco": "https://www.commoncoreontologies.org/"      
-        },
-        "@graph": []
-    }
-    units = extract_qudt_units()
-    # Process each column and attempt to match it to ontology terms
-    for col in columns:
-        if col == "__source_file__" or col == "__Label__" or col == "__rowkey__":
-            continue
-        typ = df.loc[0,col]
-
-        match = find_best_match(col, ontology_terms)
-        if(pd.isna(typ) or ":" not in typ):# if no type was explicitily included in csv
-           
-            #get iri from closest match
-            iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else normalize(col)
-
-            # Get base iri
-            iri_str = str(match["iri"]) if match else None
-            binding =""
-            study_stage = ""
-            definition = "Definition not available"
-            if iri_str:
-                last_slash = iri_str.rfind("/")
-                last_hash = iri_str.rfind("#")
-                split_pos = max(last_slash, last_hash)
-                iri_base = iri_str[:split_pos + 1] if split_pos != -1 else iri_str
-                binding = next((k for k, v in bindings_dict.items() if v == iri_base), "mds")
-                
-                #add binding to list of contexts
-                if(binding not in bindings):
-                    bindings[binding] = bindings_dict[binding]
-
-                definition = str(match["definition"]) if match else "Definition not available"
-                study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
-               
-        else: #csv included type:
-            binding, iri_fragment = typ.split(":")
-            if(binding == "mds"):
-                #if term in mds ontology, get study stage and def from ontologyt
-                definition = str(match["definition"]) if match else "Definition not available"
-                study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
-            else:
-                definition = "Definition not available"
-                study_stage = df.loc[2,col] #try to get study stage from csv
-                if pd.isna(study_stage): 
-                    study_stage =  "Study stage information not available"
-
-        # try get units
-        un = df.loc[1,col]
-
-        if not pd.isna(un):
-            try:
-                # Step 1: Convert string representation to a Python object
-                # Handles both "{'id': ...}" and "unit:UNIT"
-                evaluated = ast.literal_eval(un)
-                
-                # Step 2: Extract the string based on type
-                if isinstance(evaluated, dict):
-                    # It's a dict, get the ID value
-                    target_str = evaluated.get('@id', "")
-                else:
-                    # It's already a string (like "unit:UNIT")
-                    target_str = str(evaluated)
-
-                # Step 3: Split and safely get the second part
-                if ":" in target_str:
-                    un = target_str.split(":")[1]
-                else:
-                    un = target_str # Fallback if no colon exists
-
-            except (ValueError, SyntaxError, IndexError) as e:
-                print(f"Parsing error for value '{un}': {e}")
-                un = "UNITLESS"
-            
-        if match:
-            matched_log.append(f"{col} => {iri_fragment}")
-
-        else:
-            unmatched_log.append(col)
-
-
-        
-        if not skip_prompts:
-            unit, study, notes = prompt_for_missing_fields(iri_fragment,un, study_stage, ontology_graph, units)
-        else:
-            unit = "UNITLESS"
-            study = study_stage if study_stage not in [
-                "", "Study stage information not available"
-            ] else ""
-            notes = ""
-        
-
-        if(binding == ""):
-            binding = "mds"
-
-        if(binding not in bindings):
-                    bindings[binding] = bindings_dict[binding]
-         
-        entry = {
-            "@id": f"{binding}:{iri_fragment}",
-            "@type": f"{binding}:{iri_fragment}",
-            "skos:altLabel": col,
-            "skos:definition": definition,
-            "qudt:hasUnit": {"@id": f"unit:{unit}"},
-            "prov:generatedAtTime": {
-                "@value": datetime.now().astimezone().isoformat(),
-                "@type": "xsd:dateTime"
-            },
-            "skos:note": {
-                "@value": f"{notes}",
-                "@language": "en"
-            },
-            "mds:hasStudyStage": study
-        }
-        jsonld["@graph"].append(entry)
-
-    # Ensure output directories exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     os.makedirs(os.path.dirname(matched_log_path), exist_ok=True)
     os.makedirs(os.path.dirname(unmatched_log_path), exist_ok=True)
 
-    # Add contexts
-    jsonld["@context"].update({
-        "unit": "https://qudt.org/vocab/unit/"
-    })
-    for i in bindings:
-        jsonld["@context"].update({
-            i: bindings[i]
-        })
-
     # Write JSON-LD
     with open(output_path, "w") as f:
-        json.dump(jsonld, f, indent=2)
+        json.dump(metadata_template, f, indent=2)
 
     # Write matched log
     with open(matched_log_path, "w") as f:

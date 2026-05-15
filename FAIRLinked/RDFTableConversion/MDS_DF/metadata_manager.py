@@ -60,14 +60,24 @@ class Metadata:
             self.template_graph.bind("qudt", self.QUDT)
 
 
-        def _normalize_graph_structure(self, data: dict) -> dict:
+        def _normalize_graph_structure(self, data: any) -> dict:
             """
             Ensure the serialized JSON-LD always has a '@graph' list.
             """
-            if "@graph" not in data:
-                context = data.pop("@context", {})
+            # Fix 1: Handle if data is already a list (flattened JSON-LD)
+            if isinstance(data, list):
+                return {
+                    "@context": self.metadata_temp.get("@context", {}),
+                    "@graph": data
+                }
+
+            # Fix 2: Handle if data is a dict but missing '@graph'
+            if isinstance(data, dict) and "@graph" not in data:
+                # Use a safe pop that only runs if data is a dict
+                context = data.pop("@context") if "@context" in data else {}
                 node = {k: v for k, v in data.items()}
                 return {"@context": context, "@graph": [node]}
+                
             return data
 
 
@@ -110,154 +120,171 @@ class Metadata:
                     f.write("\n".join(sorted(set(self.unmatched_log)))) 
 
         ##### TEMPLATE MANIPULATION ####
-
-        def update_template(self, col_name: str, field: str, value: str):
+        def update_bulk(self, metadata_template: dict):
             """
-            Updates a specific metadata property for a column within the RDF graph.
-
-            This method identifies a column by its 'skos:altLabel', modifies the 
-            corresponding RDF triple in the internal graph using the appropriate 
-            namespace (MDS, QUDT, etc.), and synchronizes the change back to the 
-            JSON-LD dictionary.
-
-            Args:
-                col_name (str): The column name to update (matches the 'skos:altLabel').
-                field (str): The shorthand for the property to change. Must be one of:
-                    - 'definition': Updates the 'skos:definition' (Text).
-                    - 'unit': Updates 'qudt:hasUnit' (URI). Handles 'unit:UNIT' shorthand.
-                    - 'type': Updates 'rdf:type' (URI/Class).
-                    - 'stage': Updates 'mds:hasStudyStage' (Text/URI).
-                    - 'note': Updates 'skos:note' (Text).
-                value (str): The new value to assign to the field. 
-
-            Note:
-                This method uses RDFLib's `.set()` logic, meaning it will overwrite 
-                any existing value for the specified field to maintain a single 
-                source of truth for that property.
-
-            Returns:
-                None
+            Merges an external metadata template into the current instance.
+            Iterates through the '@graph' and decides whether to update existing 
+            columns or add new ones.
             """
-            # 1. Map the string 'field' to actual RDF Predicates
-            field_map = {
-                    "definition": SKOS.definition,
-                    "unit": self.QUDT.hasUnit,
-                    "type": RDF.type,
-                    "stage": self.MDS.hasStudyStage,
-                    "note": SKOS.note
-                }
+            # 1. Extract the graph list from the JSON-LD structure
+            # This handles both flattened and framed JSON-LD formats
+            graph_entries = metadata_template.get('@graph', [])
 
-                # 2. Find the subject (the node) that has the altLabel matching col_name
-            subject = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
+            if not graph_entries:
+                print("⚠️ No valid metadata entries found in the provided template.")
+                return
 
-            if subject and field in field_map:
-                predicate = field_map[field]
+            updates_count = 0
+            adds_count = 0
 
-                # 3. Determine the correct RDF Object type based on the field
-                if field == "unit":
-                    # Ensure unit is a URI. If it's just 'KM', make it 'unit:KM'
-                    unit_uri = value if ":" in value or value.startswith("http") else f"unit:{value}"
-                    # If using the UNIT namespace, we can expand it
-                    if unit_uri.startswith("unit:"):
-                        new_obj = self.UNIT[unit_uri.split(":")[1]]
-                    else:
-                        new_obj = URIRef(unit_uri)
-                
-                elif field == "type":
-                    # Types are usually URIs in your MDS namespace
-                    new_obj = self.MDS[value] if ":" not in value else URIRef(value)
+            for entry in graph_entries:
+                # Identify the column name (the unique key for our mapping)
+                col_name = entry.get("skos:altLabel")
+                if not col_name:
+                    continue
+
+                # Check if this column already exists in our current graph
+                existing_subject = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
+
+                if existing_subject:
+                    # OPTION A: Column exists -> Update specific fields
+                    # We map the JSON keys to the 'field' shorthand used in update_template
+                    field_mapping = {
+                        "skos:definition": "definition",
+                        "qudt:hasUnit": "unit",
+                        "rdf:type": "type",
+                        "@type": "type",
+                        "mds:hasStudyStage": "stage",
+                        "skos:note": "note"
+                    }
+
+                    for json_key, field_shorthand in field_mapping.items():
+                        value = entry.get(json_key)
+                        if value:
+                            # Handle nested @id structures (like in units)
+                            if isinstance(value, dict) and "@id" in value:
+                                value = value["@id"]
+                            
+                            self.update_template(col_name, field_shorthand, str(value))
+                    updates_count += 1
                 
                 else:
-                    # Definitions and notes are plain text Literals
-                    new_obj = Literal(value)
+                    # OPTION B: Column is new -> Add it to the graph
+                    rdf_type = entry.get("@type") or "cco:ont00000958"
+                    unit_info = entry.get("qudt:hasUnit", "unit:UNITLESS")
+                    unit = unit_info["@id"] if isinstance(unit_info, dict) else unit_info
+                    
+                    self.add_column_metadata(
+                        col_name=col_name,
+                        rdf_type=str(rdf_type),
+                        unit=str(unit).replace("unit:", ""), # Strip prefix for the function
+                        definition=entry.get("skos:definition", "Definition not available"),
+                        study_stage=entry.get("mds:hasStudyStage", "UNK")
+                    )
+                    adds_count += 1
 
-                # 4. Use .set() to replace the old value with the new one
-                self.template_graph.set((subject, predicate, new_obj))
-                
-                # 5. Re-sync the dictionary for the save_metadata method
-                # We use a frame or context to keep the JSON-LD structure clean
-                context = self.metadata_temp.get("@context", {})
-                updated_json = self.template_graph.serialize(format="json-ld", context=context)
-
-                #self.metadata_temp = json.loads(updated_json)
-                self.metadata_temp = self._normalize_graph_structure(json.loads(updated_json))
-
-                print(f"✅ Successfully updated {field} for '{col_name}'.")
-            
-            elif not subject:
-                print(f"⚠️ Column '{col_name}' not found in the graph.")
-            else:
-                print(f"⚠️ Field '{field}' is not a recognized field. Try: {list(field_map.keys())}")
+            print(f"📊 Bulk Update Summary: {updates_count} columns updated, {adds_count} columns added.")
 
 
-        def add_column_metadata(self, 
-                                col_name: str, 
-                                rdf_type: str, 
-                                unit: str = "UNITLESS", 
-                                definition: str = "No definition provided", 
-                                study_stage: str = "UNK"):
-            """
-            Manually adds a new column definition to the metadata template.
-            
-            This is useful for fixing [UNDEFINED COLUMNS] identified during validation.
-            
-            Args:
-                col_name (str): The column header from the DataFrame.
-                rdf_type (str): The MDS property or class (e.g., 'mds:Temperature').
-                unit (str): The QUDT unit shorthand (e.g., 'DEG_C'). Defaults to 'UNITLESS'.
-                definition (str): A human-readable description of the data.
-                study_stage (str): The stage of the study (e.g., 'Synthesis', 'Result').
-            """
-            # 1. Check if it already exists to avoid duplicates
-            existing = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
-            if existing:
-                print(f"⚠️ Metadata for '{col_name}' already exists. Use update_template instead.")
-                return existing
+        def update_template(self, col_name: str, field: str, value: str):
+                    """
+                    Updates both the JSON-LD template and the RDF Graph in lock-step.
+                    This ensures self.metadata_temp is updated while keeping the 
+                    internal RDFLib graph in sync for serialization.
+                    """
+                    # 1. Map shorthands to both JSON keys and RDF Predicates
+                    mapping = {
+                        "definition": ("skos:definition", SKOS.definition),
+                        "unit": ("qudt:hasUnit", self.QUDT.hasUnit),
+                        "type": ("@type", RDF.type),
+                        "stage": ("mds:hasStudyStage", self.MDS.hasStudyStage),
+                        "note": ("skos:note", SKOS.note)
+                    }
 
-            # 2. Create the internal entry structure
-            # We follow the exact format used in your template_generator
+                    if field not in mapping:
+                        print(f"⚠️ Field '{field}' is not recognized.")
+                        return
+
+                    json_key, predicate = mapping[field]
+
+                    # --- PART A: Update self.metadata_temp (The JSON source) ---
+                    # This is what you were doing; it works because of Python's object referencing
+                    graph_list = self.metadata_temp.get("@graph", [])
+                    for item in graph_list:
+                        if item.get("skos:altLabel") == col_name:
+                            if field == "unit":
+                                # Standardize to a dict structure for QUDT
+                                item[json_key] = {"@id": f"unit:{value}" if ":" not in value else value}
+                            else:
+                                item[json_key] = value
+                            break
+
+                    # --- PART B: Update self.template_graph (The RDF source) ---
+                    # This ensures serialize_row and other graph functions stay in sync
+                    subject = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
+                    
+                    if subject:
+                        # Determine the correct RDF Object type
+                        if field == "unit":
+                            unit_uri = value if ":" in value else f"unit:{value}"
+                            new_obj = self.UNIT[unit_uri.split(":")[1]] if "unit:" in unit_uri else URIRef(unit_uri)
+                        elif field == "type":
+                            new_obj = self.MDS[value] if ":" not in value else URIRef(value)
+                        else:
+                            new_obj = Literal(value)
+
+                        # Overwrite the triple in the graph
+                        self.template_graph.set((subject, predicate, new_obj))
+                        print(f"✅ Synchronized {field} for '{col_name}'.")
+                    else:
+                        print(f"⚠️ Warning: '{col_name}' updated in JSON but not found in RDF Graph.")
+
+
+        def add_column_metadata(self, col_name: str, rdf_type: str, unit: str = "UNITLESS", 
+                                definition: str = "No definition provided", study_stage: str = "UNK"):
+            # 1. Direct JSON check
+            graph = self.metadata_temp.get("@graph", [])
+            if any(item.get("skos:altLabel") == col_name for item in graph):
+                return
+
+            # 2. Build a clean Python Dict (No RDFLib objects here)
             entry = {
                 "@id": rdf_type if ":" in rdf_type else f"mds:{rdf_type}",
                 "@type": rdf_type if ":" in rdf_type else f"mds:{rdf_type}",
                 "skos:altLabel": col_name,
                 "skos:definition": definition,
                 "qudt:hasUnit": {"@id": f"unit:{unit}"},
-                "prov:generatedAtTime": {
-                    "@value": datetime.now(timezone.utc).isoformat() + "Z",
-                    "@type": "xsd:dateTime"
-                },
+                "prov:generatedAtTime": datetime.now(timezone.utc).isoformat() + "Z",
                 "mds:hasStudyStage": study_stage
             }
 
-            # 3. Add to the graph and re-sync the dictionary
-            # Adding via serialization ensures all bindings and context remain consistent
-            self.template_graph.parse(data=json.dumps(entry), format="json-ld")
+            # 3. Direct append to the list that serialize_row uses
+            graph.append(entry)
+            self.metadata_temp["@graph"] = graph
             
-            context = self.metadata_temp.get("@context", {})
-            updated_json = self.template_graph.serialize(format="json-ld", context=context)
-            #self.metadata_temp = json.loads(updated_json)
-            self.metadata_temp = self._normalize_graph_structure(json.loads(updated_json))
-
-            print(f"✅ Successfully added metadata for new column: '{col_name}'.")
+            # Optional: If you use the internal graph for OTHER things, 
+            # parse ONLY this new entry to keep it in sync
+            self.template_graph.parse(data=json.dumps(entry), format="json-ld")
 
         def delete_column_metadata(self, col_name: str):
             """
-            Removes all metadata associated with a specific column from the graph and template.
-
-            Args:
-                col_name (str): The column name (skos:altLabel) to be removed.
+            Removes all metadata associated with a specific column from both 
+            the internal JSON template and the RDF graph.
             """
-            # 1. Find the subject subject (the node) that has the altLabel matching col_name
-            subject = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
+            # 1. Direct JSON Manipulation (The "Clean" way)
+            # We filter the @graph list directly to avoid RDFLib's serialization noise
+            original_graph = self.metadata_temp.get("@graph", [])
+            new_graph = [item for item in original_graph if item.get("skos:altLabel") != col_name]
 
-            if subject:
-                # 2. Remove all triples where this node is the subject
-                self.template_graph.remove((subject, None, None))
-                
-                # 3. Re-sync the dictionary to reflect the deletion
-                context = self.metadata_temp.get("@context", {})
-                updated_json = self.template_graph.serialize(format="json-ld", context=context)
-                self.metadata_temp = json.loads(updated_json)
+            if len(new_graph) < len(original_graph):
+                # 2. Update the JSON template used by serialize_row()
+                self.metadata_temp["@graph"] = new_graph
+
+                # 3. Keep the RDF graph in sync
+                # We find the node and remove its triples so the graph remains accurate
+                subject = self.template_graph.value(predicate=SKOS.altLabel, object=Literal(col_name))
+                if subject:
+                    self.template_graph.remove((subject, None, None))
                 
                 print(f"✅ Successfully deleted metadata for column: '{col_name}'.")
             else:
@@ -281,15 +308,28 @@ class Metadata:
                 # Extracting key info into a list of dicts for the DataFrame
                 summary_list = []
                 for item in graph_data:
-                    summary_list.append({
-                        "Label": item.get("skos:altLabel", "N/A"),
-                        "Type": item.get("@type", "N/A"),
-                        "Unit": item.get("qudt:hasUnit", {}).get("@id", "None"),
-                        "Definition": item.get("skos:definition", "")[:50] + "..." 
-                                    if len(item.get("skos:definition", "")) > 50 
-                                    else item.get("skos:definition", ""),
-                        "Study Stage": item.get("mds:hasStudyStage", "N/A")
-                    })
+                            # Handle qudt:hasUnit which might be a dict, a list, or missing
+                            unit_raw = item.get("qudt:hasUnit", "None")
+                            
+                            # If it's a list, take the first entry
+                            if isinstance(unit_raw, list) and len(unit_raw) > 0:
+                                unit_val = unit_raw[0].get("@id", "None") if isinstance(unit_raw[0], dict) else str(unit_raw[0])
+                            # If it's a dict, get the @id
+                            elif isinstance(unit_raw, dict):
+                                unit_val = unit_raw.get("@id", "None")
+                            # Otherwise, just stringify it
+                            else:
+                                unit_val = str(unit_raw)
+
+                            summary_list.append({
+                                "Label": item.get("skos:altLabel", "N/A"),
+                                "Type": item.get("@type", "N/A"),
+                                "Unit": unit_val,
+                                "Definition": item.get("skos:definition", "")[:50] + "..." 
+                                            if len(item.get("skos:definition", "")) > 50 
+                                            else item.get("skos:definition", ""),
+                                "Study Stage": item.get("mds:hasStudyStage", "N/A")
+                            })
                 
                 df_summary = pd.DataFrame(summary_list)
                 
