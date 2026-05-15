@@ -347,7 +347,7 @@ class MatDatSciDf:
         """
         self.metadata_obj.update_bulk(metadata_template)
         self.metadata_template = self.metadata_obj.metadata_temp
-        
+
     def update_metadata(self, col_name: str, field: str, value: str):
         """
         Wrapper to update a metadata property (unit, type, definition, etc.) 
@@ -583,7 +583,7 @@ class MatDatSciDf:
             else: #csv included type:
                 binding, iri_fragment = typ.split(":")
                 if(binding == "mds"):
-                    #if term in mds ontology, get study stage and def from ontologyt
+                    #if term in mds ontology, get study stage and def from ontology
                     definition = str(match["definition"]) if match else "Definition not available"
                     study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
                 else:

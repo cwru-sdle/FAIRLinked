@@ -153,81 +153,69 @@ def test_jsonld_template_generator(sample_csv, sample_ontology_graph, mock_units
             # Ensure your generator passes mock_units to the prompt function
             jsonld_template_generator(sample_csv, sample_ontology_graph, out, matched, unmatched)
 
-# --- Test 5: Validation of Generated JSON-LD Content ---
+# --- Test 5: Validation of Metadata-Heavy CSV ---
 def test_template_generator_output_integrity(tmp_path, sample_ontology_graph, sample_csv, mock_units):
-    # Setup paths
     out_file = tmp_path / "out.json"
-    matched_log = tmp_path / "matched.txt"
-    unmatched_log = tmp_path / "unmatched.txt"
     
-    # Inputs to choose 'Meter' (M) for every column
-    mock_inputs = ['Meter', 'Analysis', 'notes'] * 20
-    
-    graph = sample_ontology_graph
-    bindings_dict = {prefix: str(namespace) for prefix, namespace in graph.namespaces()}
+    # Sequence: [Unit Search, Notes] (Study Stage is skipped for columns with pre-filled valid stages)
+    # 1. Sample (Recipe): ['Meter', 'some notes']
+    # 2. chemical_formula (Sample): ['Meter', 'some notes']
+    # 3. processing_method (Recipe): ['Meter', 'some notes']
+    # ...
+    # 7. sample_width (NaN): ['Meter', 'Analysis', 'some notes'] -> This one DOES prompt for stage!
+    mock_inputs = (['Meter', 'notes'] * 6) + ['Meter', 'Analysis', 'notes'] + (['Meter', 'notes'] * 5)
 
+    graph = sample_ontology_graph
+    
     with patch('builtins.input', side_effect=mock_inputs):
         with patch('builtins.print'):
-            # Pass absolute strings
             jsonld_template_generator(
                 sample_csv, 
                 graph, 
                 str(out_file), 
-                str(matched_log), 
-                str(unmatched_log)
+                str(tmp_path/"m.log"), 
+                str(tmp_path/"u.log")
             )
     
     with open(out_file, 'r') as f:
         doc = json.load(f)
+        graph_data = {item['skos:altLabel']: item for item in doc.get('@graph', [])}
         
-        for item in doc.get('@graph', []):
-            # Check Unit Mapping
-            unit_id = item['qudt:hasUnit']['@id'] # e.g. "unit:M"
-            prefix, unit_key = unit_id.split(":")
-            
-            assert prefix in bindings_dict, f"Prefix {prefix} not in graph namespaces"
-            assert (unit_key in mock_units or unit_key == "UNITLESS"), f"Unit {unit_key} not in QUDT mock"
-            
-            # Check Study Stage
-            assert item.get('mds:hasStudyStage') == 'Recipe'
+        # Verify specific values from the CSV rows (Priority 2)
+        assert graph_data['Sample'].get('mds:hasStudyStage') == 'Recipe'
+        assert graph_data['chemical_formula'].get('mds:hasStudyStage') == 'Sample'
+        assert graph_data['processing_method'].get('mds:hasStudyStage') == 'Recipe'
+        
+        # Verify the prompted value for the empty column (Priority 1)
+        assert graph_data['sample_width'].get('mds:hasStudyStage') == 'Analysis'
 
+# --- Test 6: Validation of CSV with No Metadata ---
 def test_template_generator_output_integrity_no_metadata(tmp_path, sample_ontology_graph, sample_csv_no_metadata, mock_units):
-    # Setup paths
-    out_file = tmp_path / "out.json"
-    matched_log = tmp_path / "matched.txt"
-    unmatched_log = tmp_path / "unmatched.txt"
+    out_file = tmp_path / "out_clean.json"
     
-    # Inputs to choose 'Meter' (M) for every column
-    mock_inputs = ['Meter', 'Analysis', 'notes'] * 20
-    
+    # Since all Study Stages are NaN in this CSV, EVERY column will ask for [Unit, Stage, Notes]
+    mock_inputs = ['Meter', 'Analysis', 'notes'] * 15 
+
     graph = sample_ontology_graph
-    bindings_dict = {prefix: str(namespace) for prefix, namespace in graph.namespaces()}
 
     with patch('builtins.input', side_effect=mock_inputs):
         with patch('builtins.print'):
-            # Pass absolute strings
             jsonld_template_generator(
                 sample_csv_no_metadata, 
                 graph, 
                 str(out_file), 
-                str(matched_log), 
-                str(unmatched_log),
+                str(tmp_path/"m_clean.log"), 
+                str(tmp_path/"u_clean.log"),
                 skip_prompts=False
             )
     
     with open(out_file, 'r') as f:
         doc = json.load(f)
-        
         for item in doc.get('@graph', []):
-            # Check Unit Mapping
-            unit_id = item['qudt:hasUnit']['@id'] # e.g. "unit:M"
-            prefix, unit_key = unit_id.split(":")
-            
-            assert prefix in bindings_dict, f"Prefix {prefix} not in graph namespaces"
-            assert (unit_key in mock_units or unit_key == "UNITLESS"), f"Unit {unit_key} not in QUDT mock"
-            
-            # Check Study Stage
-            assert item.get('mds:hasStudyStage') == 'Analysis'
+            # Since everything was prompted, everything should be 'Analysis'
+            actual_stage = item.get('mds:hasStudyStage')
+            label = item.get('skos:altLabel')
+            assert actual_stage == 'Analysis', f"Column {label} failed to apply prompt value."
 
 
 

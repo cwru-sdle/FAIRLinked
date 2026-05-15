@@ -1,9 +1,6 @@
-import os
 import json
 import pandas as pd
 import pytest
-from pathlib import Path
-import FAIRLinked.RDFTableConversion
 from FAIRLinked.RDFTableConversion import jsonld_directory_to_csv
 
 @pytest.fixture
