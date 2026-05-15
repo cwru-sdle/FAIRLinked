@@ -34,6 +34,25 @@ Initialize the semantic wrapper. Setting ``metadata_rows=True`` instructs the cl
    template, matched, unmatched = mds_df.template_generator(skip_prompts=True)
    mds_df.metadata_template = template
 
+
+Setting `metadata_rows=False` is the default, and this instructs the MatDatSciDf to treat the data as a normal data frame.
+
+.. code-block:: python
+  import pandas as pd
+  from FAIRLinked import MatDatSciDf
+
+  # Load the microindentation data
+  raw_df = pd.read_csv("rresources/worked-example-RDFTableConversion.MDS_DF/pmma_no_metadata_rows.csv")
+
+  mds_df = MatDatSciDf(
+      df=raw_df, 
+      orcid="0000-0001-2345-6789",
+      df_name="PMMA_Hardness_Test"
+  )
+
+  mds_df.view_metadata()
+
+
 To serialize the data, run ``serialize_row`` or ``serialize_bulk``:
 
 .. code-block:: python

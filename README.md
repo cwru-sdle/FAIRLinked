@@ -95,6 +95,24 @@ mds_df = MatDatSciDf(
 mds_df.view_metadata()
 
 ```
+Setting `metadata_rows=False` is the default, and this instructs the MatDatSciDf to treat the data as a normal data frame.
+
+```python
+import pandas as pd
+from FAIRLinked import MatDatSciDf
+
+# Load the microindentation data
+raw_df = pd.read_csv("rresources/worked-example-RDFTableConversion.MDS_DF/pmma_no_metadata_rows.csv")
+
+mds_df = MatDatSciDf(
+    df=raw_df, 
+    orcid="0000-0001-2345-6789",
+    df_name="PMMA_Hardness_Test"
+)
+
+mds_df.view_metadata()
+
+```
 
 To serialize the data, run ``serialize_row`` or ``serialize_bulk`` method:
 
