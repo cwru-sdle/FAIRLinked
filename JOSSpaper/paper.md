@@ -19,11 +19,11 @@ authors:
   - name: Van D. Tran
     affiliation: "1, 3"
     orcid: "0009-0008-4355-0543"
+  - name: Brandon Lee
+    affiliation: "2, 3"
   - name: Ritika Lamba
     affiliation: "2, 3"
     orcid: "0009-0007-8483-019X"
-  - name: Brandon Lee
-    affiliation: "2, 3"
   - name: Henry Dirks
     affiliation: "3, 4"
   - name: Quynh D. Tran
