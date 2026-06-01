@@ -146,7 +146,7 @@ For users who wish to add richer metadata to their dataset, FAIRLinked provides 
 The source code for `FAIRLinked` can be retrieved [from PyPi](https://pypi.org/project/FAIRLinked/) or in the [GitHub repository](https://github.com/cwru-sdle/FAIRLinked). 
 
 
-# Acknowledgement
+# Acknowledgements
 
 This work was supported by the Department of Energy (National Nuclear Security Administration) under Award Number DE-NA0004104 and Contract Number B647887 and from the U.S. National Science Foundation under Award Number 2133576.
 
