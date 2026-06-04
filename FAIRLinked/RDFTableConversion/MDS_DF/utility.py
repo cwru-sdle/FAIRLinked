@@ -20,7 +20,7 @@ _CACHED_UNITS = None
 
 def load_units():
     """
-    Optimized unit loader using single-pass regex and global caching.
+    Robust unit loader using programmatic rdflib graph traversal and global caching.
     """
     global _CACHED_UNITS
     
@@ -29,60 +29,61 @@ def load_units():
         return _CACHED_UNITS
 
     try:
-        # 2. Access the file via importlib.resources
+        # 2. Read the file content via importlib
         with resources.files(helper_data).joinpath("qudt_unit.ttl").open() as f:
             content = f.read()
 
-        # 3. Optimized Single-Pass Regex: 
-        # Captures the unit name AND its associated block in one go
-        # This prevents scanning the entire file for every unit
-        unit_blocks = re.findall(
-            r'unit:([A-Z0-9_\-]+)\s*\n(.*?)(?=\nunit:|$)', 
-            content, 
-            re.DOTALL
-        )
+        # 3. Parse the Turtle data into an RDF Graph
+        g = Graph()
+        g.parse(data=content, format="turtle")
+        
+        # 4. Corrected Official QUDT Namespaces
+        # QUDT schema elements use http and a trailing hash '#'
+        QUDT = Namespace("http://qudt.org/schema/qudt/")
         
         unit_details = {}
         
-        for unit_name, block in unit_blocks:
-            # 4. Extract details ONLY from the local block string
-            # This is significantly faster than searching the whole file
+        # 5. Programmatically find all subjects that are instances of qudt:Unit or qudt:DerivedUnit
+        unit_subjects = set(g.subjects(RDF.type, QUDT.Unit)).union(
+            g.subjects(RDF.type, QUDT.DerivedUnit)
+        )
+        
+        for subj in unit_subjects:
+            # Handle splitting the term from the URI safely, accounting for both '/' and '#'
+            unit_uri_str = str(subj)
+            unit_name = unit_uri_str.split('/')[-1].split('#')[-1]
             
-            # Extract symbol
-            symbol_match = re.search(r'qudt:symbol\s+"([^"]+)"', block)
-            symbol = symbol_match.group(1) if symbol_match else None
+            # Extract English label explicitly
+            labels = g.objects(subj, RDFS.label)
+            label_lit = next((l for l in labels if getattr(l, 'language', None) == 'en'), None)
+            if label_lit is None:
+                label_lit = g.value(subj, RDFS.label)
             
-            # Extract label(s)
-            label_matches = re.findall(r'rdfs:label\s+"([^"]+)"(?:@\w+)?', block)
-            label = label_matches[0] if label_matches else unit_name
+            symbol_lit = g.value(subj, QUDT.symbol)
+            ucum_lit = g.value(subj, QUDT.ucumCode)
+            mult_lit = g.value(subj, QUDT.conversionMultiplier)
+            desc_lit = g.value(subj, DCTERMS.description)
             
-            # Extract description
-            desc_match = re.search(r'dcterms:description\s+"([^"]+)"', block)
-            description = desc_match.group(1) if desc_match else None
-            
-            # Extract UCUM code
-            ucum_match = re.search(r'qudt:ucumCode\s+"([^"]+)"', block)
-            ucum_code = ucum_match.group(1) if ucum_match else None
-            
-            # Extract conversion multiplier
-            conv_match = re.search(r'qudt:conversionMultiplier\s+([\d.E\-+]+)', block)
-            conversion = conv_match.group(1) if conv_match else None
-            
+            # Handle the description formatting safely
+            description = str(desc_lit) if desc_lit else None
+            if description and len(description) > 100:
+                description = description[:100] + '...'
+                
             unit_details[unit_name] = {
                 'name': unit_name,
-                'label': label,
-                'symbol': symbol,
-                'ucum_code': ucum_code,
-                'conversion_multiplier': conversion,
-                'description': description[:100] + '...' if description and len(description) > 100 else description
+                'label': str(label_lit) if label_lit else unit_name,
+                'symbol': str(symbol_lit) if symbol_lit else None,
+                'ucum_code': str(ucum_lit) if ucum_lit else None,
+                'conversion_multiplier': str(mult_lit) if mult_lit else None,
+                'description': description
             }
         
-        # 5. Store in global cache for future calls
+        # 6. Store in global cache
         _CACHED_UNITS = unit_details
         return _CACHED_UNITS
 
     except Exception as e:
-        print(f"⚠️ Unit loading failed: {e}. Returning empty dictionary.")
+        print(f"⚠️ Programmatic graph unit loading failed: {e}. Returning empty dictionary.")
         return {}
 
 
@@ -377,60 +378,49 @@ def extract_qudt_units(url="https://qudt.org/vocab/unit/"):
     print(f"Fetching QUDT ontology from: {url}")
     
     try:
-        # Fetch the ontology data
-        response = requests.get(url, headers={'Accept': 'text/turtle'})
-        response.raise_for_status()
-        content = response.text
+        g = Graph()
+        g.parse(url, format="turtle")
         
-        print(f"Successfully fetched {len(content)} characters of data\n")
+        # 4. Corrected Official QUDT Namespaces
+        # QUDT schema elements use http and a trailing hash '#'
+        QUDT = Namespace("http://qudt.org/schema/qudt/")
         
-        # Extract units using regex patterns
-        # Pattern to match unit definitions: unit:UNIT_NAME
-        unit_pattern = r'unit:([A-Z0-9_\-]+)\s*\n\s*a\s+qudt:(?:Unit|DerivedUnit)'
-        
-        # Find all unit names
-        units = re.findall(unit_pattern, content)
-        
-        # Dictionary to store unit details
         unit_details = {}
         
-        # For each unit, extract additional information
-        for unit_name in units:
-            # Create a pattern to find the unit's definition block
-            unit_block_pattern = rf'unit:{re.escape(unit_name)}\s*\n(.*?)(?=\nunit:|$)'
-            match = re.search(unit_block_pattern, content, re.DOTALL)
+        # 5. Programmatically find all subjects that are instances of qudt:Unit or qudt:DerivedUnit
+        unit_subjects = set(g.subjects(RDF.type, QUDT.Unit)).union(
+            g.subjects(RDF.type, QUDT.DerivedUnit)
+        )
+        
+        for subj in unit_subjects:
+            # Handle splitting the term from the URI safely, accounting for both '/' and '#'
+            unit_uri_str = str(subj)
+            unit_name = unit_uri_str.split('/')[-1].split('#')[-1]
             
-            if match:
-                unit_block = match.group(1)
+            # Extract English label explicitly
+            labels = g.objects(subj, RDFS.label)
+            label_lit = next((l for l in labels if getattr(l, 'language', None) == 'en'), None)
+            if label_lit is None:
+                label_lit = g.value(subj, RDFS.label)
+            
+            symbol_lit = g.value(subj, QUDT.symbol)
+            ucum_lit = g.value(subj, QUDT.ucumCode)
+            mult_lit = g.value(subj, QUDT.conversionMultiplier)
+            desc_lit = g.value(subj, DCTERMS.description)
+            
+            # Handle the description formatting safely
+            description = str(desc_lit) if desc_lit else None
+            if description and len(description) > 100:
+                description = description[:100] + '...'
                 
-                # Extract symbol
-                symbol_match = re.search(r'qudt:symbol\s+"([^"]+)"', unit_block)
-                symbol = symbol_match.group(1) if symbol_match else None
-                
-                # Extract label(s)
-                label_matches = re.findall(r'rdfs:label\s+"([^"]+)"(?:@\w+)?', unit_block)
-                label = label_matches[0] if label_matches else unit_name
-                
-                # Extract description
-                desc_match = re.search(r'dcterms:description\s+"([^"]+)"', unit_block)
-                description = desc_match.group(1) if desc_match else None
-                
-                # Extract UCUM code
-                ucum_match = re.search(r'qudt:ucumCode\s+"([^"]+)"', unit_block)
-                ucum_code = ucum_match.group(1) if ucum_match else None
-                
-                # Extract conversion multiplier
-                conv_match = re.search(r'qudt:conversionMultiplier\s+([\d.E\-+]+)', unit_block)
-                conversion = conv_match.group(1) if conv_match else None
-                
-                unit_details[unit_name] = {
-                    'name': unit_name,
-                    'label': label,
-                    'symbol': symbol,
-                    'ucum_code': ucum_code,
-                    'conversion_multiplier': conversion,
-                    'description': description[:100] + '...' if description and len(description) > 100 else description
-                }
+            unit_details[unit_name] = {
+                'name': unit_name,
+                'label': str(label_lit) if label_lit else unit_name,
+                'symbol': str(symbol_lit) if symbol_lit else None,
+                'ucum_code': str(ucum_lit) if ucum_lit else None,
+                'conversion_multiplier': str(mult_lit) if mult_lit else None,
+                'description': description
+            }
         
         return unit_details
         
@@ -486,7 +476,7 @@ def prompt_for_missing_fields(col, unit, study_stage, ontology_graph, units):
             break # Found it! Move on to next fields
         
         elif len(matches) > 1:
-            print("\nMultiple matches found. Select a number or type 'back':")
+            print("\nMultiple matches found. Select a number or type 'back' to perform another search:")
             for i, m in enumerate(matches, 1):
                 print(f"  {i}. {units[m]['label']} ({m})")
             

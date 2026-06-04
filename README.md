@@ -114,6 +114,9 @@ mds_df.view_metadata()
 
 ```
 
+> [!NOTE]
+> It is recommended that users use UCUM code or write unit in the form 'unit:UNIT' where 'UNIT' is QUDT-compliant unit string.
+
 To serialize the data, run ``serialize_row`` or ``serialize_bulk`` method:
 
 ```python

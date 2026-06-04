@@ -598,25 +598,61 @@ class MatDatSciDf:
                 try:
                     # Step 1: Convert string representation to a Python object
                     # Handles both "{'id': ...}" and "unit:UNIT"
-                    evaluated = ast.literal_eval(un)
-                    
-                    # Step 2: Extract the string based on type
-                    if isinstance(evaluated, dict):
-                        # It's a dict, get the ID value
-                        target_str = evaluated.get('@id', "")
+                    if un.startswith("{") and un.endswith("}"):
+                        try:
+                            evaluated = ast.literal_eval(un)
+                            if isinstance(evaluated, dict):
+                                # It's a dict, get the ID value
+                                target_str = evaluated.get('@id', "")
+                            else:
+                                target_str = un
+                        except Exception:
+                            target_str = un
+
                     else:
                         # It's already a string (like "unit:UNIT")
-                        target_str = str(evaluated)
+                        target_str = str(un).strip()
 
                     # Step 3: Split and safely get the second part
                     if ":" in target_str:
                         un = target_str.split(":")[1]
                     else:
-                        un = target_str # Fallback if no colon exists
+                        matches = []
+                        for key, details in units.items():
+                            # Clean up comparisons using .lower() and check both ucum and labels
+                            name = details.get('name', '')
+                            ucum_code = details.get('ucum_code', '')
+                            label = details.get('label', '')
+                            
+                            if ((name and un.lower() == name.lower()) or
+                                (ucum_code and un == ucum_code) or 
+                                (label and un.lower() == label.lower())):
+                                matches.append(key)
+
+                        if len(matches) == 1 :
+                            un = matches[0]
+
+                        elif len(matches) > 1:
+                            print(f"\nMultiple matches found for unit {un}. Select a number or click 'enter' to skip. \n'UNITLESS' will be used if user does not select a unit:")
+                            for i, m in enumerate(matches, 1):
+                                print(f"  {i}. {units[m]['label']} ({m})")
+                            choice = input("> ")
+                            if choice.lower() == '':
+                                print("No unit chosen. Default to UNITLESS")
+                                un = "UNITLESS"
+                            if choice.isdigit() and 1 <= int(choice) <= len(matches):
+                                un = matches[int(choice) - 1]
+                        else:
+                            print(f"Unable to find unit {un}. Default to UNITLESS")
+                            un = "UNITLESS"
+                        
+
 
                 except (ValueError, SyntaxError, IndexError) as e:
                     print(f"Parsing error for value '{un}': {e}")
                     un = "UNITLESS"
+            else:
+                un = "UNITLESS"
                 
             if match:
                 matched_log.append(f"{col} => {iri_fragment}")
@@ -629,7 +665,7 @@ class MatDatSciDf:
             if not skip_prompts:
                 unit, study, notes = prompt_for_missing_fields(iri_fragment, un, study_stage, ontology_graph, units)
             else:
-                unit = "UNITLESS"
+                unit = un
                 study = study_stage if study_stage not in [
                     "", "Study stage information not available"
                 ] else ""
