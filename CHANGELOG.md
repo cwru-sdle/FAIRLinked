@@ -1,3 +1,7 @@
+# 0.3.3.5
+
+Improve QUDT unit retrieval from metadata row.
+
 # 0.3.3.4
 
 Automatic discovery of relations in the data based on ontology
