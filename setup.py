@@ -59,6 +59,6 @@ setup(
             'FAIRLinked=FAIRLinked.cli.__main__:main',
         ],
     },
-    package_data={'FAIRLinked.helper_data': ['*.json']},
+    package_data={'FAIRLinked.helper_data': ['*.json', '*.ttl']},
     include_package_data=True
 )
