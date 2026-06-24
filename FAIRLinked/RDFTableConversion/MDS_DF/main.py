@@ -357,10 +357,42 @@ class MatDatSciDf:
         self.metadata_template = self.metadata_obj.metadata_temp
 
     def add_column_metadata(self, col_name: str, rdf_type: str, unit: str = "UNITLESS", 
-                            definition: str = "No definition provided", study_stage: str = "UNK"):
+                            definition: str = "Definition not available", study_stage: str = "UNK"):
         """
-        Top-level API to manually define semantic metadata for a new column.
-        Useful for defining columns found in 'Discovery Warning' reports.
+        Registers and appends metadata for a specific data column to both the temporary 
+        JSON-LD graph and the internal RDFLib Graph.
+
+        This method prevents duplicate entries by checking the existing JSON-LD `@graph` 
+        for the column name. If the column does not exist, it constructs a clean Python 
+        dictionary representing the JSON-LD entity, appends it to the temporary graph 
+        structure, and synchronizes it by parsing it into the internal `template_graph`.
+
+        Parameters
+        ----------
+        col_name : str
+            The exact name of the data column (e.g., 'patient_age'). Used as the 
+            `skos:altLabel` identifier to prevent duplicate entries.
+        rdf_type : str
+            The RDF semantic type or class for the column. If a namespace prefix (like 'mds:') 
+            is omitted, the 'mds:' prefix will be automatically prepended.
+        unit : str, optional
+            The measurement unit of the column data, mapped to a QUDT ontology identifier. 
+            Defaults to "UNITLESS".
+        definition : str, optional
+            A human-readable textual description of what the column represents. 
+            Defaults to "Definition not available".
+        study_stage : str, optional
+            The phase or stage of the study lifecycle this data belongs to (e.g., 'COLLECTION', 
+            'ANALYSIS'). Defaults to "UNKNOWN".
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValueError
+            If required parameters are malformed (handled by downstream JSON/RDF parsers).
         """
         existing = self.metadata_obj.add_column_metadata(col_name, rdf_type, unit, definition, study_stage)
         if existing:
