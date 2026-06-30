@@ -350,8 +350,44 @@ class MatDatSciDf:
 
     def update_metadata(self, col_name: str, field: str, value: str):
         """
-        Wrapper to update a metadata property (unit, type, definition, etc.) 
-        for a specific column.
+        Updates a specific property of a column metadata entry in both the JSON-LD template 
+        and the internal RDFLib Graph in a synchronized, lock-step transaction.
+
+        This method maps a user-friendly shorthand token (passed via `field`) to its 
+        corresponding JSON-LD schema key and formal RDF ontology predicate. It safely 
+        modifies the temporary JSON source dictionary and updates the corresponding triple 
+        statement within the `template_graph`.
+
+        Parameters
+        ----------
+        col_name : str
+            The exact string name of the target data column (e.g., 'systolic_bp'). 
+            Matches against the existing 'skos:altLabel' identifier.
+        field : {'definition', 'unit', 'type', 'stage', 'note'}
+            The shorthand token representing the metadata property to modify:
+            
+            * 'definition' : Maps to `skos:definition` (SKOS.definition). Updates the text-based 
+                human description. Expects a plain string.
+            * 'unit'       : Maps to `qudt:hasUnit` (QUDT.hasUnit). Updates the measurement unit. 
+                Accepts a raw value (e.g., 'KG') or a prefixed URI (e.g., 'unit:KG'). Will be 
+                transformed into a dictionary block in JSON-LD and a URIRef in RDF.
+            * 'type'       : Maps to `@type` / `rdf:type` (RDF.type). Updates the semantic class or 
+                concept type of the column. Autocompletes to the 'mds:' namespace if a prefix is missing.
+            * 'stage'      : Maps to `mds:hasStudyStage` (MDS.hasStudyStage). Updates the phase of the 
+                study lifecycle. Expects a string (e.g., 'COLLECTION').
+            * 'note'       : Maps to `skos:note` (SKOS.note). Appends an administrative or usage 
+                note to the concept. Expects a string value.
+        value : str
+            The new data value to assign to the specified field.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        Prints a warning message if the `field` is unrecognized, or if the `col_name` was successfully 
+        updated in the JSON template but could not be found as a subject node inside the RDF Graph.
         """
         self.metadata_obj.update_template(col_name, field, value)
         self.metadata_template = self.metadata_obj.metadata_temp
@@ -420,9 +456,33 @@ class MatDatSciDf:
 
     def view_metadata(self, format: str = "table"):
         """
-        Wrapper to print the current metadata template as a 
-        formatted table or raw JSON-LD. Change to format = 'json-ld' 
-        to view metadata template in JSON-LD format.
+        Prints the current metadata template to the standard output.
+
+        Depending on the chosen format, this method will either output a pretty-printed 
+        JSON-LD structure representing the underlying knowledge graph or a tabular 
+        summary compiled into a pandas DataFrame.
+
+        Parameters
+        ----------
+        format : {'table', 'json'}, default 'table'
+            The output format for displaying the metadata template.
+            
+            * 'table': Flattens the nested JSON-LD '@graph' arrays (including handling 
+                complex structures like 'qudt:hasUnit' sub-dictionaries) and extracts key 
+                attributes (`Label`, `Type`, `Unit`, `Definition`, `Study Stage`) into a 
+                summarized, human-readable table. If executed in a Jupyter Notebook, it 
+                renders as an HTML table; in a terminal, it outputs as plain text.
+            * 'json': Outputs the raw, un-flattened JSON-LD template structure with 
+                proper indentation for deep debugging.
+
+        Returns
+        -------
+        None
+
+        Outputs
+        -------
+        Prints the formatted metadata summary or raw JSON directly to stdout. If an 
+        unsupported format string is provided, prints an error message.
         """
         self.metadata_obj.print_template(format=format)
 
