@@ -59,6 +59,28 @@ You can initialize a MatDatSciDf instance with a standard DataFrame. If your CSV
     mds_df.view_metadata()
 
 
+
+Updating Metadata
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    import pandas as pd
+    from FAIRLinked import MatDatSciDf
+
+    df = pd.read_csv("experimental_data.csv")
+
+    # Initialize with researcher identity
+    mds_df = MatDatSciDf(
+        df=df,
+        orcid="0000-0001-2345-6789",
+        df_name="PMMA_Indentation_Study",
+        metadata_rows=True  # Isolates the first 3 rows as semantic headers
+    )
+
+    mds_df.update_metadata(col="col_1", field="definition", value="Definition of col_1 label")
+    mds_df.view_metadata()
+
 Validation and Relations
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -127,6 +149,19 @@ The ``AnalysisTracker`` monitors a specific analysis event, generating a unique 
 
     # The function now logs all I/O and active file handles automatically
     calculate_modulus(10.5, 0.02)
+
+Instead of using a decorator, the user could also wrap a function used for analysis inside `run_and_track()`.
+
+.. code-block:: python
+
+    from FAIRLinked import AnalysisTracker
+
+    tracker = AnalysisTracker(proj_name="Hardness_Fit", home_path="./results")
+
+    def calculate_modulus(load, depth):
+        return (load / depth) * 0.75 
+
+    tracker.run_and_track(func=calculate_modulus, load=10.5, depth=0.2)
 
 AnalysisGroup: Batch Orchestration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
