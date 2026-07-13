@@ -1,3 +1,8 @@
+# 0.3.3.9
+
+Add an argument in serialization that allows nodes to have rdfs:label
+Update functions to accommodate new domain/subdomain predicate
+
 # 0.3.3.7
 
 Include unit helper data

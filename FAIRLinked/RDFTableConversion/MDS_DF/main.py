@@ -836,7 +836,8 @@ class MatDatSciDf:
                     output_folder: str, 
                     format = 'json-ld', 
                     row_key_cols: Optional[list[str]] = None, 
-                    id_cols: Optional[list[str]] = None, 
+                    id_cols: Optional[list[str]] = None,
+                    label_pairs: Optional[list[tuple[str, str]]] = None, 
                     license: Optional[str]= None,
                     write_files: Optional[bool] = True) -> list[Graph]:
 
@@ -847,8 +848,9 @@ class MatDatSciDf:
         This method transforms tabular experimental data into Linked Data. It iterates 
         through the DataFrame, generating a unique row identifier (Subject URI) for 
         each entry based on either specified 'id_cols' or a hash of the study-stage 
-        metadata. It maps cell values to 'qudt:value' triples and establishes 
-        inter-column relationships defined in the internal 'data_relations' manager.
+        metadata. It maps cell values to 'qudt:value' triples, applies dynamic 
+        'rdfs:label' tags, and establishes inter-column relationships defined in 
+        the internal 'data_relations' manager.
 
         Args:
             output_folder (str): Directory where individual RDF files will be saved.
@@ -859,6 +861,11 @@ class MatDatSciDf:
             id_cols (list[str], optional): Column names whose values should be 
                 normalized and used as the primary Subject URI identifier (@id). 
                 If None, Subject URIs are generated from the unique row key.
+            label_pairs (list[tuple[str, str]], optional): A list of 2-tuples (X, Y) 
+                where column X represents an entity in the semantic template, and 
+                column Y contains the literal text string that should be assigned 
+                as its 'rdfs:label'. If a cell in column Y is missing or empty, 
+                the label triple for that row is omitted.
             license (str, optional): An SPDX license identifier (e.g., 'MIT') or 
                 a full URI. Defaults to 'CC0-1.0'.
             write_files (bool, optional): If True, writes each row to a file on disk. 
@@ -1044,6 +1051,24 @@ class MatDatSciDf:
                         g.add((subj_uri, DCTERMS.creator, curator_uri))
                         if not self.orcid_verified:
                             g.add((subj_uri, SKOS.note, Literal("Caution: Data curator ORCID was not verified at time of serialization.")))
+
+                # ==========================================
+                # Process custom RDFS label pairs
+                # ==========================================
+                if label_pairs:
+                    for subj_col, label_col in label_pairs:
+                        # Ensure the subject column exists in our mapped entities
+                        subj_uri = subject_lookup.get(subj_col)
+                        
+                        # Validate that the label column exists in the row and has data
+                        if subj_uri and label_col in row:
+                            label_val = row[label_col]
+                            if pd.notna(label_val) and str(label_val).strip() != "":
+                                if hasattr(label_val, 'item'):
+                                    label_val = label_val.item()
+                                
+                                # Add the rdfs:label triple to the graph
+                                g.add((subj_uri, RDFS.label, Literal(str(label_val).strip(), datatype=XSD.string)))
 
 
                 # Add object/datatype properties if given
