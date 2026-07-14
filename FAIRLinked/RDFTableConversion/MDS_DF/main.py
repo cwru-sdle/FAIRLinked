@@ -982,8 +982,9 @@ class MatDatSciDf:
                     for x in set(c) & set(row_key_cols):
                         row_key = row_key + str(df.at[idx,x]).strip() + "_"
                 
-                timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-                full_row_key = f"{row_key}{orcid}-{timestamp}"
+                #timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+                orcid_rk = orcid.replace("-","")
+                full_row_key = f"{row_key}or{orcid_rk}"
                 full_row_key = full_row_key.replace(" ", "")
                 
 
@@ -1122,8 +1123,8 @@ class MatDatSciDf:
                     g.remove(triple)
 
                 # Save the RDF graph to file
-                random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
-                output_file = os.path.join(output_folder, f"{random_suffix}-{full_row_key}.jsonld")
+                # random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
+                output_file = os.path.join(output_folder, f"{full_row_key}.jsonld")
                 # g.serialize(destination=output_file, format="json-ld", context=context, indent=2, auto_compact=True, encoding='utf-8')
                 g = self.semantic_remapping(g)
                 raw_jsonld = g.serialize(format="json-ld", context=context)
@@ -1149,7 +1150,8 @@ class MatDatSciDf:
                       output_path: str, 
                       format = 'json-ld', 
                       row_key_cols: Optional[list[str]] = None, 
-                      id_cols: Optional[list[str]] = None, 
+                      id_cols: Optional[list[str]] = None,
+                      label_pairs: Optional[list[tuple[str, str]]] = None,  
                       license: Optional[str] = None,
                       write_files: Optional[bool] = True) -> Graph:
         """
@@ -1201,6 +1203,7 @@ class MatDatSciDf:
             format=format,
             row_key_cols=row_key_cols,
             id_cols=id_cols,
+            label_pairs=label_pairs,
             license=license,
             write_files = False
         )
