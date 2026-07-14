@@ -1,3 +1,8 @@
+# 0.3.3.10
+
+Change jsonld file name convention. Now file name does not include random letters and timestamps
+Add the rdfs:label for serialize_bulk method
+
 # 0.3.3.9
 
 Add an argument in serialization that allows nodes to have rdfs:label
