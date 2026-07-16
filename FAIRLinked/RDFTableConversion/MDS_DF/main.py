@@ -862,7 +862,7 @@ class MatDatSciDf:
                 normalized and used as the primary Subject URI identifier (@id). 
                 If None, Subject URIs are generated from the unique row key.
             label_pairs (list[tuple[str, str]], optional): A list of 2-tuples (X, Y) 
-                where column X represents an entity in the semantic template, and 
+                where column X represents an entity in the dataframe, and 
                 column Y contains the literal text string that should be assigned 
                 as its 'rdfs:label'. If a cell in column Y is missing or empty, 
                 the label triple for that row is omitted.
@@ -974,13 +974,13 @@ class MatDatSciDf:
                     for key in keys:
                         try:
                             num = str(hash6("".join([str(x) for x in keys[key] if not pd.isna(x)])))
-                            row_key = row_key + sskey[key] + num + "_"
+                            row_key = row_key + sskey[key] + num + "-"
                         except Exception:
                             traceback.print_exc()
                 else:
                     row_key = ""
                     for x in set(c) & set(row_key_cols):
-                        row_key = row_key + str(df.at[idx,x]).strip() + "_"
+                        row_key = row_key + str(df.at[idx,x]).strip() + "-"
                 
                 #timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
                 orcid_rk = orcid.replace("-","")
@@ -1172,6 +1172,11 @@ class MatDatSciDf:
                 row identifiers.
             id_cols (list[str], optional): Column names to be used as entity 
                 identifiers (@id) instead of row keys.
+            label_pairs (list[tuple[str, str]], optional): A list of 2-tuples (X, Y) 
+                where column X represents an entity in the dataframe, and 
+                column Y contains the literal text string that should be assigned 
+                as its 'rdfs:label'. If a cell in column Y is missing or empty, 
+                the label triple for that row is omitted.
             license (str, optional): SPDX license ID or URI to be applied to the 
                 triples.
             write_files (bool, optional): Whether to write serialized data to disk. 
