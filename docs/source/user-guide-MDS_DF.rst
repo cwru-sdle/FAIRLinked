@@ -109,22 +109,103 @@ Serialization (Export/Import)
     # Reconstruct: Restore a MatDatSciDf object from a directory of RDF files
     reconstructed = MatDatSciDf.from_rdf_dir(input_dir="records/", orcid="0000-0001-2345-6789")
 
+.. code-block:: python
+
+  # Setup explicit labels linking your tracking IDs to clear human descriptions
+  provenance_labels = [
+      ("specimen_id", "specimen_nickname"),
+      ("instrument_id", "operator_log_tag")
+  ]
+
+  # Write individual files where filenames are directly derived from your metadata keys
+  independent_runs = mds_df.serialize_row(
+      output_folder="data/lab_repository/runs/",
+      format="turtle",                         # Compact text format optimized for Git diffs
+      row_key_cols=["batch_id", "run_number"],  # Filenames will read like: SYN12A-1-.ttl
+      id_cols=["specimen_id"],                  # Uses specimen_id values as the actual RDF subject URIs
+      label_pairs=provenance_labels,            # Binds labels directly inside the graph
+      license="CC-BY-4.0",                      # Explicit attribution required
+      write_files=True
+  )
+
+
+.. code-block:: python
+
+  row_graphs = mds_df.serialize_row(
+    output_folder="outputs/individual_records/",
+    format="json-ld",
+    row_key_cols=["batch_number", "synthesis_date"],  # Composite key for file naming
+    license="MIT",
+    write_files=True
+  )
+
+.. code-block:: python
+
+  # Export to multiple files simultaneously 
+  mds_df.save_mds_df(
+      output_dir="outputs/tabular_distribution/",
+      metadata_in_output_df=True,              # Prepends semantic headers to the CSV distribution
+      formats=["csv", "parquet", "arrow"]      # Generates clean, optimized schemas for Parquet/Arrow
+  )
+
+
+Deserialize from JSON-LDs back to data frame
+
+.. code-block:: python
+
+  reconstructed_df = MatDatSciDf.from_rdf_dir(
+    input_dir="outputs/individual_records/",
+    orcid="0000-0002-1825-0097",
+    df_name="Audited_Experimental_Data",
+    data_relations_dict=my_expected_relations  # Optional, verifies that required links exist per file
+  )
+
 .. list-table:: MatDatSciDf API Summary
-   :widths: 30 70
+   :widths: 25 75
    :header-rows: 1
 
-   * - Method
+   * - Method / Property
      - Purpose
+   * - ``__init__``
+     - Initializes the wrapper, strips metadata rows, verifies the curator's ORCID via API, and links the reference ontology.
    * - ``template_generator``
-     - Maps columns to ontology terms (fuzzy-match or header-parse).
+     - Automatically crawls dataframe columns and maps them to ontology concepts using fuzzy matching or explicit header rows.
    * - ``validate_metadata``
-     - Audits alignment between DataFrame and JSON-LD template.
+     - Performs a two-way integrity audit checking for undefined data columns, empty metadata placeholders, or missing schema fields.
+   * - ``update_metadata``
+     - Atomically updates specific metadata properties (e.g., type, unit, definition) for a single column in a synchronized JSON/RDF transaction.
+   * - ``update_metadata_bulk``
+     - Overwrites metadata values for multiple columns simultaneously using a batch JSON-LD template dictionary.
+   * - ``add_column_metadata``
+     - Registers a completely new column entry into both the JSON-LD context map and the internal tracking graph.
+   * - ``delete_column_metadata``
+     - Removes an existing column's semantic mapping definitions from the current instance.
+   * - ``get_relations``
+     - Extracts all available OWL Object and Datatype properties from the active ontology graph as user-friendly labels and URIs.
+   * - ``get_relation_pairs_onto``
+     - Automatically scans the template graph and reference ontology to discover valid logical links between columns based on domains and ranges.
    * - ``add_relations``
-     - Connects columns together via semantic predicates.
+     - Connects distinct columns together across semantic predicates inside the data relations manager.
+   * - ``delete_relation``
+     - Breaks specific semantic links between columns, or drops all mappings associated with a chosen property predicate.
+   * - ``validate_data_relations``
+     - Validates configured data column links against the loaded ontology's rules.
+   * - ``view_metadata``
+     - Renders a clean tabular layout summarizing active column definitions or displays the raw indented JSON-LD template.
+   * - ``view_data_relations``
+     - Prints a formatted terminal report showing active, mapped links between dataframe columns.
+   * - ``semantic_remapping``
+     - Internal safety filter that checks generated types against the ontology, remapping unrecognized classes to ``obo:BFO_0000001`` (Entity).
+   * - ``serialize_row``
+     - Transforms each dataframe row into its own independent RDF file on disk using unique naming hashes or key columns.
    * - ``serialize_bulk``
-     - Converts the entire dataset into a master JSON-LD file.
+     - Merges all individual row subgraphs into a unified knowledge graph dataset formatted into a single file with global context prefix rules.
    * - ``save_mds_df``
-     - Saves "Semantic CSVs" or Parquet/Arrow files.
+     - Multi-format file exporter that outputs raw or semantic header-prepended data to CSV, Parquet, and Apache Arrow formats.
+   * - ``from_rdf_dir``
+     - Class factory method that crawls a folder of RDF files to rebuild an aligned, audited dataframe wrapper and dumps a validation issues report.
+   * - ``search_license``
+     - Static utility method that searches the local SPDX index to check valid license short IDs, descriptions, and OSI approval statuses without needing an active object instance.
 
 --------------------------------------------
 Analysis Provenance (Tracker & Group)
