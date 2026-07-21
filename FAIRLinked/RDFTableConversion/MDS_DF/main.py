@@ -1399,20 +1399,36 @@ class MatDatSciDf:
 
                     if data_relations_dict:
                         for prop_key, pairs in data_relations_dict.items():
-                            # Check if key is a label in our pre-calculated onto_props
+                            # Determine property URI and type (ObjectProperty vs DatatypeProperty)
                             if prop_key in onto_props:
-                                p_uri = URIRef(onto_props[prop_key][0])
+                                p_uri_str, prop_type = onto_props[prop_key]
+                                p_uri = URIRef(p_uri_str)
                             else:
-                                # Fallback to your utility function
-                                p_uri, _ = resolve_predicate(prop_key, target_onto)
+                                p_uri, prop_type = resolve_predicate(prop_key, target_onto)
 
-                            for subj_col, obj_col in pairs:
-                                if subj_col in template_items and obj_col in template_items:
+                            for subj_col, obj_target in pairs:
+                                # Check only if subject variable exists in the current file
+                                if subj_col in row and row[subj_col] is not pd.NA:
                                     s_uri = URIRef(template_items[subj_col]["@id"])
-                                    o_uri = URIRef(template_items[obj_col]["@id"])
 
-                                    if (s_uri, p_uri, o_uri) not in g:
-                                        relations_schema_mismatches.append(f"{filename}: {subj_col} -> {obj_col}")
+                                    # --- CASE 1: Object Property (Entity -> Entity) ---
+                                    if prop_type == "Object Property" or "ObjectProperty" in str(prop_type):
+                                        if obj_target in row and row[obj_target] is not pd.NA:
+                                            o_uri = URIRef(template_items[obj_target]["@id"])
+                                            if (s_uri, p_uri, o_uri) not in g:
+                                                relations_schema_mismatches.append(
+                                                    f"{filename}: ObjectProperty Mismatch ({subj_col} -[{prop_key}]-> {obj_target})"
+                                                )
+
+                                    # --- CASE 2: Datatype Property (Entity -> Literal Value) ---
+                                    elif prop_type == "Datatype Property" or "DatatypeProperty" in str(prop_type):
+                                        # Check if s_uri has ANY triple with predicate p_uri in graph g
+                                        # or explicitly match against the parsed literal value
+                                        val = g.value(s_uri, p_uri)
+                                        if val is None:
+                                            relations_schema_mismatches.append(
+                                                f"{filename}: Missing DatatypeProperty ({subj_col} -[{prop_key}]-> Literal)"
+                                            )
                     
                     parsed_files_count += 1
 

@@ -234,6 +234,51 @@ The ``AnalysisGroup`` class allows you to execute a function multiple times whil
    group.save_report()
    group.save_jsonld()
 
+.. code-block:: r
+
+  library(reticulate)
+  library(purrr)
+
+  # 2. Import FAIRLinked module
+  fairlinked <- import("FAIRLinked")
+  AnalysisGroup <- fairlinked$AnalysisGroup
+
+  # 3. Instantiate AnalysisGroup
+  group <- AnalysisGroup(
+    proj_name = "Lattice_Trend_Study",
+    home_path = "path/to/data",
+    orcid = "0000-0001-2345-6789"
+  )
+
+  # 4. Define your analysis function in R
+  perform_regression <- function(X_data, y_data) {
+    model <- lm(y_data ~ X_data)
+    s <- summary(model)
+    
+    # Return a list (converts to a Python dict automatically)
+    list(
+      slope = coef(model)[["X_data"]],
+      r_squared = s$r.squared
+    )
+  }
+
+  # 5. Run the Batch (using purrr::iwalk or purrr::pwalk)
+  # Assuming you have a list or subset vectors for your temperature steps
+  iwalk(temperatures, function(temp, idx) {
+    sub_x <- x_list[[idx]]
+    sub_y <- y_list[[idx]]
+    
+    # Track function execution
+    group$run_and_track(
+      func = perform_regression,
+      X_data = sub_x,
+      y_data = sub_y
+    )
+  })
+  
+  group$save_report()
+  group$save_jsonld()
+
 
 This next section provides example runs of the serialization and deserialization processes. All example files can be found in the GitHub repository of ``FAIRLinked`` under ``resources`` or can be directly accessed `here <https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/resources>`_. Command-line version of the functions below can be found `here <https://github.com/cwru-sdle/FAIRLinked/blob/main/resources/CLI_Examples.md>`_ and in the `change log <https://github.com/cwru-sdle/FAIRLinked/blob/main//CHANGELOG.md>`_.
 
