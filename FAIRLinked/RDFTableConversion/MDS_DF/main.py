@@ -1000,7 +1000,8 @@ class MatDatSciDf:
                     if id_cols is not None and item["skos:altLabel"] in id_cols:
                         raw_identifier = row.get(item["skos:altLabel"])
                         if not raw_identifier:
-                            raise ValueError(f"Cannot find entity identifier in row {idx}")
+                            warnings.warn(f"Cannot find entity identifier in row {idx}")
+                            continue
                         entity_identifier = normalize(re.sub(r'[^a-zA-Z0-9_\-\.]', '', raw_identifier))
                         subject_uri = self.MDS[f"{localname}.{entity_identifier}"]
                     else:
