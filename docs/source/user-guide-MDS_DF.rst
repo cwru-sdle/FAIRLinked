@@ -268,7 +268,7 @@ Instead of using a decorator, the user could also wrap a function used for analy
         return (load / depth) * 0.75 
 
     tracker.run_and_track(func=calculate_modulus, load=10.5, depth=0.2)
-    tracker.serialize_analysis_jsonld(license='MIT')
+    tracker.serialize_analysis_jsonld()
     tracker.save_report()
 
 
@@ -292,7 +292,7 @@ Using ``reticulate`` package, ``R`` functions can also be wrapped.
 
     # 4. Pass the function name as a string to run_and_track_R
     result <- tracker$run_and_track_R("calculate_modulus", load = 10.5, depth = 0.2)
-    tracker$serialize_analysis_jsonld(license='MIT')
+    tracker$serialize_analysis_jsonld()
     tracker$save_report()
 
 AnalysisGroup: Batch Orchestration
