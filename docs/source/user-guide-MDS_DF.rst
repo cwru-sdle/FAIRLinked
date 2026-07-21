@@ -20,6 +20,13 @@ An instance of ``MatDatSciDf`` manages three synchronized components:
 2. **Metadata Graph**: An RDFLib Graph and JSON-LD template synchronized via the ``metadata_obj``.
 3. **Semantic Relations**: A mapping of inter-column links via the ``data_relations`` manager.
 
+.. figure:: ../../figs/MatDatSciDf.png
+   :align: center
+   :width: 80%
+
+   Overview of the MatDatSciDf data container structure.
+
+
 Initialization & Metadata Ingestion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -238,6 +245,11 @@ Analysis Provenance (Tracker & Group)
 
 The Analysis Tracking system provides a transparent "paper trail" by capturing function arguments, return values, and OS-level file system events.
 
+.. figure:: ../../figs/AnalysisTracker.png
+   :align: center
+
+   Execution provenance tracking using AnalysisTracker.
+
 AnalysisTracker: Atomic Auditing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -300,6 +312,12 @@ AnalysisGroup: Batch Orchestration
 
 For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multiple runs into a unified dataset.
 
+.. figure:: ../../figs/AnalysisGroup.png
+   :align: center
+   :width: 80%
+
+   Execution provenance tracking using AnalysisGroup.
+
 .. code-block:: python
 
     from FAIRLinked import AnalysisGroup
@@ -330,7 +348,7 @@ Using ``reticulate`` package, ``R`` functions can also be wrapped.
         group$run_and_track_R("my_simulation_func", temp = t)
     }
 
-    group$group.save_jsonld()
+    group$save_jsonld()
     group$save_report()
 
 ``AnalysisGroup`` also allows using the same ``AnalysisTracker`` instance to track a workflow.
@@ -435,10 +453,6 @@ A key feature of ``AnalysisGroup`` is its ability to transition results directly
      - Converts batch results into a semantic-aware MDS object.
    * - ``save_jsonld``
      - Serializes the complete provenance graph.
-
-More Complex Usage
-~~~~~~~~~~~~~~~~~~~
-
 
 
 --------------------------------------------
