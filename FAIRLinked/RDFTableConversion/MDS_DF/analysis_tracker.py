@@ -404,6 +404,83 @@ class AnalysisTracker:
                 "cco:ont00001986": [err_iri] if err_iri else []
             })
             return None
+
+    def run_and_track_R(self, r_func_name, *args, **kwargs):
+        """
+        Intercepts R function execution via reticulate, running the code 
+        through the Python tracking pipeline before appending captured 
+        R package metadata to the JSON-LD context.
+        """
+        # 1. Safely grab the R bridge object from the execution environment
+        try:
+            import __main__
+            r = getattr(__main__, 'r')
+        except AttributeError:
+            raise RuntimeError(
+                "R environment wrapper 'r' not found in __main__. "
+                "Ensure reticulate has initialized the R session."
+            )
+
+        # 2. Setup the target R function wrapper
+        r_target_function = getattr(r, r_func_name)
+        
+        def universal_bridge(*f_args, **f_kwargs):
+            return r_target_function(*f_args, **f_kwargs)
+            
+        universal_bridge.__name__ = r_func_name
+        
+        # 3. Use the class's own native tracker pipeline
+        result = self.run_and_track(universal_bridge, *args, **kwargs)
+        
+        # 4. Ask R for currently attached packages
+        try:
+            attached_packages = list(r.search())
+            r_packages = [pkg.split(':')[1] for pkg in attached_packages if pkg.startswith('package:')]
+        except Exception as e:
+            print(f"Could not retrieve attached R packages: {e}")
+            return result
+        
+        # 5. Ensure the imports array exists
+        if self.imports is None:
+            self.imports = []
+            
+        already_logged = {item.get('@id') for item in self.imports if isinstance(item, dict)}
+
+        # 6. Shape and safely append R package metadata
+        for pkg in r_packages:
+            r_id = f'{self.prefix}:Software_{pkg}'
+            
+            if r_id not in already_logged:
+                # Resolve version string
+                try:
+                    raw_version = r.packageVersion(pkg)
+                    raw_str = str(r.format(raw_version))
+                    r_version = raw_str.replace(', ', '.').replace(',', '.')
+                except Exception as e:
+                    print(f'Could not get version for {pkg}: {e}')
+                    r_version = 'Unknown'
+                    
+                # Resolve file system path location
+                try:
+                    find_package_func = getattr(r, 'find.package')
+                    r_location = str(find_package_func(pkg))
+                except Exception as e:
+                    print(f'Could not get installation location for {pkg}: {e}')
+                    r_location = f'R_package:{pkg}'
+                    
+                r_software_info = {
+                    '@id': r_id,
+                    'skos:prefLabel': f'{pkg} (R Package)',
+                    'dcterms:type': 'Software',
+                    'dcterms:hasVersion': r_version,
+                    'dcterms:identifier': r_location,
+                    'dcterms:publisher': 'Third Party Package'
+                }
+                
+                self.imports.append(r_software_info)
+
+        # 7. Return the final execution result
+        return result
         
     def semantic_remapping(self, unmatched_log):
             """
@@ -1051,6 +1128,45 @@ class AnalysisGroup:
         self.metadata_obj.update_bulk(analysis_temp)
         
         return analysis_result
+
+    def run_and_track_R(self, func, *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
+        """
+        Executes a function in R and stores metadata. Can use an existing tracker
+        to group multiple functions under one ID, or create a new one.
+        """
+        
+        # 1. Option: Use the injected tracker or create a new instance
+        analysis = tracker if tracker is not None else AnalysisTracker(
+                        proj_name=self.proj_name, 
+                        home_path=self.home_path, 
+                        orcid=self.orcid,
+                        metadata_template=self.metadata_template,
+                        base_uri=self.base_uri,
+                        ontology_graph=self.ontology,
+                        prefix=self.prefix,
+                        file_events=self.store_file_events
+                        )
+
+        # 2. Execute the function via the tracker
+        analysis_result = analysis.run_and_track_R(func, *args, **kwargs)
+        
+        # 3. Update Group-level registries
+        # We use the analysis_id as the key. If using the same tracker, 
+        # this will update the existing entry rather than creating a new row.
+        self.analyses[analysis.analysis_id] = {
+                "analysis_obj": analysis,
+                "result": analysis_result,
+                "jsonld": analysis.create_analysis_jsonld(),
+                "report": analysis.create_report(),
+                "dataframe": analysis.create_arg_df()
+            }
+        
+        # Generate and update semantic metadata
+        analysis_temp, _, _ = analysis.create_metadata_template()
+        self.metadata_obj.update_bulk(analysis_temp)
+        
+        return analysis_result
+
 
     def create_group_arg_df(self) -> pd.DataFrame:
         """

@@ -14,7 +14,7 @@ from urllib.parse import quote
 import traceback
 import requests
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-from typing import Optional
+from typing import Optional, List, Union
 from .utility import (
     load_licenses, 
     hash6, 
@@ -31,6 +31,7 @@ import ast
 from tqdm import tqdm
 from .metadata_manager import Metadata
 from .data_relations_manager import DataRelationsDict
+import tempfile
 
 class MatDatSciDf:
     """
@@ -999,7 +1000,8 @@ class MatDatSciDf:
                     if id_cols is not None and item["skos:altLabel"] in id_cols:
                         raw_identifier = row.get(item["skos:altLabel"])
                         if not raw_identifier:
-                            raise ValueError(f"Cannot find entity identifier in row {idx}")
+                            warnings.warn(f"Cannot find entity identifier in row {idx}")
+                            continue
                         entity_identifier = normalize(re.sub(r'[^a-zA-Z0-9_\-\.]', '', raw_identifier))
                         subject_uri = self.MDS[f"{localname}.{entity_identifier}"]
                     else:
@@ -1237,7 +1239,7 @@ class MatDatSciDf:
     @classmethod
     def from_rdf_dir(cls, 
                      input_dir: str, 
-                     orcid: str, 
+                     orcid: str = '0000-0000-0000-0000', 
                      metadata_template: Optional[dict] = None,
                      data_relations_dict: Optional[dict] = None,
                      df_name: str = "Imported_RDF_Data",
@@ -1398,20 +1400,36 @@ class MatDatSciDf:
 
                     if data_relations_dict:
                         for prop_key, pairs in data_relations_dict.items():
-                            # Check if key is a label in our pre-calculated onto_props
+                            # Determine property URI and type (ObjectProperty vs DatatypeProperty)
                             if prop_key in onto_props:
-                                p_uri = URIRef(onto_props[prop_key][0])
+                                p_uri_str, prop_type = onto_props[prop_key]
+                                p_uri = URIRef(p_uri_str)
                             else:
-                                # Fallback to your utility function
-                                p_uri, _ = resolve_predicate(prop_key, target_onto)
+                                p_uri, prop_type = resolve_predicate(prop_key, target_onto)
 
-                            for subj_col, obj_col in pairs:
-                                if subj_col in template_items and obj_col in template_items:
+                            for subj_col, obj_target in pairs:
+                                # Check only if subject variable exists in the current file
+                                if subj_col in row and row[subj_col] is not pd.NA:
                                     s_uri = URIRef(template_items[subj_col]["@id"])
-                                    o_uri = URIRef(template_items[obj_col]["@id"])
 
-                                    if (s_uri, p_uri, o_uri) not in g:
-                                        relations_schema_mismatches.append(f"{filename}: {subj_col} -> {obj_col}")
+                                    # --- CASE 1: Object Property (Entity -> Entity) ---
+                                    if prop_type == "Object Property" or "ObjectProperty" in str(prop_type):
+                                        if obj_target in row and row[obj_target] is not pd.NA:
+                                            o_uri = URIRef(template_items[obj_target]["@id"])
+                                            if (s_uri, p_uri, o_uri) not in g:
+                                                relations_schema_mismatches.append(
+                                                    f"{filename}: ObjectProperty Mismatch ({subj_col} -[{prop_key}]-> {obj_target})"
+                                                )
+
+                                    # --- CASE 2: Datatype Property (Entity -> Literal Value) ---
+                                    elif prop_type == "Datatype Property" or "DatatypeProperty" in str(prop_type):
+                                        # Check if s_uri has ANY triple with predicate p_uri in graph g
+                                        # or explicitly match against the parsed literal value
+                                        val = g.value(s_uri, p_uri)
+                                        if val is None:
+                                            relations_schema_mismatches.append(
+                                                f"{filename}: Missing DatatypeProperty ({subj_col} -[{prop_key}]-> Literal)"
+                                            )
                     
                     parsed_files_count += 1
 
@@ -1504,6 +1522,90 @@ class MatDatSciDf:
                 ontology_graph=ontology_graph,
                 base_uri=base_uri
             )
+
+    @classmethod
+    def from_jsonld_list(cls, 
+                         jsonld_list: List[Union[dict, str]], 
+                         orcid: str = '0000-0000-0000-0000', 
+                         metadata_template: Optional[dict] = None,
+                         data_relations_dict: Optional[dict] = None,
+                         df_name: str = "Imported_JSONLD_Data",
+                         ontology_graph: Optional[Graph] = None,
+                         base_uri: str = "https://cwrusdle.bitbucket.io/mds/"):
+        """Factory method to reconstruct a MatDatSciDf instance from in-memory JSON-LD payloads.
+
+        Stages an in-memory collection of JSON-LD dictionaries or JSON-LD serialized strings
+        into an isolated temporary directory, delegates execution to `from_rdf_dir` to 
+        reconstruct tabular data and execute semantic integrity checks, prints the generated 
+        validation audit report to stdout, and cleans up temporary artifacts.
+
+        Args:
+            jsonld_list (List[Union[dict, str]]): A list containing in-memory JSON-LD objects, 
+                where elements can be Python dictionaries or pre-serialized JSON-LD strings.
+            orcid (str, optional): The ORCID identifier of the user performing the 
+                reconstruction. Defaults to '0000-0000-0000-0000'.
+            metadata_template (dict, optional): A master JSON-LD template dictionary used 
+                as a baseline schema for unit, type, and column verification. Defaults to None.
+            data_relations_dict (dict, optional): Expected Subject-Predicate-Object schema 
+                mapping to validate relational graph integrity across objects. Defaults to None.
+            df_name (str, optional): Descriptive name for the resulting DataFrame and 
+                validation report logging. Defaults to "Imported_JSONLD_Data".
+            ontology_graph (rdflib.Graph, optional): Reference RDF graph used to resolve 
+                labels and CURIEs during schema validation. Defaults to None.
+            base_uri (str, optional): Base URI used for semantic subject identification. 
+                Defaults to "https://cwrusdle.bitbucket.io/mds/".
+
+        Returns:
+            MatDatSciDf: A fully initialized and validated MatDatSciDf instance containing 
+                the reconstructed dataset, associated metadata template, and semantic logs.
+
+        Raises:
+            ValueError: If any item in `jsonld_list` is neither a `dict` nor a `str`.
+
+        Reports & Output:
+            - Reads and prints the content of '{df_name}_import_validation.txt' directly to 
+              stdout before temporary file teardown.
+            - Audits RDF type mismatches, unit conflicts against expected QUDT definitions, 
+              and missing relational schema triples.
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            print(f"📁 Temporary directory is created at: {temp_dir}")
+            
+            # 1. Stage in-memory JSON-LD items into temporary files
+            for idx, item in enumerate(jsonld_list):
+                file_path = os.path.join(temp_dir, f"record_{idx}.jsonld")
+                
+                with open(file_path, "w", encoding="utf-8") as f:
+                    if isinstance(item, dict):
+                        json.dump(item, f, indent=2)
+                    elif isinstance(item, str):
+                        f.write(item)
+                    else:
+                        raise ValueError(f"Invalid payload type at index {idx}: {type(item)}")
+
+            # 2. Delegate to original file-based reconstruction
+            instance = cls.from_rdf_dir(
+                input_dir=temp_dir,
+                orcid=orcid,
+                metadata_template=metadata_template,
+                data_relations_dict=data_relations_dict,
+                df_name=df_name,
+                ontology_graph=ontology_graph,
+                base_uri=base_uri
+            )
+
+            # 3. Read and print the validation report before temp_dir is deleted
+            report_path = os.path.join(temp_dir, f"{df_name}_import_validation.txt")
+            if os.path.exists(report_path):
+                print("\n" + "=" * 60)
+                print(f"📋 PRINTING IMPORT VALIDATION REPORT ({df_name})")
+                print("=" * 60)
+                with open(report_path, "r", encoding="utf-8") as f:
+                    print(f.read())
+                print("=" * 60 + "\n")
+
+        # temp_dir and its contents (including record_*.jsonld and report) are deleted here
+        return instance
 
     def save_mds_df(self, 
                     output_dir: str, 
