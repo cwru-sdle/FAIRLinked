@@ -163,14 +163,14 @@ Deserialize from JSON-LDs back to data frame
 
     # Sample in-memory JSON-LD payloads (mix of dicts and pre-serialized strings)
     record_1 = {
-        "@context": {"qudt": "http://qudt.org/schema/qudt/", "skos": "http://www.w3.org/2004/02/skos/core#"},
-        "@type": "https://cwrusdle.bitbucket.io/mds/Hardness",
+        "@context": {"qudt": "http://qudt.org/schema/qudt/", "skos": "http://www.w3.org/2004/02/skos/core#", "mds":"https://cwrusdle.bitbucket.io/mds/"},
+        "@type": "mds:Hardness",
         "skos:altLabel": "Hardness",
         "qudt:value": 12.4,
         "qudt:hasUnit": {"@id": "unit:GigaPA"}
     }
 
-    record_2 = '{"@context": {"qudt": "http://qudt.org/schema/qudt/", "skos": "http://www.w3.org/2004/02/skos/core#"}, "@type": "https://cwrusdle.bitbucket.io/mds/Hardness", "skos:altLabel": "Hardness", "qudt:value": 11.8, "qudt:hasUnit": {"@id": "unit:GigaPA"}}'
+    record_2 = '{"@context": {"qudt": "http://qudt.org/schema/qudt/", "skos": "http://www.w3.org/2004/02/skos/core#", "mds":"https://cwrusdle.bitbucket.io/mds/"}, "@type": "mds:Hardness", "skos:altLabel": "Hardness", "qudt:value": 11.8, "qudt:hasUnit": {"@id": "unit:GigaPA"}}'
 
     jsonld_records = [record_1, record_2]
 
