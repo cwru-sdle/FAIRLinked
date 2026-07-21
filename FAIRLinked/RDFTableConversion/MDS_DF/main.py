@@ -14,7 +14,7 @@ from urllib.parse import quote
 import traceback
 import requests
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-from typing import Optional
+from typing import Optional, List, Union
 from .utility import (
     load_licenses, 
     hash6, 
@@ -31,6 +31,7 @@ import ast
 from tqdm import tqdm
 from .metadata_manager import Metadata
 from .data_relations_manager import DataRelationsDict
+import tempfile
 
 class MatDatSciDf:
     """
@@ -1237,7 +1238,7 @@ class MatDatSciDf:
     @classmethod
     def from_rdf_dir(cls, 
                      input_dir: str, 
-                     orcid: str, 
+                     orcid: str = '0000-0000-0000-0000', 
                      metadata_template: Optional[dict] = None,
                      data_relations_dict: Optional[dict] = None,
                      df_name: str = "Imported_RDF_Data",
@@ -1504,6 +1505,90 @@ class MatDatSciDf:
                 ontology_graph=ontology_graph,
                 base_uri=base_uri
             )
+
+    @classmethod
+    def from_jsonld_list(cls, 
+                         jsonld_list: List[Union[dict, str]], 
+                         orcid: str = '0000-0000-0000-0000', 
+                         metadata_template: Optional[dict] = None,
+                         data_relations_dict: Optional[dict] = None,
+                         df_name: str = "Imported_JSONLD_Data",
+                         ontology_graph: Optional[Graph] = None,
+                         base_uri: str = "https://cwrusdle.bitbucket.io/mds/"):
+        """Factory method to reconstruct a MatDatSciDf instance from in-memory JSON-LD payloads.
+
+        Stages an in-memory collection of JSON-LD dictionaries or JSON-LD serialized strings
+        into an isolated temporary directory, delegates execution to `from_rdf_dir` to 
+        reconstruct tabular data and execute semantic integrity checks, prints the generated 
+        validation audit report to stdout, and cleans up temporary artifacts.
+
+        Args:
+            jsonld_list (List[Union[dict, str]]): A list containing in-memory JSON-LD objects, 
+                where elements can be Python dictionaries or pre-serialized JSON-LD strings.
+            orcid (str, optional): The ORCID identifier of the user performing the 
+                reconstruction. Defaults to '0000-0000-0000-0000'.
+            metadata_template (dict, optional): A master JSON-LD template dictionary used 
+                as a baseline schema for unit, type, and column verification. Defaults to None.
+            data_relations_dict (dict, optional): Expected Subject-Predicate-Object schema 
+                mapping to validate relational graph integrity across objects. Defaults to None.
+            df_name (str, optional): Descriptive name for the resulting DataFrame and 
+                validation report logging. Defaults to "Imported_JSONLD_Data".
+            ontology_graph (rdflib.Graph, optional): Reference RDF graph used to resolve 
+                labels and CURIEs during schema validation. Defaults to None.
+            base_uri (str, optional): Base URI used for semantic subject identification. 
+                Defaults to "https://cwrusdle.bitbucket.io/mds/".
+
+        Returns:
+            MatDatSciDf: A fully initialized and validated MatDatSciDf instance containing 
+                the reconstructed dataset, associated metadata template, and semantic logs.
+
+        Raises:
+            ValueError: If any item in `jsonld_list` is neither a `dict` nor a `str`.
+
+        Reports & Output:
+            - Reads and prints the content of '{df_name}_import_validation.txt' directly to 
+              stdout before temporary file teardown.
+            - Audits RDF type mismatches, unit conflicts against expected QUDT definitions, 
+              and missing relational schema triples.
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            print(f"📁 Temporary directory is created at: {temp_dir}")
+            
+            # 1. Stage in-memory JSON-LD items into temporary files
+            for idx, item in enumerate(jsonld_list):
+                file_path = os.path.join(temp_dir, f"record_{idx}.jsonld")
+                
+                with open(file_path, "w", encoding="utf-8") as f:
+                    if isinstance(item, dict):
+                        json.dump(item, f, indent=2)
+                    elif isinstance(item, str):
+                        f.write(item)
+                    else:
+                        raise ValueError(f"Invalid payload type at index {idx}: {type(item)}")
+
+            # 2. Delegate to original file-based reconstruction
+            instance = cls.from_rdf_dir(
+                input_dir=temp_dir,
+                orcid=orcid,
+                metadata_template=metadata_template,
+                data_relations_dict=data_relations_dict,
+                df_name=df_name,
+                ontology_graph=ontology_graph,
+                base_uri=base_uri
+            )
+
+            # 3. Read and print the validation report before temp_dir is deleted
+            report_path = os.path.join(temp_dir, f"{df_name}_import_validation.txt")
+            if os.path.exists(report_path):
+                print("\n" + "=" * 60)
+                print(f"📋 PRINTING IMPORT VALIDATION REPORT ({df_name})")
+                print("=" * 60)
+                with open(report_path, "r", encoding="utf-8") as f:
+                    print(f.read())
+                print("=" * 60 + "\n")
+
+        # temp_dir and its contents (including record_*.jsonld and report) are deleted here
+        return instance
 
     def save_mds_df(self, 
                     output_dir: str, 

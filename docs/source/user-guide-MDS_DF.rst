@@ -156,9 +156,32 @@ Deserialize from JSON-LDs back to data frame
   reconstructed_df = MatDatSciDf.from_rdf_dir(
     input_dir="outputs/individual_records/",
     orcid="0000-0002-1825-0097",
-    df_name="Audited_Experimental_Data",
-    data_relations_dict=my_expected_relations  # Optional, verifies that required links exist per file
+    df_name="Audited_Experimental_Data"
   )
+
+.. code-block:: python
+
+    # Sample in-memory JSON-LD payloads (mix of dicts and pre-serialized strings)
+    record_1 = {
+        "@context": {"qudt": "http://qudt.org/schema/qudt/", "skos": "http://www.w3.org/2004/02/skos/core#"},
+        "@type": "https://cwrusdle.bitbucket.io/mds/Hardness",
+        "skos:altLabel": "Hardness",
+        "qudt:value": 12.4,
+        "qudt:hasUnit": {"@id": "unit:GigaPA"}
+    }
+
+    record_2 = '{"@context": {"qudt": "http://qudt.org/schema/qudt/", "skos": "http://www.w3.org/2004/02/skos/core#"}, "@type": "https://cwrusdle.bitbucket.io/mds/Hardness", "skos:altLabel": "Hardness", "qudt:value": 11.8, "qudt:hasUnit": {"@id": "unit:GigaPA"}}'
+
+    jsonld_records = [record_1, record_2]
+
+    # Reconstruct MatDatSciDf directly from memory
+    reconstructed_df = MatDatSciDf.from_jsonld_list(
+        jsonld_list=jsonld_records,
+        orcid="0000-0002-1825-0097",
+        df_name="Autdited_Experimental_Data"
+    )
+
+
 
 .. list-table:: MatDatSciDf API Summary
    :widths: 25 75
@@ -204,6 +227,8 @@ Deserialize from JSON-LDs back to data frame
      - Multi-format file exporter that outputs raw or semantic header-prepended data to CSV, Parquet, and Apache Arrow formats.
    * - ``from_rdf_dir``
      - Class factory method that crawls a folder of RDF files to rebuild an aligned, audited dataframe wrapper and dumps a validation issues report.
+   * - ``from_jsonld_list``
+     - Class factory method that reconstructs and validates a dataframe wrapper directly from in-memory JSON-LD dictionaries.
    * - ``search_license``
      - Static utility method that searches the local SPDX index to check valid license short IDs, descriptions, and OSI approval statuses without needing an active object instance.
 
@@ -243,6 +268,32 @@ Instead of using a decorator, the user could also wrap a function used for analy
         return (load / depth) * 0.75 
 
     tracker.run_and_track(func=calculate_modulus, load=10.5, depth=0.2)
+    tracker.serialize_analysis_jsonld(license='MIT')
+    tracker.save_report()
+
+
+Using ``reticulate`` package, ``R`` functions can also be wrapped.
+
+.. code-block:: r
+
+    library(reticulate)
+
+    # 1. Import FAIRLinked module and class
+    fairlinked <- import("FAIRLinked")
+    AnalysisTracker <- fairlinked$AnalysisTracker
+
+    # 2. Define your R calculation function in the R global workspace
+    calculate_modulus <- function(load, depth) {
+      return((load / depth) * 0.75)
+    }
+
+    # 3. Instantiate tracker
+    tracker <- AnalysisTracker(proj_name = "Hardness_Fit", home_path = "./results")
+
+    # 4. Pass the function name as a string to run_and_track_R
+    result <- tracker$run_and_track_R("calculate_modulus", load = 10.5, depth = 0.2)
+    tracker$serialize_analysis_jsonld(license='MIT')
+    tracker$save_report()
 
 AnalysisGroup: Batch Orchestration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,6 +309,29 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
     # Run multiple tracked iterations
     for t in [300, 400, 500]:
         group.run_and_track(my_simulation_func, temp=t)
+    
+    group.save_jsonld()
+    group.save_report()
+
+Using ``reticulate`` package, ``R`` functions can also be wrapped.
+
+.. code-block:: r
+
+    library(reticulate)
+
+    # Import FAIRLinked modules via reticulate
+    fairlinked <- import("FAIRLinked")
+    AnalysisGroup <- fairlinked$AnalysisGroup
+
+    group <- AnalysisGroup(proj_name = "Temperature_Sweep", home_path = "./batch_data")
+
+    # Run multiple tracked iterations passing R function names as strings
+    for (t in c(300, 400, 500)) {
+        group$run_and_track_R("my_simulation_func", temp = t)
+    }
+
+    group$group.save_jsonld()
+    group$save_report()
 
 ``AnalysisGroup`` also allows using the same ``AnalysisTracker`` instance to track a workflow.
 
@@ -274,6 +348,29 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
       group.run_and_track(my_simulation_func, temp=t, tracker=tracker)
       group.run_and_track(my_simulation_func_2, temp=t, tracker=tracker)
 
+  
+.. code-block:: r
+
+    library(reticulate)
+
+    fairlinked <- import("FAIRLinked")
+    AnalysisGroup <- fairlinked$AnalysisGroup
+    AnalysisTracker <- fairlinked$AnalysisTracker
+
+    group <- AnalysisGroup(proj_name = "Temperature_Sweep", home_path = "./batch_data")
+
+    # Run multiple tracked iterations chaining functions under a single tracker
+    for (t in c(300, 400, 500)) {
+        tracker <- AnalysisTracker(
+            proj_name = paste0("Temperature_Sweep_", t), 
+            home_path = "./batch_data"
+        )
+        group$run_and_track_R("my_simulation_func", temp = t, tracker = tracker)
+        group$run_and_track_R("my_simulation_func_2", temp = t, tracker = tracker)
+    }
+
+    group$save_jsonld()
+    group$save_report()
 
 **Batch Tracking with Decorators**
 

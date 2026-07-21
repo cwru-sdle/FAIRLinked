@@ -1,3 +1,8 @@
+# 0.3.3.12
+
+Create a version of run_and_track that works with reticulate package in R
+Allow for in memory generation of an MDS_DF object from a list of json_lds
+
 # 0.3.3.11
 
 Change row key underscore to dashes
