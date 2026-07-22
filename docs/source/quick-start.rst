@@ -41,7 +41,7 @@ Setting `metadata_rows=False` is the default, and this instructs the MatDatSciDf
   from FAIRLinked import MatDatSciDf
 
   # Load the microindentation data
-  raw_df = pd.read_csv("rresources/worked-example-RDFTableConversion.MDS_DF/pmma_no_metadata_rows.csv")
+  raw_df = pd.read_csv("resources/worked-example-RDFTableConversion.MDS_DF/pmma_no_metadata_rows.csv")
 
   mds_df = MatDatSciDf(
       df=raw_df, 

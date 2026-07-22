@@ -188,6 +188,44 @@ Deserialize from JSON-LDs back to data frame
         df_name="Autdited_Experimental_Data"
     )
 
+Serialization and Deserialization 
+
+.. code-block:: python
+  from FAIRLinked import MatDatSciDf
+  import pandas as pd
+
+
+  rheology_dataset = pd.read_csv('resources/worked-example-RDFTableConversion.MDS_DF/Si_50wt%_PVA_1wt%_flow_sweep.csv')
+
+  rheology_fair = MatDatSciDf(df = rheology_dataset, metadata_rows=True)
+
+  data_relations = {
+    'has agent': [('Act of Measuring', 'Instrument')],
+    'is input of': [('Shear rate (s-1)', 'Act of Measuring')],
+    'is output of': [('Viscosity (mPa.s)', 'Act of Measuring'), ('Measurement', 'Act of Measuring')]
+
+  }
+  rheology_fair.add_relations(data_relations=data_relations)
+
+  rheology_fair.view_metadata()
+
+  rheology_fair.update_metadata(col_name = 'Shear rate (s-1)', field='unit', value='unit:PER-SEC')
+  rheology_fair.update_metadata(col_name = 'Viscosity (mPa.s)', field='unit', value='unit:MegaN-M-PER-M2')
+  rheology_fair.update_metadata(col_name = 'Viscosity (mPa.s)', field='type', value='mds:Viscosity')
+  rheology_fair.update_metadata(col_name = 'Instrument', field='type', value='mds:Instrument')
+  rheology_fair.view_metadata()
+
+  graphs_list = rheology_fair.serialize_row(output_folder='.',
+                                id_cols=['Sample', 'Instrument', 'Act of Measuring'], write_files=False)
+
+  template = rheology_fair.metadata_template
+
+  graphs_list = [g.serialize(format='json-ld') for g in graphs_list]
+
+  reconstructed_df = MatDatSciDf.from_jsonld_list(jsonld_list=graphs_list)
+  reconstructed_df.view_metadata(format='json')
+  graphs_list = reconstructed_df.serialize_row(output_folder='/home/vxt101/Git/26-van-thesis/scripts/data/test_jsonlds',row_key_cols=['Measurement', 'Act of Measuring'],
+                                  id_cols=['Sample', 'Instrument', 'Act of Measuring'])
 
 
 .. list-table:: MatDatSciDf API Summary
