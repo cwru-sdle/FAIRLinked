@@ -377,7 +377,7 @@ class TestRunAndTrack:
         def add(a, b):
             return a + b
 #
-        result = t.run_and_track(add, 2, 3)
+        result = t.run_and_track(func=add, a=2, b=3)
         assert result == 5
 #
     def test_arguments_captured(self):
@@ -396,7 +396,7 @@ class TestRunAndTrack:
         def multi():
             return 1, 2
 #
-        t.run_and_track(multi)
+        t.run_and_track(func=multi)
         labels = [s["skos:altLabel"] for s in t.sources]
         assert any("output" in lbl for lbl in labels)
 #
@@ -420,7 +420,7 @@ class TestRunAndTrack:
         def noop():
             pass
 #
-        t.run_and_track(noop)
+        t.run_and_track(func=noop)
         assert len(t.file_events) == 1
         assert t.file_events[0]["mds:fileName"] == "test_file.csv"
         assert t.file_events[0]["mds:fileEvent"] == "read/import"
@@ -589,7 +589,7 @@ class TestAnalysisGroup:
         def add(a, b):
             return a + b
 #
-        g.run_and_track(add, 1, 2)
+        g.run_and_track(func=add, a=1, b=2)
         assert len(g.analyses) == 1
 #
     def test_create_group_arg_df(self, tmp_path):
@@ -598,8 +598,8 @@ class TestAnalysisGroup:
         def add(a, b):
             return a + b
 #
-        g.run_and_track(add, 1, 2)
-        g.run_and_track(add, 3, 4)
+        g.run_and_track(func=add, a=1, b=2)
+        g.run_and_track(func=add, a=3, b=4)
         df = g.create_group_arg_df()
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 2
