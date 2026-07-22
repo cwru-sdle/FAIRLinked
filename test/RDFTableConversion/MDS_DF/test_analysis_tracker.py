@@ -386,7 +386,7 @@ class TestRunAndTrack:
         def double(x):
             return x * 2
 #
-        t.run_and_track(double, 7)
+        t.run_and_track(func=double, x=7)
         labels = [s["skos:altLabel"] for s in t.sources]
         assert "x" in labels
 #

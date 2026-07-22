@@ -286,7 +286,7 @@ class AnalysisTracker:
             return self.run_and_track(func, *args, **kwargs)
         return wrapper
 
-    def run_and_track(self, func, *args, version: Optional[str] = None, **kwargs):
+    def run_and_track(self, func, *args, **kwargs):
         """
         Executes a function while auditing arguments, results, and environment.
 
@@ -307,7 +307,6 @@ class AnalysisTracker:
 
         Args:
             func (callable): The scientific function or method to be executed.
-            version (str): The version of the function being tracked.
             *args: Positional arguments to be passed to the target function.
             **kwargs: Keyword arguments to be passed to the target function.
 
@@ -318,8 +317,6 @@ class AnalysisTracker:
         """
         # 1. Setup Activity Identity
         activity_num = str(uuid4().int)[-15:]
-        if version is None:
-            version = '0.0.0.0'
         run_id = f"{func.__name__}_activity{activity_num}_{self.analysis_id}"
         activity_iri = f"{self.prefix}:{run_id}"
         start_time = datetime.now().isoformat()
@@ -374,7 +371,6 @@ class AnalysisTracker:
                 "prov:endedAtTime": end_time,
                 "cco:ont00001921": direct_input_iris,      # Direct IRIs list
                 "cco:ont00001986": direct_output_iris,  # Direct IRIs list
-                "dcterms:hasVersion": version
             })
             
             # 6. Capture File Events linked to this Activity
@@ -410,7 +406,7 @@ class AnalysisTracker:
             })
             return None
 
-    def run_and_track_R(self, r_func_name, *args, version: Optional[str] = None, **kwargs):
+    def run_and_track_R(self, r_func_name, *args, **kwargs):
         """
         Intercepts R function execution via reticulate, running the code 
         through the Python tracking pipeline before appending captured 
@@ -435,7 +431,7 @@ class AnalysisTracker:
         universal_bridge.__name__ = r_func_name
         
         # 3. Use the class's own native tracker pipeline
-        result = self.run_and_track(universal_bridge, version=version, *args, **kwargs)
+        result = self.run_and_track(universal_bridge, *args, **kwargs)
         
         # 4. Ask R for currently attached packages
         try:
@@ -1096,7 +1092,7 @@ class AnalysisGroup:
         return wrapper
         
 
-    def run_and_track(self, func, *args, tracker: Optional[AnalysisTracker] = None, version: Optional[str] = None, **kwargs):
+    def run_and_track(self, func, *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
         """
         Executes a function and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
@@ -1104,7 +1100,6 @@ class AnalysisGroup:
         Args:
             func (callable): The scientific function or method to be executed.
             *args: Positional arguments to be passed to the target function.
-            version (str, optional): The version of the function being tracked.
             tracker (AnalysisTracker, optional): The tracker to be used.
             **kwargs: Keyword arguments to be passed to the target function.
 
@@ -1127,7 +1122,7 @@ class AnalysisGroup:
                         )
 
         # 2. Execute the function via the tracker
-        analysis_result = analysis.run_and_track(func, version, *args, **kwargs)
+        analysis_result = analysis.run_and_track(func, *args, **kwargs)
         
         # 3. Update Group-level registries
         # We use the analysis_id as the key. If using the same tracker, 
@@ -1146,7 +1141,7 @@ class AnalysisGroup:
         
         return analysis_result
 
-    def run_and_track_R(self, func, *args, tracker: Optional[AnalysisTracker] = None, version: Optional[str] = None, **kwargs):
+    def run_and_track_R(self, func, *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
         """
         Executes a function in R and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
@@ -1165,7 +1160,7 @@ class AnalysisGroup:
                         )
 
         # 2. Execute the function via the tracker
-        analysis_result = analysis.run_and_track_R(func, version, *args, **kwargs)
+        analysis_result = analysis.run_and_track_R(func, *args, **kwargs)
         
         # 3. Update Group-level registries
         # We use the analysis_id as the key. If using the same tracker, 
