@@ -286,7 +286,7 @@ class AnalysisTracker:
             return self.run_and_track(func, *args, **kwargs)
         return wrapper
 
-    def run_and_track(self, func, *args, version: Optional[str] = '0.0.0.0', **kwargs):
+    def run_and_track(self, func, *args, version: Optional[str] = None, **kwargs):
         """
         Executes a function while auditing arguments, results, and environment.
 
@@ -318,6 +318,8 @@ class AnalysisTracker:
         """
         # 1. Setup Activity Identity
         activity_num = str(uuid4().int)[-15:]
+        if version is None:
+            version = '0.0.0.0'
         run_id = f"{func.__name__}_activity{activity_num}_{self.analysis_id}"
         activity_iri = f"{self.prefix}:{run_id}"
         start_time = datetime.now().isoformat()
@@ -408,7 +410,7 @@ class AnalysisTracker:
             })
             return None
 
-    def run_and_track_R(self, r_func_name, *args, version: Optional[str], **kwargs):
+    def run_and_track_R(self, r_func_name, *args, version: Optional[str] = None, **kwargs):
         """
         Intercepts R function execution via reticulate, running the code 
         through the Python tracking pipeline before appending captured 
@@ -1094,7 +1096,7 @@ class AnalysisGroup:
         return wrapper
         
 
-    def run_and_track(self, func, *args, tracker: Optional[AnalysisTracker] = None, version: Optional[str], **kwargs):
+    def run_and_track(self, func, *args, tracker: Optional[AnalysisTracker] = None, version: Optional[str] = None, **kwargs):
         """
         Executes a function and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
@@ -1144,7 +1146,7 @@ class AnalysisGroup:
         
         return analysis_result
 
-    def run_and_track_R(self, func, *args, version: Optional[str], tracker: Optional[AnalysisTracker] = None, **kwargs):
+    def run_and_track_R(self, func, *args, tracker: Optional[AnalysisTracker] = None, version: Optional[str] = None, **kwargs):
         """
         Executes a function in R and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
