@@ -286,7 +286,7 @@ class AnalysisTracker:
             return self.run_and_track(func, *args, **kwargs)
         return wrapper
 
-    def run_and_track(self, func, *args, version: Optional[str], **kwargs):
+    def run_and_track(self, func, *args, version: Optional[str] = '0.0.0.0', **kwargs):
         """
         Executes a function while auditing arguments, results, and environment.
 
