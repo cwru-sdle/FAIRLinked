@@ -286,7 +286,7 @@ class AnalysisTracker:
             return self.run_and_track(func, *args, **kwargs)
         return wrapper
 
-    def run_and_track(self, func, version: Optional[str], *args, **kwargs):
+    def run_and_track(self, func, *args, version: Optional[str], **kwargs):
         """
         Executes a function while auditing arguments, results, and environment.
 
@@ -307,6 +307,7 @@ class AnalysisTracker:
 
         Args:
             func (callable): The scientific function or method to be executed.
+            version (str): The version of the function being tracked.
             *args: Positional arguments to be passed to the target function.
             **kwargs: Keyword arguments to be passed to the target function.
 
@@ -407,7 +408,7 @@ class AnalysisTracker:
             })
             return None
 
-    def run_and_track_R(self, r_func_name, version: Optional[str], *args, **kwargs):
+    def run_and_track_R(self, r_func_name, *args, version: Optional[str], **kwargs):
         """
         Intercepts R function execution via reticulate, running the code 
         through the Python tracking pipeline before appending captured 
@@ -1093,10 +1094,22 @@ class AnalysisGroup:
         return wrapper
         
 
-    def run_and_track(self, func, version: Optional[str], *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
+    def run_and_track(self, func, *args, tracker: Optional[AnalysisTracker] = None, version: Optional[str], **kwargs):
         """
         Executes a function and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
+
+        Args:
+            func (callable): The scientific function or method to be executed.
+            *args: Positional arguments to be passed to the target function.
+            version (str, optional): The version of the function being tracked.
+            tracker (AnalysisTracker, optional): The tracker to be used.
+            **kwargs: Keyword arguments to be passed to the target function.
+
+        Returns:
+            Any: The original return value of the wrapped function. If an 
+                exception occurs, it returns None after logging the error 
+                as a provenance event.
         """
         
         # 1. Option: Use the injected tracker or create a new instance
@@ -1131,7 +1144,7 @@ class AnalysisGroup:
         
         return analysis_result
 
-    def run_and_track_R(self, func, version: Optional[str], *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
+    def run_and_track_R(self, func, *args, version: Optional[str], tracker: Optional[AnalysisTracker] = None, **kwargs):
         """
         Executes a function in R and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
