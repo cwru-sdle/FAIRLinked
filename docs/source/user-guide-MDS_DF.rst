@@ -364,7 +364,7 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
 
     # Run multiple tracked iterations
     for t in [300, 400, 500]:
-        group.run_and_track(my_simulation_func, temp=t, version='0.0.0.1')
+        group.run_and_track(my_simulation_func, temp=t)
     
     group.save_jsonld()
     group.save_report()
@@ -383,7 +383,7 @@ Using ``reticulate`` package, ``R`` functions can also be wrapped.
 
     # Run multiple tracked iterations passing R function names as strings
     for (t in c(300, 400, 500)) {
-        group$run_and_track_R("my_simulation_func", temp = t, version="0.0.0.1")
+        group$run_and_track_R("my_simulation_func", temp = t)
     }
 
     group$save_jsonld()
