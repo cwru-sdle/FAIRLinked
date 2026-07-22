@@ -1,3 +1,7 @@
+# 0.3.3.13
+
+Fix serialize_row and from_rdf_dir interaction
+
 # 0.3.3.12
 
 Create a version of run_and_track that works with reticulate package in R

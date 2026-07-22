@@ -845,50 +845,10 @@ class MatDatSciDf:
         """
         Serializes each row of the DataFrame into individual RDF files using the 
         active semantic metadata template.
-
-        This method transforms tabular experimental data into Linked Data. It iterates 
-        through the DataFrame, generating a unique row identifier (Subject URI) for 
-        each entry based on either specified 'id_cols' or a hash of the study-stage 
-        metadata. It maps cell values to 'qudt:value' triples, applies dynamic 
-        'rdfs:label' tags, and establishes inter-column relationships defined in 
-        the internal 'data_relations' manager.
-
-        Args:
-            output_folder (str): Directory where individual RDF files will be saved.
-            format (str, optional): The RDF serialization format. 
-                Supported: 'json-ld', 'turtle', 'xml', 'nt'. Defaults to 'json-ld'.
-            row_key_cols (list[str], optional): Column names used to generate the 
-                unique row string used for file naming and internal row indexing.
-            id_cols (list[str], optional): Column names whose values should be 
-                normalized and used as the primary Subject URI identifier (@id). 
-                If None, Subject URIs are generated from the unique row key.
-            label_pairs (list[tuple[str, str]], optional): A list of 2-tuples (X, Y) 
-                where column X represents an entity in the dataframe, and 
-                column Y contains the literal text string that should be assigned 
-                as its 'rdfs:label'. If a cell in column Y is missing or empty, 
-                the label triple for that row is omitted.
-            license (str, optional): An SPDX license identifier (e.g., 'MIT') or 
-                a full URI. Defaults to 'CC0-1.0'.
-            write_files (bool, optional): If True, writes each row to a file on disk. 
-                If False, only returns the list of RDF Graphs. Defaults to True.
-
-        Raises:
-            ValueError: If the provided license is invalid or if the metadata 
-                template is missing required 'skos:altLabel' definitions.
-
-        Returns:
-            List[rdflib.Graph]: A list of RDFLib Graph objects, each representing 
-                one row of experimental data and its associated semantic context.
-
-        Note:
-            - Parent directories for `output_folder` are created automatically.
-            - Files are named using the pattern: '{random_suffix}-{row_key}.{ext}'.
-            - Triples for 'pd.NA' or empty string values are omitted to maintain 
-              graph sparsity and data integrity.
         """
 
         df = self.df
-        orcid =  self.orcid
+        orcid = self.orcid
         metadata_obj = self.metadata_obj
         data_relation_dict = self.data_relations
         prop_column_pair_dict = data_relation_dict.prop_pair_dict if data_relation_dict else None
@@ -913,103 +873,108 @@ class MatDatSciDf:
             "Result": "RSLT", 
             "Analysis": "AN", 
             "Modeling": "MOD",
-            "": "UNK"}
+            "": "UNK"
+        }
 
         rowpredicate = URIRef("https://cwrusdle.bitbucket.io/mds/row")
-        row_key = ""
 
-        #check license
-        if(not license):
+        # check license
+        if not license:
             license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
             print("No license provided. Default to CC0-1.0 (Public Domain)")
 
         elif not license.startswith("http"):
-            # Load SPDX license list
-
             spdx_data = load_licenses()
-
             valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
 
-            # Check if the provided short ID is valid
             if license not in valid_ids:
                 raise ValueError(
                     f"Invalid SPDX license ID '{license}'.\n"
                     f"Please use one from https://spdx.org/licenses/."
                 )
 
-            license_uri = f"https://spdx.org/licenses/{license}.html"
-            license_uri = URIRef(license_uri)
+            license_uri = URIRef(f"https://spdx.org/licenses/{license}.html")
             write_license_triple(output_folder, base_uri, license_uri)
 
         else:
-            # Full URI provided; assume it's valid
             license_uri = URIRef(license)
-            
             write_license_triple(output_folder, base_uri, license_uri)
 
 
         for idx, row in df.iterrows():
-
             try:
-
                 # Deep copy the template and assign @id
                 template_copy = copy.deepcopy(graph_template)
                 subject_lookup = {}  # Maps skos:altLabel → generated @id
 
-                # generate row key
-                c = [item["skos:altLabel"] for item in template_copy ]
-                if(row_key_cols is None or not any(x in c for x in row_key_cols) ):
+                # Generate row key
+                c = [item["skos:altLabel"] for item in template_copy if "skos:altLabel" in item]
+                if row_key_cols is None or not any(x in c for x in row_key_cols):
                     keys = {}
                     for item in template_copy:
                         if "skos:altLabel" not in item or not item["skos:altLabel"]:
                             raise ValueError("Missing skos:altLabel in template")
                         col = item["skos:altLabel"]
-                        studystage = item["mds:hasStudyStage"]
-                        val = df.at[idx,col]
+                        studystage = item.get("mds:hasStudyStage", "")
+                        val = df.at[idx, col]
 
                         if studystage not in keys:
                             keys[studystage] = [val]
                         else:
                             keys[studystage].append(val)
+                    
                     row_key = ""
                     for key in keys:
                         try:
                             num = str(hash6("".join([str(x) for x in keys[key] if not pd.isna(x)])))
-                            row_key = row_key + sskey[key] + num + "-"
+                            row_key += sskey.get(key, "UNK") + num + "-"
                         except Exception:
                             traceback.print_exc()
                 else:
                     row_key = ""
                     for x in set(c) & set(row_key_cols):
-                        row_key = row_key + str(df.at[idx,x]).strip() + "-"
+                        row_key += str(df.at[idx, x]).strip() + "-"
                 
-                #timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-                orcid_rk = orcid.replace("-","")
-                full_row_key = f"{row_key}or{orcid_rk}"
-                full_row_key = full_row_key.replace(" ", "")
-                
+                orcid_rk = orcid.replace("-", "")
+                full_row_key = f"{row_key}or{orcid_rk}".replace(" ", "")
+                clean_row_key = row_key.rstrip("-")
 
-                for item in template_copy: #prepare all fields
+                # ==========================================
+                # Prepare Template Fields & Subject URIs
+                # ==========================================
+                for item in template_copy:
                     if "@type" not in item or not item["@type"]:
                         warnings.warn(f"Missing or empty @type in template item: {item}")
                         continue
                     if "skos:altLabel" not in item or not item["skos:altLabel"]:
                         raise ValueError("Missing skos:altLabel in template")
 
-                    prefix, localname = item["@type"].split(":")
+                    raw_type = str(item["@type"]).strip()
+    
+                    if "://" in raw_type:
+                        # Full IRI (e.g., "https://cwrusdle.bitbucket.io/mds/ShearRate")
+                        localname = raw_type.split("/")[-1].split("#")[-1]
+                    elif ":" in raw_type:
+                        # CURIE (e.g., "mds:ShearRate")
+                        _, localname = raw_type.split(":", 1)
+                    else:
+                        # Bare string (e.g., "ShearRate")
+                        localname = raw_type
+
                     if id_cols is not None and item["skos:altLabel"] in id_cols:
                         raw_identifier = row.get(item["skos:altLabel"])
-                        if not raw_identifier:
+                        if not raw_identifier or pd.isna(raw_identifier):
                             warnings.warn(f"Cannot find entity identifier in row {idx}")
                             continue
-                        entity_identifier = normalize(re.sub(r'[^a-zA-Z0-9_\-\.]', '', raw_identifier))
+                        entity_identifier = normalize(re.sub(r'[^a-zA-Z0-9_\-\.]', '', str(raw_identifier)))
                         subject_uri = self.MDS[f"{localname}.{entity_identifier}"]
                     else:
-                        subject_uri = self.MDS[f"{localname}.{row_key[:-1]}" if prefix else f"{localname}.{row_key[:-1]}"]
+                        subject_uri = self.MDS[f"{localname}.{clean_row_key}"]
+
                     item["@id"] = URIRef(subject_uri)
                     subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
-                    if "prov:generatedAtTime" in item:
+                    if "prov:generatedAtTime" in item and isinstance(item["prov:generatedAtTime"], dict):
                         item["prov:generatedAtTime"]["@value"] = datetime.now(timezone.utc).isoformat() + "Z"
 
                     if "qudt:hasUnit" in item and not item["qudt:hasUnit"].get("@id"):
@@ -1022,66 +987,60 @@ class MatDatSciDf:
                     "@graph": template_copy
                 }
 
-                #convert to rdf graph
+                # Convert to RDF Graph
                 g = Graph(identifier=URIRef(f"{base_uri}{full_row_key}{idx}"))
                 g.parse(data=json.dumps(jsonld_data), format="json-ld")
+                
                 QUDT = Namespace("http://qudt.org/schema/qudt/")
                 MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
                 OBO = Namespace("http://purl.obolibrary.org/obo/")
+                
                 g.bind("mds", MDS)
                 g.bind("qudt", QUDT)
                 g.bind("dcterms", DCTERMS)
                 g.bind("obo", OBO)
 
-
-                #separate jsonld not needed
-                #write_license_triple(output_folder, base_uri, license_uri)
-
-                #add in triples from csv values
+                # Add triples from DataFrame row values
                 for alt_label, subj_uri in subject_lookup.items():
                     if alt_label in row:
                         g.remove((subj_uri, QUDT.value, None))
-                        if pd.notna(row[alt_label]) and row[alt_label] != "":
+                        if pd.notna(row[alt_label]) and str(row[alt_label]).strip() != "":
                             data_value = row[alt_label]
                             if hasattr(data_value, 'item'):
                                 data_value = data_value.item()
                             g.add((subj_uri, QUDT.value, Literal(data_value, datatype=XSD.string)))
                         else:
-                            print(f"Skipping NA value for {alt_label} on row {idx} with row key {row_key}")
-                        g.add((subj_uri, rowpredicate, Literal(row_key[:-1]) ))
+                            print(f"Skipping NA value for {alt_label} on row {idx} with row key {clean_row_key}")
+                        
+                        g.add((subj_uri, rowpredicate, Literal(clean_row_key)))
                         g.add((subj_uri, DCTERMS.license, license_uri))
                         curator_uri = URIRef(f"https://orcid.org/{self.orcid}")
                         g.add((subj_uri, DCTERMS.creator, curator_uri))
-                        if not self.orcid_verified:
+                        
+                        if not getattr(self, 'orcid_verified', True):
                             g.add((subj_uri, SKOS.note, Literal("Caution: Data curator ORCID was not verified at time of serialization.")))
 
                 # ==========================================
-                # Process custom RDFS label pairs
+                # Process Custom RDFS Label Pairs
                 # ==========================================
                 if label_pairs:
                     for subj_col, label_col in label_pairs:
-                        # Ensure the subject column exists in our mapped entities
                         subj_uri = subject_lookup.get(subj_col)
-                        
-                        # Validate that the label column exists in the row and has data
                         if subj_uri and label_col in row:
                             label_val = row[label_col]
                             if pd.notna(label_val) and str(label_val).strip() != "":
                                 if hasattr(label_val, 'item'):
                                     label_val = label_val.item()
-                                
-                                # Add the rdfs:label triple to the graph
                                 g.add((subj_uri, RDFS.label, Literal(str(label_val).strip(), datatype=XSD.string)))
 
-
-                # Add object/datatype properties if given
+                # ==========================================
+                # Add Object & Datatype Properties
+                # ==========================================
                 if prop_column_pair_dict:
                     for key, column_pair_list in prop_column_pair_dict.items():
-                        # attempt to resolve via iri, then curie, then skip
                         prop_uri, prop_type = resolve_predicate(key, ontology_graph)
 
                         if prop_uri is None:
-                            #below attempts to create pred_uri based on the prop_metadata_dict
                             prop_metadata = prop_metadata_dict.get(key)
                             if not prop_metadata:
                                 continue
@@ -1093,8 +1052,8 @@ class MatDatSciDf:
                         for subj_col, obj_col in column_pair_list:
                             if subj_col not in row or pd.isna(row[subj_col]):
                                 continue
-                            alt_label = subj_col
-                            subj_uri = subject_lookup.get(alt_label)
+                            
+                            subj_uri = subject_lookup.get(subj_col)
                             if not subj_uri:
                                 continue
                             
@@ -1113,26 +1072,22 @@ class MatDatSciDf:
                             elif prop_type == "Datatype Property":
                                 g.add((subj_uri, pred_uri, Literal(obj_val)))
 
-                
-                triples_to_remove = []
-                for s, p, o in g:
-                    if p == QUDT.value and len(str(o).strip()) == 0:
-                        if len(str(o).strip()) == 0:
-                            print(f"debug removing empty {s}, {p}, {o}")
-                            triples_to_remove.append((s, p, o))
-
+                # Remove empty QUDT values
+                triples_to_remove = [
+                    (s, p, o) for s, p, o in g 
+                    if p == QUDT.value and len(str(o).strip()) == 0
+                ]
                 for triple in triples_to_remove:
                     g.remove(triple)
 
-                # Save the RDF graph to file
-                # random_suffix = ''.join(random.choices(string.ascii_lowercase, k=2))
+                # Execute Semantic Remapping Firewall
                 output_file = os.path.join(output_folder, f"{full_row_key}.jsonld")
-                # g.serialize(destination=output_file, format="json-ld", context=context, indent=2, auto_compact=True, encoding='utf-8')
                 g = self.semantic_remapping(g)
                 raw_jsonld = g.serialize(format="json-ld", context=context)
 
                 clean_graph = Graph()
                 clean_graph.parse(data=raw_jsonld, format='json-ld')
+                
                 if write_files:
                     clean_graph.serialize(
                         destination=output_file, 
@@ -1140,7 +1095,7 @@ class MatDatSciDf:
                         context=context, 
                         indent=2,
                         auto_compact=True
-                        )
+                    )
                 results.append(clean_graph)
 
             except Exception as e:
@@ -1290,6 +1245,8 @@ class MatDatSciDf:
         
         MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
         QUDT = Namespace("http://qudt.org/schema/qudt/")
+        UNIT = Namespace("https://qudt.org/vocab/unit/")
+        SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
 
         # Use the passed graph if available, otherwise fallback to class default
         target_onto = ontology_graph if ontology_graph is not None else cls.mds_graph
@@ -1313,10 +1270,15 @@ class MatDatSciDf:
             "qudt": "http://qudt.org/schema/qudt/",
             "mds": "https://cwrusdle.bitbucket.io/mds/",
             "skos": "http://www.w3.org/2004/02/skos/core#",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
+            "owl": "http://www.w3.org/2002/07/owl#",
             "xsd": "http://www.w3.org/2001/XMLSchema#",
             "prov": "http://www.w3.org/ns/prov#",
             "dcterms": "http://purl.org/dc/terms/",
-            "unit": "https://qudt.org/vocab/unit/"
+            "cco": "https://www.commoncoreontologies.org/",
+            "obo": "http://purl.obolibrary.org/obo/",
+            "unit": "https://qudt.org/vocab/unit/"     
         }
 
         type_mismatches = []
@@ -1346,6 +1308,11 @@ class MatDatSciDf:
                 try:
                     g = Graph()
                     g.parse(path, format=EXTENSIONS[ext])
+                    # PRE-BIND NAMESPACES BEFORE PARSING
+                    g.bind("mds", MDS)
+                    g.bind("qudt", QUDT)
+                    g.bind("unit", UNIT)
+                    g.bind("skos", SKOS)
                     
                     row = {}
                     # Process every entity that represents a data column
@@ -1380,8 +1347,8 @@ class MatDatSciDf:
 
                             template_origins[label] = filename
                             template_items[label] = {
-                                "@id": str(subj),
-                                "@type": str(g.value(subj, RDF.type) or ""),
+                                "@id": semantic_type,
+                                "@type": semantic_type,
                                 "skos:altLabel": label,
                                 "skos:definition": str(g.value(subj, SKOS.definition) or ""),
                                 "qudt:hasUnit": {"@id": unit_uri},
