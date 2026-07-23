@@ -1,3 +1,8 @@
+# 0.3.3.13
+
+Fix serialize_row and from_rdf_dir interaction.
+New argument added to AnaysisTracker init to allow script versioning tracking.
+
 # 0.3.3.12
 
 Create a version of run_and_track that works with reticulate package in R

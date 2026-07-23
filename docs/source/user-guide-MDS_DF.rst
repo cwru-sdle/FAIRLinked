@@ -188,6 +188,44 @@ Deserialize from JSON-LDs back to data frame
         df_name="Autdited_Experimental_Data"
     )
 
+Serialization and Deserialization 
+
+.. code-block:: python
+  from FAIRLinked import MatDatSciDf
+  import pandas as pd
+
+
+  rheology_dataset = pd.read_csv('resources/worked-example-RDFTableConversion.MDS_DF/Si_50wt%_PVA_1wt%_flow_sweep.csv')
+
+  rheology_fair = MatDatSciDf(df = rheology_dataset, metadata_rows=True)
+
+  data_relations = {
+    'has agent': [('Act of Measuring', 'Instrument')],
+    'is input of': [('Shear rate (s-1)', 'Act of Measuring')],
+    'is output of': [('Viscosity (mPa.s)', 'Act of Measuring'), ('Measurement', 'Act of Measuring')]
+
+  }
+  rheology_fair.add_relations(data_relations=data_relations)
+
+  rheology_fair.view_metadata()
+
+  rheology_fair.update_metadata(col_name = 'Shear rate (s-1)', field='unit', value='unit:PER-SEC')
+  rheology_fair.update_metadata(col_name = 'Viscosity (mPa.s)', field='unit', value='unit:MegaN-M-PER-M2')
+  rheology_fair.update_metadata(col_name = 'Viscosity (mPa.s)', field='type', value='mds:Viscosity')
+  rheology_fair.update_metadata(col_name = 'Instrument', field='type', value='mds:Instrument')
+  rheology_fair.view_metadata()
+
+  graphs_list = rheology_fair.serialize_row(output_folder='.',
+                                id_cols=['Sample', 'Instrument', 'Act of Measuring'], write_files=False)
+
+  template = rheology_fair.metadata_template
+
+  graphs_list = [g.serialize(format='json-ld') for g in graphs_list]
+
+  reconstructed_df = MatDatSciDf.from_jsonld_list(jsonld_list=graphs_list)
+  reconstructed_df.view_metadata(format='json')
+  graphs_list = reconstructed_df.serialize_row(output_folder='/home/vxt101/Git/26-van-thesis/scripts/data/test_jsonlds',row_key_cols=['Measurement', 'Act of Measuring'],
+                                  id_cols=['Sample', 'Instrument', 'Act of Measuring'])
 
 
 .. list-table:: MatDatSciDf API Summary
@@ -274,7 +312,7 @@ Instead of using a decorator, the user could also wrap a function used for analy
 
     from FAIRLinked import AnalysisTracker
 
-    tracker = AnalysisTracker(proj_name="Hardness_Fit", home_path="./results")
+    tracker = AnalysisTracker(proj_name="Hardness_Fit", home_path="./results", script_version='0.0.0.1')
 
     def calculate_modulus(load, depth):
         return (load / depth) * 0.75 
@@ -300,10 +338,10 @@ Using ``reticulate`` package, ``R`` functions can also be wrapped.
     }
 
     # 3. Instantiate tracker
-    tracker <- AnalysisTracker(proj_name = "Hardness_Fit", home_path = "./results")
+    tracker <- AnalysisTracker(proj_name = "Hardness_Fit", home_path = "./results", script_version='0.0.0.1')
 
     # 4. Pass the function name as a string to run_and_track_R
-    result <- tracker$run_and_track_R("calculate_modulus", load = 10.5, depth = 0.2)
+    result <- tracker$run_and_track_R(func="calculate_modulus", load = 10.5, depth = 0.2)
     tracker$serialize_analysis_jsonld()
     tracker$save_report()
 
@@ -322,11 +360,20 @@ For parameter sweeps or iterative processing, ``AnalysisGroup`` aggregates multi
 
     from FAIRLinked import AnalysisGroup
 
-    group = AnalysisGroup(proj_name="Temperature_Sweep", home_path="./batch_data")
+    group = AnalysisGroup(proj_name="Temperature_Sweep", home_path="./batch_data", script_version='0.0.0.1')
+
+    def my_simulation_func(temp):
+      """
+      Performs a simulation at a specific temperature.
+      Inputs and outputs are automatically audited as separate runs.
+      """
+      result = temp * 0.0012 
+      return {"lattice_parameter": result}
+
 
     # Run multiple tracked iterations
     for t in [300, 400, 500]:
-        group.run_and_track(my_simulation_func, temp=t)
+        group.run_and_track(func=my_simulation_func, temp=t)
     
     group.save_jsonld()
     group.save_report()
@@ -341,11 +388,15 @@ Using ``reticulate`` package, ``R`` functions can also be wrapped.
     fairlinked <- import("FAIRLinked")
     AnalysisGroup <- fairlinked$AnalysisGroup
 
-    group <- AnalysisGroup(proj_name = "Temperature_Sweep", home_path = "./batch_data")
+    group <- AnalysisGroup(proj_name = "Temperature_Sweep", home_path = "./batch_data", script_version='0.0.0.1')
+    my_simulation_func <- function(temp) {
+      result <- temp * 0.0012
+      return(list(lattice_parameter = result))
+      }
 
     # Run multiple tracked iterations passing R function names as strings
     for (t in c(300, 400, 500)) {
-        group$run_and_track_R("my_simulation_func", temp = t)
+        group$run_and_track_R(func="my_simulation_func", temp = t)
     }
 
     group$save_jsonld()
@@ -360,11 +411,27 @@ Using ``reticulate`` package, ``R`` functions can also be wrapped.
 
     group = AnalysisGroup(proj_name="Temperature_Sweep", home_path="./batch_data")
 
+    def my_simulation_func(temp):
+      """
+      Performs a simulation at a specific temperature.
+      Inputs and outputs are automatically audited as separate runs.
+      """
+      result = temp * 0.0012 
+      return {"lattice_parameter": result}
+
+    def my_simulation_func_2(temp):
+      """
+      Performs a simulation at a specific temperature.
+      Inputs and outputs are automatically audited as separate runs.
+      """
+      result = temp * 0.05
+      return {"lattice_parameter": result}
+
     # Run multiple tracked iterations
     for t in [300, 400, 500]:
       tracker = AnalysisTracker(proj_name=f'Temperature_Sweep_{t}', home_path="./batch_data")
-      group.run_and_track(my_simulation_func, temp=t, tracker=tracker)
-      group.run_and_track(my_simulation_func_2, temp=t, tracker=tracker)
+      group.run_and_track(func=my_simulation_func, temp=t, tracker=tracker)
+      group.run_and_track(func=my_simulation_func_2, temp=t, tracker=tracker)
 
   
 .. code-block:: r
@@ -383,8 +450,8 @@ Using ``reticulate`` package, ``R`` functions can also be wrapped.
             proj_name = paste0("Temperature_Sweep_", t), 
             home_path = "./batch_data"
         )
-        group$run_and_track_R("my_simulation_func", temp = t, tracker = tracker)
-        group$run_and_track_R("my_simulation_func_2", temp = t, tracker = tracker)
+        group$run_and_track_R(func="my_simulation_func", temp = t, tracker = tracker)
+        group$run_and_track_R(func="my_simulation_func_2", temp = t, tracker = tracker)
     }
 
     group$save_jsonld()

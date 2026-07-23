@@ -35,10 +35,11 @@ class AnalysisTracker:
     def __init__(self, 
                 proj_name: str, 
                 home_path: str, 
-                orcid: Optional[str] = "0000-0000-0000-0000", 
+                orcid: Optional[str] = "0000-0000-0000-0000",
                 metadata_template: Optional[dict] = None,
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
-                ontology_graph: Optional[Graph] = None, 
+                ontology_graph: Optional[Graph] = None,
+                script_version: Optional[str] = None, 
                 prefix: Optional[str] = "mds",
                 file_events: Optional[bool] = False) -> None:
         """
@@ -52,6 +53,7 @@ class AnalysisTracker:
             metadata_template: Metadata information about analysis parameters.
             base_uri: The base URI for semantic namespace generation.
             ontology_graph: A custom RDFLib Graph. Defaults to MDS ontology.
+            script_version: Version of the script being run.
             prefix: The prefix used for the base_uri in JSON-LD.
             file_events: Option to save file events. Default to False.
         """
@@ -103,6 +105,11 @@ class AnalysisTracker:
                 self.ontology = AnalysisTracker.mds_graph
         else:
             self.ontology = ontology_graph
+        if script_version is None:
+            self.script_version = '0.0.0.0'
+        else:
+            self.script_version = script_version
+
         
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
@@ -369,7 +376,7 @@ class AnalysisTracker:
                 "prov:startedAtTime": start_time,
                 "prov:endedAtTime": end_time,
                 "cco:ont00001921": direct_input_iris,      # Direct IRIs list
-                "cco:ont00001986": direct_output_iris  # Direct IRIs list
+                "cco:ont00001986": direct_output_iris,  # Direct IRIs list
             })
             
             # 6. Capture File Events linked to this Activity
@@ -405,7 +412,7 @@ class AnalysisTracker:
             })
             return None
 
-    def run_and_track_R(self, r_func_name, *args, **kwargs):
+    def run_and_track_R(self, func, *args, **kwargs):
         """
         Intercepts R function execution via reticulate, running the code 
         through the Python tracking pipeline before appending captured 
@@ -422,12 +429,12 @@ class AnalysisTracker:
             )
 
         # 2. Setup the target R function wrapper
-        r_target_function = getattr(r, r_func_name)
+        r_target_function = getattr(r, func)
         
         def universal_bridge(*f_args, **f_kwargs):
             return r_target_function(*f_args, **f_kwargs)
             
-        universal_bridge.__name__ = r_func_name
+        universal_bridge.__name__ = func
         
         # 3. Use the class's own native tracker pipeline
         result = self.run_and_track(universal_bridge, *args, **kwargs)
@@ -807,6 +814,7 @@ class AnalysisTracker:
             {
             "@id": f"mds:{self.analysis_id}",
             "@type": "mds:AnalyticalResult",
+            "dcterms:hasVersion": self.script_version,
             "dcterms:creator":{
                 "@id": f"https://orcid.org/{self.orcid}"
             },
@@ -857,6 +865,7 @@ class AnalysisTracker:
         report = []
         report.append(f"## Analysis Report: {self.proj_name}")
         report.append(f"**Analysis ID:** `{self.analysis_id}`")
+        report.append(f"**Script Version:** {self.script_version}")
         report.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         report.append(f"**Creator:** [{self.orcid}](https://orcid.org/{self.orcid}) ({'Verified' if self.orcid_verified else 'Unverified'})")
         report.append("\n")
@@ -1005,7 +1014,8 @@ class AnalysisGroup:
                 orcid: Optional[str] = "0000-0000-0000-0000", 
                 metadata_template: Optional[dict] = None,
                 base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
-                ontology_graph: Optional[Graph] = None, 
+                ontology_graph: Optional[Graph] = None,
+                script_version: Optional[str] = None,
                 prefix: Optional[str] = "mds",
                 file_events: Optional[bool] = False) -> None:
         """
@@ -1018,6 +1028,7 @@ class AnalysisGroup:
             orcid: Researcher's ORCID iD.
             base_uri: Base URI for semantic namespaces.
             ontology_graph: Shared RDFLib Graph.
+            script_version: Version of the script being run.
             prefix: Prefix for the base URI.
             file_events: Option to save file events. Default to False.
         """
@@ -1040,6 +1051,11 @@ class AnalysisGroup:
                 self.ontology = AnalysisGroup.mds_graph
         else:
             self.ontology = ontology_graph
+        
+        if script_version is None:
+            self.script_version = '0.0.0.0'
+        else:
+            self.script_version = script_version
         self.prefix = prefix
         self.group_id = f"runGroup{str(uuid4().int)[-15:].zfill(15)}"
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
@@ -1095,6 +1111,17 @@ class AnalysisGroup:
         """
         Executes a function and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
+
+        Args:
+            func (callable): The scientific function or method to be executed.
+            *args: Positional arguments to be passed to the target function.
+            tracker (AnalysisTracker, optional): The tracker to be used.
+            **kwargs: Keyword arguments to be passed to the target function.
+
+        Returns:
+            Any: The original return value of the wrapped function. If an 
+                exception occurs, it returns None after logging the error 
+                as a provenance event.
         """
         
         # 1. Option: Use the injected tracker or create a new instance
@@ -1105,6 +1132,7 @@ class AnalysisGroup:
                         metadata_template=self.metadata_template,
                         base_uri=self.base_uri,
                         ontology_graph=self.ontology,
+                        script_version=self.script_version,
                         prefix=self.prefix,
                         file_events=self.store_file_events
                         )
