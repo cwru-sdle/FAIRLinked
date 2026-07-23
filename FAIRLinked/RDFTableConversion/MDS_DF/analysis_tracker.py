@@ -5,7 +5,7 @@ import numpy as np
 from functools import wraps
 from datetime import datetime
 from uuid import uuid4
-from typing import Optional, cast
+from typing import Optional, cast, Callable
 import psutil
 import os
 from .main import MatDatSciDf
@@ -292,7 +292,7 @@ class AnalysisTracker:
             return self.run_and_track(func, *args, **kwargs)
         return wrapper
 
-    def run_and_track(self, func, *args, **kwargs):
+    def run_and_track(self, func: Callable, *args, **kwargs):
         """
         Executes a function while auditing arguments, results, and environment.
 
@@ -1107,7 +1107,7 @@ class AnalysisGroup:
         return wrapper
         
 
-    def run_and_track(self, func, *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
+    def run_and_track(self, func: Callable, *args, tracker: Optional[AnalysisTracker] = None, **kwargs):
         """
         Executes a function and stores metadata. Can use an existing tracker
         to group multiple functions under one ID, or create a new one.
@@ -1176,7 +1176,7 @@ class AnalysisGroup:
                         )
 
         # 2. Execute the function via the tracker
-        analysis_result = analysis.run_and_track_R(func, *args, **kwargs)
+        analysis_result = analysis.run_and_track_R(func=func, *args, **kwargs)
         
         # 3. Update Group-level registries
         # We use the analysis_id as the key. If using the same tracker, 
@@ -1269,6 +1269,7 @@ class AnalysisGroup:
 
         group_report.append(f"# Group Analysis Report: {self.proj_name}")
         group_report.append(f"**Group Analysis ID:** `{self.group_id}`")
+        group_report.append(f"**Script Version:** {self.script_version}")
         group_report.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         group_report.append("\n---\n")
 
