@@ -412,7 +412,7 @@ class AnalysisTracker:
             })
             return None
 
-    def run_and_track_R(self, r_func_name, *args, **kwargs):
+    def run_and_track_R(self, func, *args, **kwargs):
         """
         Intercepts R function execution via reticulate, running the code 
         through the Python tracking pipeline before appending captured 
@@ -429,12 +429,12 @@ class AnalysisTracker:
             )
 
         # 2. Setup the target R function wrapper
-        r_target_function = getattr(r, r_func_name)
+        r_target_function = getattr(r, func)
         
         def universal_bridge(*f_args, **f_kwargs):
             return r_target_function(*f_args, **f_kwargs)
             
-        universal_bridge.__name__ = r_func_name
+        universal_bridge.__name__ = func
         
         # 3. Use the class's own native tracker pipeline
         result = self.run_and_track(universal_bridge, *args, **kwargs)
