@@ -1327,6 +1327,7 @@ class AnalysisGroup:
         group_node = {
             "@id": f"mds:{self.group_id}",
             "@type": "mds:AnalyticalResult",
+            "dcterms:hasVersion": self.script_version,
             "dcterms:title": self.proj_name,
             "dcterms:creator": {"@id": f"https://orcid.org/{self.orcid}"},
             "dcterms:date": datetime.now().strftime("%Y-%m-%d"),
