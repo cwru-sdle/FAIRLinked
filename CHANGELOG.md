@@ -1,3 +1,8 @@
+# 0.3.3.14
+
+Ensure that data_relations_dict are generated from jsonlds if no data_relations_dict are given during deserialization.
+Preserve semantic relations after reconstruction.
+
 # 0.3.3.13
 
 Fix serialize_row and from_rdf_dir interaction.

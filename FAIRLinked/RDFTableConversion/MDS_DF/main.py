@@ -1298,6 +1298,10 @@ class MatDatSciDf:
                     }
                     template_origins[label] = "User-provided Template"
 
+        infer_relations_from_first = data_relations_dict is None
+        if infer_relations_from_first:
+            print("Data relationships not given, automatically infer from first JSON-LD.")
+
         for root, _, files in os.walk(input_dir):
             supported_files = [f for f in files if os.path.splitext(f)[1].lower() in EXTENSIONS]
 
@@ -1315,6 +1319,7 @@ class MatDatSciDf:
                     g.bind("skos", SKOS)
                     
                     row = {}
+                    uri_to_label = {}
                     # Process every entity that represents a data column
                     for subj in g.subjects(SKOS.altLabel, None):
                         label = str(g.value(subj, SKOS.altLabel)).strip()
@@ -1322,6 +1327,8 @@ class MatDatSciDf:
                         unit_node = g.value(subj, QUDT.hasUnit)
                         unit_uri = g.namespace_manager.curie(str(unit_node) if unit_node else "")
                         semantic_type = str(g.value(subj, RDF.type) or "")
+
+                        uri_to_label[subj] = label
 
                         # 1. Extract Value (Native Python type if Literal, else String/URI)
                         if val is not None:
@@ -1365,6 +1372,35 @@ class MatDatSciDf:
                                 if semantic_type != existing_type:
                                     type_mismatches.append(f"{filename}: Type mismatch for '{label}' vs {template_origins[label]}")
 
+                    # --- STEP 1: RECONSTRUCT DATA RELATIONS FROM FIRST FILE ---
+                    if infer_relations_from_first:
+                        data_relations_dict = {}
+                        
+                        for s, p, o in g:
+                            # Skip standard metadata properties handled above
+                            if p in (SKOS.altLabel, QUDT.value, QUDT.hasUnit, RDF.type, SKOS.definition, MDS.hasStudyStage):
+                                continue
+
+                            # Object Property: Subject and Object both map to known columns
+                            if s in uri_to_label and o in uri_to_label:
+                                subj_col = uri_to_label[s]
+                                obj_col = uri_to_label[o]
+
+                                # Get clean predicate label from ontology or CURIE namespace
+                                p_label = target_onto.value(p, RDFS.label) if target_onto else None
+                                prop_key = str(p_label) if p_label else g.namespace_manager.curie(str(p))
+
+                                if prop_key not in data_relations_dict:
+                                    data_relations_dict[prop_key] = []
+                                
+                                pair = (subj_col, obj_col)
+                                if pair not in data_relations_dict[prop_key]:
+                                    data_relations_dict[prop_key].append(pair)
+
+                        # Once inferred from the first file, disable inferral so remaining files validate against it
+                        infer_relations_from_first = False
+
+                    
                     if data_relations_dict:
                         for prop_key, pairs in data_relations_dict.items():
                             # Determine property URI and type (ObjectProperty vs DatatypeProperty)
@@ -1375,24 +1411,31 @@ class MatDatSciDf:
                                 p_uri, prop_type = resolve_predicate(prop_key, target_onto)
 
                             for subj_col, obj_target in pairs:
-                                # Check only if subject variable exists in the current file
+                                # Check only if subject variable exists in current row
                                 if subj_col in row and row[subj_col] is not pd.NA:
-                                    s_uri = URIRef(template_items[subj_col]["@id"])
+                                    
+                                    # Look up the actual instance node in graph g matching subj_col's altLabel
+                                    s_nodes = list(g.subjects(SKOS.altLabel, Literal(subj_col)))
+                                    if not s_nodes:
+                                        continue
+                                    s_node = s_nodes[0]
 
                                     # --- CASE 1: Object Property (Entity -> Entity) ---
                                     if prop_type == "Object Property" or "ObjectProperty" in str(prop_type):
                                         if obj_target in row and row[obj_target] is not pd.NA:
-                                            o_uri = URIRef(template_items[obj_target]["@id"])
-                                            if (s_uri, p_uri, o_uri) not in g:
-                                                relations_schema_mismatches.append(
-                                                    f"{filename}: ObjectProperty Mismatch ({subj_col} -[{prop_key}]-> {obj_target})"
-                                                )
+                                            # Look up actual instance node in graph g matching obj_target's altLabel
+                                            o_nodes = list(g.subjects(SKOS.altLabel, Literal(obj_target)))
+                                            if o_nodes:
+                                                o_node = o_nodes[0]
+                                                # Check triple between actual instance nodes in graph g
+                                                if (s_node, p_uri, o_node) not in g:
+                                                    relations_schema_mismatches.append(
+                                                        f"{filename}: ObjectProperty Mismatch ({subj_col} -[{prop_key}]-> {obj_target})"
+                                                    )
 
                                     # --- CASE 2: Datatype Property (Entity -> Literal Value) ---
                                     elif prop_type == "Datatype Property" or "DatatypeProperty" in str(prop_type):
-                                        # Check if s_uri has ANY triple with predicate p_uri in graph g
-                                        # or explicitly match against the parsed literal value
-                                        val = g.value(s_uri, p_uri)
+                                        val = g.value(s_node, p_uri)
                                         if val is None:
                                             relations_schema_mismatches.append(
                                                 f"{filename}: Missing DatatypeProperty ({subj_col} -[{prop_key}]-> Literal)"
