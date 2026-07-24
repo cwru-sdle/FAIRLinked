@@ -228,7 +228,24 @@ Serialization and Deserialization
   rheology_fair.view_data_relations()
   reconstructed_df.view_data_relations()
 
-  
+Getting pre-defined relationships from ontology
+
+.. code-block:: python
+
+  from FAIRLinked import MatDatSciDf
+  import pandas as pd
+
+
+  rheology_dataset = pd.read_csv('resources/worked-example-RDFTableConversion.MDS_DF/Si_50wt%_PVA_1wt%_flow_sweep.csv')
+
+  rheology_fair = MatDatSciDf(df = rheology_dataset, metadata_rows=True)
+
+  # Get relations that are applicable to the data frame
+  print(rheology_fair.get_relation_pairs_onto())
+
+  # Get all relations defined in the ontology
+  rheology_fair.view_relations()
+
 
 
 .. list-table:: MatDatSciDf API Summary
