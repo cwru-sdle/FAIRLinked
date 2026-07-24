@@ -218,14 +218,17 @@ Serialization and Deserialization
   graphs_list = rheology_fair.serialize_row(output_folder='.',
                                 id_cols=['Sample', 'Instrument', 'Act of Measuring'], write_files=False)
 
-  template = rheology_fair.metadata_template
-
   graphs_list = [g.serialize(format='json-ld') for g in graphs_list]
 
   reconstructed_df = MatDatSciDf.from_jsonld_list(jsonld_list=graphs_list)
-  reconstructed_df.view_metadata(format='json')
-  graphs_list = reconstructed_df.serialize_row(output_folder='/home/vxt101/Git/26-van-thesis/scripts/data/test_jsonlds',row_key_cols=['Measurement', 'Act of Measuring'],
-                                  id_cols=['Sample', 'Instrument', 'Act of Measuring'])
+
+  rheology_fair.view_metadata()
+  reconstructed_df.view_metadata()
+
+  rheology_fair.view_data_relations()
+  reconstructed_df.view_data_relations()
+
+  
 
 
 .. list-table:: MatDatSciDf API Summary
