@@ -1,3 +1,7 @@
+# 0.3.3.15
+
+Create argument for licensing when serializing JSONs with AnalysisGroup
+
 # 0.3.3.14
 
 Ensure that data_relations_dict are generated from jsonlds if no data_relations_dict are given during deserialization.
