@@ -1298,7 +1298,7 @@ class AnalysisGroup:
         
         print(f"Report saved at {full_path}")
 
-    def save_jsonld(self):
+    def save_jsonld(self, license: Optional[str] = None):
         """
         Serializes all individual analysis JSON-LDs and creates a 
         master graph file that links all components to the group activity.
@@ -1307,10 +1307,34 @@ class AnalysisGroup:
         # Create a list of references to show "Components" of the group
         analysis_refs = [{"@id": f"mds:{aid}"} for aid in self.analyses.keys()]
 
+        if(not license):
+            license_uri = "https://spdx.org/licenses/CC0-1.0.html"
+            print("No license provided. Default to CC0-1.0 (Public Domain)")
+
+        elif not license.startswith("http"):
+            # Load SPDX license list
+
+            spdx_data = load_licenses()
+
+            valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
+
+            # Check if the provided short ID is valid
+            if license not in valid_ids:
+                raise ValueError(
+                    f"Invalid SPDX license ID '{license}'.\n"
+                    f"Please use one from https://spdx.org/licenses/."
+                )
+
+            license_uri = f"https://spdx.org/licenses/{license}.html"
+
+        else:
+            # Full URI provided; assume it's valid
+            license_uri = license
+
         # 1. Loop through the dictionary using .items()
         for analysis_id, meta in self.analyses.items():
             # Trigger the individual tracker's serialization
-            meta["analysis_obj"].serialize_analysis_jsonld()
+            meta["analysis_obj"].serialize_analysis_jsonld(license=license_uri)
             
             # Load the individual graph
             individual_data = json.loads(meta["jsonld"])
@@ -1332,7 +1356,8 @@ class AnalysisGroup:
             "dcterms:creator": {"@id": f"https://orcid.org/{self.orcid}"},
             "dcterms:date": datetime.now().strftime("%Y-%m-%d"),
             "mds:hasAnalysisComponent": analysis_refs,
-            "mds:hasStudyStage": "Analysis"
+            "mds:hasStudyStage": "Analysis",
+            "dcterms:license": {"@id": license_uri}
         }
 
         # 3. Final Master Graph Assembly

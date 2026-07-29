@@ -33,7 +33,7 @@ def domain_subdomain_viewer():
         return find_root_domain(parent)
 
     # 1. Inspect every object targeted by MDS.inDomain
-    for obj in mds_ontology_graph.objects(predicate=MDS.inDomain):
+    for obj in mds_ontology_graph.objects(predicate=MDS.inDomain): #mds:inDomain
         
         # Check if it has a parent
         parent = mds_ontology_graph.value(subject=obj, predicate=RDFS.subClassOf)
