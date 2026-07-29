@@ -975,7 +975,7 @@ class MatDatSciDf:
                     subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
                     if "prov:generatedAtTime" in item and isinstance(item["prov:generatedAtTime"], dict):
-                        item["prov:generatedAtTime"]["@value"] = datetime.now(timezone.utc).isoformat() + "Z"
+                        item["prov:generatedAtTime"]["@value"] = datetime.now(timezone.utc).isoformat()
 
                     if "qudt:hasUnit" in item and not item["qudt:hasUnit"].get("@id"):
                         del item["qudt:hasUnit"]
