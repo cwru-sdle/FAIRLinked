@@ -22,7 +22,7 @@ def term_search_general(mds_ontology_graph=None, query_term=None, search_types=N
     if ttl_extr and ttl_path is None:
         raise ValueError("A file path must be provided via ttl_path to save the results when ttl_extr is enabled.")
 
-    MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+    MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
 
     # Load ontology if not passed
     if mds_ontology_graph is None:

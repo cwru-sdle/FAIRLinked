@@ -48,7 +48,7 @@ def extract_data_from_csv(
     id_cols=None,                 # optional
     prop_column_pair_dict=None,   # optional
     ontology_graph=None,          # optional
-    base_uri="https://cwrusdle.bitbucket.io/mds/",
+    base_uri="https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
     license=None #optional
 ):
     #raise Exception("called exeception")
@@ -249,7 +249,7 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
         ```json
         {
           "@context": {
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
             "dcterms": "http://purl.org/dc/terms/"
           },
           "@id": "mds:Dataset",
@@ -319,7 +319,7 @@ def extract_from_folder(
     output_base_folder, 
     prop_column_pair_dict=None, 
     ontology_graph=None,
-    base_uri="https://cwrusdle.bitbucket.io/mds/",
+    base_uri="https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
     license=None
     ):
     """

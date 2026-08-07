@@ -73,7 +73,7 @@ class MatDatSciDf:
                 df_name: Optional[str] = None,
                 metadata_rows: Optional[bool] = False,
                 ontology_graph: Optional[Graph] = None, 
-                base_uri="https://cwrusdle.bitbucket.io/mds/",
+                base_uri="https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
                 local_unit_file: Optional[bool] = True):
         """
         Initializes the MatDatSciDf instance, validates identity, and constructs semantic objects.
@@ -134,6 +134,11 @@ class MatDatSciDf:
         else:
             self.ontology = ontology_graph
         
+        self.base_uri = base_uri
+
+        self.MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
+        self.ontology.bind("mds", self.MDS, override=True)
+
         if not metadata_template or metadata_template == {}:
             template, matched, unmatched = self.template_generator(skip_prompts=True)
             self.metadata_template = template
@@ -175,13 +180,6 @@ class MatDatSciDf:
         else:
             self.df_name = df_name
 
-
-        
-
-        self.base_uri = base_uri
-
-        self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
-        self.ontology.bind("mds", self.MDS)
         if data_relations_dict is None:
             data_relations_dict = {}
 
@@ -198,23 +196,34 @@ class MatDatSciDf:
         Extracts all Object and Datatype properties from the associated ontology.
 
         This method scans the ontology graph for OWL ObjectProperties and 
-        DatatypeProperties, mapping their human-readable rdfs:labels to their 
-        full URIs and property types.
+        DatatypeProperties, mapping their human-readable rdfs:labels, full URIs,
+        local name fragments, and CURIEs to their full URIs and property types.
 
         Returns:
-            dict: A dictionary (prop_metadata_dict) where:
-                - Key: Property label (str)
-                - Value: Tuple of (Property URI, Property Type)
+            dict: A dictionary (prop_metadata_dict) mapping any property identifier 
+                (label, URI, fragment, or CURIE) to a Tuple of (Property URI, Property Type).
         """
-
         ontology_graph = self.ontology
         prop_metadata_dict = {}
 
         for prop_type, label_type in [(OWL.ObjectProperty, "Object Property"), (OWL.DatatypeProperty, "Datatype Property")]:
             for prop in ontology_graph.subjects(RDF.type, prop_type):
+                prop_str = str(prop)
+                fragment = prop_str.split("/")[-1].split("#")[-1]
+
+                # 1. Index by Full URI (e.g., 'https://...#hasName')
+                prop_metadata_dict[prop_str] = (prop_str, label_type)
+
+                # 2. Index by Local Fragment (e.g., 'hasName')
+                prop_metadata_dict[fragment] = (prop_str, label_type)
+
+                # 3. Index by CURIE (e.g., 'mds:hasName')
+                prop_metadata_dict[f"mds:{fragment}"] = (prop_str, label_type)
+
+                # 4. Index by rdfs:label if present (e.g., 'has Name')
                 label = ontology_graph.value(prop, RDFS.label)
                 if label:
-                    prop_metadata_dict[str(label)] = (str(prop), label_type)
+                    prop_metadata_dict[str(label)] = (prop_str, label_type)
 
         return prop_metadata_dict
 
@@ -236,7 +245,7 @@ class MatDatSciDf:
     def get_relation_pairs_onto(self):
         """
         Analyzes the ontology and metadata template to discover relationships 
-        between columns.
+        between columns (supporting direct domains/ranges and owl:unionOf collections).
         
         Returns:
             dict: { URI: [(subj_col, obj_col), ...] }
@@ -245,62 +254,90 @@ class MatDatSciDf:
         metadata_obj = self.metadata_obj
         template_graph = metadata_obj.metadata_temp.get("@graph", [])
         
-        # 1. Map column names (altLabels) to their expanded Ontology Class URIs
+        # 1. Map column names (altLabels) to their expanded Ontology Class URIs safely
         col_to_type = {}
         for item in template_graph:
             alt_label = item.get("skos:altLabel")
             rdf_type = item.get("@type")
             
             if alt_label and rdf_type:
-                try:
-                    # Use the graph's namespace manager to expand CURIEs like 'mds:Result'
-                    type_uri = ontology.namespace_manager.expand_curie(rdf_type)
-                    col_to_type[alt_label] = type_uri
-                except Exception:
-                    continue
+                rdf_type_str = str(rdf_type).strip()
+                if rdf_type_str.startswith("mds:"):
+                    type_uri = URIRef("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#" + rdf_type_str.split(":", 1)[1])
+                elif "://" in rdf_type_str:
+                    type_uri = URIRef(rdf_type_str)
+                else:
+                    try:
+                        type_uri = ontology.namespace_manager.expand_curie(rdf_type_str)
+                    except Exception:
+                        type_uri = URIRef("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#" + rdf_type_str)
+                col_to_type[alt_label] = type_uri
 
         relation_dict = {}
         columns = list(col_to_type.keys())
 
-        # Helper to extract classes from range (handling owl:unionOf)
-        def get_classes_in_range(prop_uri):
+        # Helper to extract all target classes from a domain/range node (handling owl:unionOf)
+        def extract_classes(node):
             classes = set()
-            for r in ontology.objects(prop_uri, RDFS.range):
-                union_node = ontology.value(r, OWL.unionOf)
-                if union_node:
+            if not node:
+                return classes
+            union_node = ontology.value(node, OWL.unionOf)
+            if union_node:
+                try:
                     classes.update(list(Collection(ontology, union_node)))
-                else:
-                    classes.add(r)
+                except Exception:
+                    pass
+            else:
+                classes.add(node)
             return classes
 
-        # 2. Iterate through columns and ontology to find valid links
-        for s_col in columns:
-            s_type = col_to_type[s_col]
-            s_hierarchy = list(ontology.transitive_objects(s_type, RDFS.subClassOf))
-            
-            for s_cls in s_hierarchy:
-                for prop in ontology.subjects(RDFS.domain, s_cls):
-                    if (prop, RDF.type, OWL.DatatypeProperty) in ontology:
+        # Helper to get full class hierarchy (self + all subClassOf superclasses)
+        def get_hierarchy(cls_uri):
+            hierarchy = {cls_uri}
+            try:
+                hierarchy.update(set(ontology.transitive_objects(cls_uri, RDFS.subClassOf)))
+            except Exception:
+                pass
+            return hierarchy
+
+        # Pre-calculate hierarchy for each column
+        col_hierarchies = {col: get_hierarchy(col_to_type[col]) for col in columns if col in col_to_type}
+
+        # 2. Iterate through all ObjectProperties in the ontology
+        for prop in ontology.subjects(RDF.type, OWL.ObjectProperty):
+            prop_str = str(prop)
+
+            # Get domain classes for this property
+            domain_classes = set()
+            for d_node in ontology.objects(prop, RDFS.domain):
+                domain_classes.update(extract_classes(d_node))
+
+            # Get range classes for this property
+            range_classes = set()
+            for r_node in ontology.objects(prop, RDFS.range):
+                range_classes.update(extract_classes(r_node))
+
+            if not domain_classes or not range_classes:
+                continue
+
+            # Match subject columns against domain classes and object columns against range classes
+            for s_col in columns:
+                if s_col not in col_hierarchies:
+                    continue
+                s_hierarchy = col_hierarchies[s_col]
+                if not any(d_cls in s_hierarchy for d_cls in domain_classes):
+                    continue
+
+                for o_col in columns:
+                    if s_col == o_col or o_col not in col_hierarchies:
                         continue
-                    
-                    valid_ranges = get_classes_in_range(prop)
-                    
-                    for o_col in columns:
-                        if s_col == o_col: 
-                            continue
-                            
-                        o_type = col_to_type[o_col]
-                        o_hierarchy = set(ontology.transitive_objects(o_type, RDFS.subClassOf))
-                        
-                        if any(r_cls in o_hierarchy for r_cls in valid_ranges):
-                            prop_str = str(prop)
-                            
-                            if prop_str not in relation_dict:
-                                relation_dict[prop_str] = []
-                            
-                            pair = (s_col, o_col)
-                            if pair not in relation_dict[prop_str]:
-                                relation_dict[prop_str].append(pair)
+                    o_hierarchy = col_hierarchies[o_col]
+                    if any(r_cls in o_hierarchy for r_cls in range_classes):
+                        if prop_str not in relation_dict:
+                            relation_dict[prop_str] = []
+                        pair = (s_col, o_col)
+                        if pair not in relation_dict[prop_str]:
+                            relation_dict[prop_str].append(pair)
 
         return relation_dict
     
@@ -616,103 +653,112 @@ class MatDatSciDf:
         columns = h_df.columns
         ontology_terms = extract_terms_from_ontology(ontology_graph)
 
+        # Force 'mds' namespace to exist and point to the clean URI
         bindings_dict = {prefix: str(namespace) for prefix, namespace in ontology_graph.namespaces()}
-        if "mds" not in bindings_dict:
-            bindings_dict["mds"] = "https://cwrusdle.bitbucket.io/mds/"
+        bindings_dict["mds"] = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#"
 
         matched_log = []
         unmatched_log = []
-        bindings = {}
+        bindings = {"mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#"}
 
         jsonld = {
-        "@context": {
-            "qudt": "http://qudt.org/schema/qudt/",
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
-            "skos": "http://www.w3.org/2004/02/skos/core#",
-            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
-            "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
-            "owl": "http://www.w3.org/2002/07/owl#",
-            "xsd": "http://www.w3.org/2001/XMLSchema#",
-            "prov": "http://www.w3.org/ns/prov#",
-            "dcterms": "http://purl.org/dc/terms/",
-            "cco": "https://www.commoncoreontologies.org/",
-            "obo": "http://purl.obolibrary.org/obo/"      
-        },
-        "@graph": []
+            "@context": {
+                "qudt": "http://qudt.org/schema/qudt/",
+                "mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
+                "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
+                "owl": "http://www.w3.org/2002/07/owl#",
+                "xsd": "http://www.w3.org/2001/XMLSchema#",
+                "prov": "http://www.w3.org/ns/prov#",
+                "dcterms": "http://purl.org/dc/terms/",
+                "cco": "https://www.commoncoreontologies.org/",
+                "obo": "http://purl.obolibrary.org/obo/"      
+            },
+            "@graph": []
         }   
 
         units = self.units
 
         for col in columns:
-            if col == "__source_file__" or col == "__Label__" or col == "__rowkey__":
+            if col in ("__source_file__", "__Label__", "__rowkey__"):
                 continue
-            typ = h_df.loc[0,col]
+            typ = h_df.loc[0, col]
 
             match = find_best_match(col, ontology_terms)
-            if(pd.isna(typ) or ":" not in typ):# if no type was explicitily included in csv
             
-                #get iri from closest match
+            if pd.isna(typ) or ":" not in typ: # if no type was explicitly included in CSV
+                # Get IRI fragment from closest match
                 iri_fragment = str(match["iri"]).split("/")[-1].split("#")[-1] if match else normalize(col)
 
-                # Get base iri
+                # Get base IRI
                 iri_str = str(match["iri"]) if match else None
-                binding =""
+                binding = "mds"
                 study_stage = ""
                 definition = "Definition not available"
+                
                 if iri_str:
-                    last_slash = iri_str.rfind("/")
-                    last_hash = iri_str.rfind("#")
-                    split_pos = max(last_slash, last_hash)
-                    iri_base = iri_str[:split_pos + 1] if split_pos != -1 else iri_str
-                    binding = next((k for k, v in bindings_dict.items() if v == iri_base), "mds")
-                    
-                    #add binding to list of contexts
-                    if(binding not in bindings):
-                        bindings[binding] = bindings_dict[binding]
+                    # Force 'mds' prefix for any match coming from your MDS ontology
+                    if "MDS_Onto" in iri_str or "cwrusdle" in iri_str:
+                        binding = "mds"
+                    else:
+                        last_slash = iri_str.rfind("/")
+                        last_hash = iri_str.rfind("#")
+                        split_pos = max(last_slash, last_hash)
+                        iri_base = iri_str[:split_pos + 1] if split_pos != -1 else iri_str
+                        
+                        matching_prefixes = [k for k, v in bindings_dict.items() if v == iri_base]
+                        if "mds" in matching_prefixes:
+                            binding = "mds"
+                        elif matching_prefixes:
+                            binding = matching_prefixes[0]
+                        else:
+                            binding = "mds"
+
+                    # Add binding to context
+                    if binding not in bindings:
+                        bindings[binding] = bindings_dict.get(binding, "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
 
                     definition = str(match["definition"]) if match else "Definition not available"
                     study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
                 
-            else: #csv included type:
-                binding, iri_fragment = typ.split(":")
-                if(binding == "mds"):
-                    #if term in mds ontology, get study stage and def from ontology
+            else: # CSV included explicit type (e.g. mds:Sample or mds1:Sample)
+                binding, iri_fragment = typ.split(":", 1)
+                
+                # Normalize any 'mds1', 'mds2', etc. prefix back to 'mds'
+                if binding.startswith("mds"):
+                    binding = "mds"
+                    
+                if binding == "mds":
                     definition = str(match["definition"]) if match else "Definition not available"
                     study_stage = match["study_stage"][0].value if (match and match.get("study_stage")) else "Study stage information not available"
                 else:
                     definition = "Definition not available"
-                    study_stage = h_df.loc[2,col] #try to get study stage from csv
+                    study_stage = h_df.loc[2, col]
                     if pd.isna(study_stage): 
-                        study_stage =  "Study stage information not available"
+                        study_stage = "Study stage information not available"
 
-            # try get units
-            un = h_df.loc[1,col]
+            # Try to resolve units
+            un = h_df.loc[1, col]
             if not pd.isna(un):
                 try:
-                    # Step 1: Convert string representation to a Python object
-                    # Handles both "{'id': ...}" and "unit:UNIT"
                     if un.startswith("{") and un.endswith("}"):
                         try:
                             evaluated = ast.literal_eval(un)
                             if isinstance(evaluated, dict):
-                                # It's a dict, get the ID value
                                 target_str = evaluated.get('@id', "")
                             else:
                                 target_str = un
                         except Exception:
                             target_str = un
-
                     else:
-                        # It's already a string (like "unit:UNIT")
                         target_str = str(un).strip()
 
-                    # Step 3: Split and safely get the second part
                     if ":" in target_str:
                         un = target_str.split(":")[1]
                     else:
                         matches = []
                         for key, details in units.items():
-                            # Clean up comparisons using .lower() and check both ucum and labels
                             name = details.get('name', '')
                             ucum_code = details.get('ucum_code', '')
                             label = details.get('label', '')
@@ -722,7 +768,7 @@ class MatDatSciDf:
                                 (label and un.lower() == label.lower())):
                                 matches.append(key)
 
-                        if len(matches) == 1 :
+                        if len(matches) == 1:
                             un = matches[0]
 
                         elif len(matches) > 1:
@@ -738,8 +784,6 @@ class MatDatSciDf:
                         else:
                             print(f"Unable to find unit {un}. Default to UNITLESS")
                             un = "UNITLESS"
-                        
-
 
                 except (ValueError, SyntaxError, IndexError) as e:
                     print(f"Parsing error for value '{un}': {e}")
@@ -749,12 +793,9 @@ class MatDatSciDf:
                 
             if match:
                 matched_log.append(f"{col} => {iri_fragment}")
-
             else:
                 unmatched_log.append(col)
 
-
-            
             if not skip_prompts:
                 unit, study, notes = prompt_for_missing_fields(iri_fragment, un, study_stage, ontology_graph, units)
             else:
@@ -763,14 +804,13 @@ class MatDatSciDf:
                     "", "Study stage information not available"
                 ] else ""
                 notes = ""
-            
 
-            if(binding == ""):
+            if binding == "":
                 binding = "mds"
 
-            if(binding not in bindings):
-                        bindings[binding] = bindings_dict[binding]
-            
+            if binding not in bindings:
+                bindings[binding] = bindings_dict.get(binding, "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
+
             entry = {
                 "@id": f"{binding}:{iri_fragment}",
                 "@type": f"{binding}:{iri_fragment}",
@@ -778,7 +818,7 @@ class MatDatSciDf:
                 "skos:definition": definition,
                 "qudt:hasUnit": {"@id": f"unit:{unit}"},
                 "prov:generatedAtTime": {
-                    "@value": datetime.now().astimezone().isoformat(),
+                    "@value": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                     "@type": "xsd:dateTime"
                 },
                 "skos:note": {
@@ -788,10 +828,10 @@ class MatDatSciDf:
                 "mds:hasStudyStage": study
             }
             jsonld["@graph"].append(entry)
-        
+
         jsonld["@context"].update({
             "unit": "https://qudt.org/vocab/unit/"
-            })
+        })
         for i in bindings:
             jsonld["@context"].update({
                 i: bindings[i]
@@ -876,7 +916,7 @@ class MatDatSciDf:
             "": "UNK"
         }
 
-        rowpredicate = URIRef("https://cwrusdle.bitbucket.io/mds/row")
+        rowpredicate = URIRef("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#row")
 
         # check license
         if not license:
@@ -952,7 +992,7 @@ class MatDatSciDf:
                     raw_type = str(item["@type"]).strip()
     
                     if "://" in raw_type:
-                        # Full IRI (e.g., "https://cwrusdle.bitbucket.io/mds/ShearRate")
+                        # Full IRI (e.g., "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#ShearRate")
                         localname = raw_type.split("/")[-1].split("#")[-1]
                     elif ":" in raw_type:
                         # CURIE (e.g., "mds:ShearRate")
@@ -975,7 +1015,7 @@ class MatDatSciDf:
                     subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
 
                     if "prov:generatedAtTime" in item and isinstance(item["prov:generatedAtTime"], dict):
-                        item["prov:generatedAtTime"]["@value"] = datetime.now(timezone.utc).isoformat() + "Z"
+                        item["prov:generatedAtTime"]["@value"] = datetime.now(timezone.utc).isoformat()
 
                     if "qudt:hasUnit" in item and not item["qudt:hasUnit"].get("@id"):
                         del item["qudt:hasUnit"]
@@ -992,13 +1032,13 @@ class MatDatSciDf:
                 g.parse(data=json.dumps(jsonld_data), format="json-ld")
                 
                 QUDT = Namespace("http://qudt.org/schema/qudt/")
-                MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+                MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
                 OBO = Namespace("http://purl.obolibrary.org/obo/")
                 
-                g.bind("mds", MDS)
-                g.bind("qudt", QUDT)
-                g.bind("dcterms", DCTERMS)
-                g.bind("obo", OBO)
+                g.bind("mds", MDS, override=True)
+                g.bind("qudt", QUDT, override=True)
+                g.bind("dcterms", DCTERMS, override=True)
+                g.bind("obo", OBO, override=True)
 
                 # Add triples from DataFrame row values
                 for alt_label, subj_uri in subject_lookup.items():
@@ -1199,7 +1239,7 @@ class MatDatSciDf:
                      data_relations_dict: Optional[dict] = None,
                      df_name: str = "Imported_RDF_Data",
                      ontology_graph: Optional[Graph] = None,
-                     base_uri: str = "https://cwrusdle.bitbucket.io/mds/"):
+                     base_uri: str = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#"):
         """
         Factory method to reconstruct a MatDatSciDf instance and validate semantic integrity 
         from a directory of RDF files.
@@ -1220,7 +1260,7 @@ class MatDatSciDf:
             ontology_graph (rdflib.Graph, optional): A reference ontology used to resolve 
                 labels and CURIEs during validation.
             base_uri (str, optional): The base URI used for semantic subject identification. 
-                Defaults to "https://cwrusdle.bitbucket.io/mds/".
+                Defaults to "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#".
 
         Returns:
             MatDatSciDf: A fully initialized and validated instance containing the 
@@ -1243,7 +1283,7 @@ class MatDatSciDf:
             ".nt": "nt", ".rdf": "xml", ".xml": "xml"
         }
         
-        MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+        MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
         QUDT = Namespace("http://qudt.org/schema/qudt/")
         UNIT = Namespace("https://qudt.org/vocab/unit/")
         SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
@@ -1268,7 +1308,7 @@ class MatDatSciDf:
         # Standard context for reconstruction
         reconstructed_context = {
             "qudt": "http://qudt.org/schema/qudt/",
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
             "skos": "http://www.w3.org/2004/02/skos/core#",
             "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
             "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
@@ -1311,12 +1351,12 @@ class MatDatSciDf:
                 
                 try:
                     g = Graph()
+                    # PRE-BIND NAMESPACES BEFORE PARSING TO PREVENT mds1 CREATION
+                    g.bind("mds", MDS, override=True)
+                    g.bind("qudt", QUDT, override=True)
+                    g.bind("unit", UNIT, override=True)
+                    g.bind("skos", SKOS, override=True)
                     g.parse(path, format=EXTENSIONS[ext])
-                    # PRE-BIND NAMESPACES BEFORE PARSING
-                    g.bind("mds", MDS)
-                    g.bind("qudt", QUDT)
-                    g.bind("unit", UNIT)
-                    g.bind("skos", SKOS)
                     
                     row = {}
                     uri_to_label = {}
@@ -1327,6 +1367,9 @@ class MatDatSciDf:
                         unit_node = g.value(subj, QUDT.hasUnit)
                         unit_uri = g.namespace_manager.curie(str(unit_node) if unit_node else "")
                         semantic_type = str(g.value(subj, RDF.type) or "")
+
+                        if semantic_type.startswith("mds1:"):
+                            semantic_type = semantic_type.replace("mds1:", "mds:")
 
                         uri_to_label[subj] = label
 
@@ -1476,7 +1519,7 @@ class MatDatSciDf:
             for label, origin in template_origins.items():
                 f.write(f"{label:<25} | {origin}\n")
             
-            f.write("\n RDF TYPE MISMATCHES ({len(type_mismatches)})\n")
+            f.write(f"\n RDF TYPE MISMATCHES ({len(type_mismatches)})\n")
             if not type_mismatches: 
                 f.write("  None detected.\n")
             else:
@@ -1541,7 +1584,7 @@ class MatDatSciDf:
                          data_relations_dict: Optional[dict] = None,
                          df_name: str = "Imported_JSONLD_Data",
                          ontology_graph: Optional[Graph] = None,
-                         base_uri: str = "https://cwrusdle.bitbucket.io/mds/"):
+                         base_uri: str = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#/"):
         """Factory method to reconstruct a MatDatSciDf instance from in-memory JSON-LD payloads.
 
         Stages an in-memory collection of JSON-LD dictionaries or JSON-LD serialized strings
@@ -1563,7 +1606,7 @@ class MatDatSciDf:
             ontology_graph (rdflib.Graph, optional): Reference RDF graph used to resolve 
                 labels and CURIEs during schema validation. Defaults to None.
             base_uri (str, optional): Base URI used for semantic subject identification. 
-                Defaults to "https://cwrusdle.bitbucket.io/mds/".
+                Defaults to "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#".
 
         Returns:
             MatDatSciDf: A fully initialized and validated MatDatSciDf instance containing 
@@ -1807,12 +1850,3 @@ class MatDatSciDf:
             # We use a broad catch here only for the UI print, 
             # as network/file issues shouldn't crash the user's session.
             print(f"⚠️ Could not access the license database: {e}")
-
-
-
-
-
-
-
-
-

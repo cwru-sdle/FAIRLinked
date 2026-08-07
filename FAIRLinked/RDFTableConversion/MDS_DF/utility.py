@@ -205,7 +205,7 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
         ```json
         {
           "@context": {
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
             "dcterms": "http://purl.org/dc/terms/"
           },
           "@id": "mds:Dataset",
@@ -314,7 +314,7 @@ def extract_terms_from_ontology(ontology_graph):
     Returns:
         list[dict]: A list of dictionaries containing term IRIs, original labels, and normalized labels.
     """
-    MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+    MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
     
     terms = []
     for s in ontology_graph.subjects(RDF.type, OWL.Class):

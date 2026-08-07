@@ -51,7 +51,7 @@ class Metadata:
             self.unmatched_log = unmatched_log if unmatched_log is not None else []
             self.template_graph = Graph()
             self.template_graph.parse(data=json.dumps(metadata_template), format="json-ld")
-            self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+            self.MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
             self.QUDT = Namespace("http://qudt.org/schema/qudt/")
             self.UNIT = Namespace("https://qudt.org/vocab/unit/")
             self.template_graph.bind("unit", self.UNIT)
@@ -326,7 +326,7 @@ class Metadata:
                 "skos:altLabel": col_name,
                 "skos:definition": definition,
                 "qudt:hasUnit": {"@id": f"unit:{unit}"},
-                "prov:generatedAtTime": datetime.now(timezone.utc).isoformat() + "Z",
+                "prov:generatedAtTime": datetime.now(timezone.utc).isoformat(),
                 "mds:hasStudyStage": study_stage
             }
 
