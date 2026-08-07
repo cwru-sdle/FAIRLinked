@@ -37,7 +37,7 @@ class AnalysisTracker:
                 home_path: str, 
                 orcid: Optional[str] = "0000-0000-0000-0000",
                 metadata_template: Optional[dict] = None,
-                base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
+                base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
                 ontology_graph: Optional[Graph] = None,
                 script_version: Optional[str] = None, 
                 prefix: Optional[str] = "mds",
@@ -111,9 +111,9 @@ class AnalysisTracker:
             self.script_version = script_version
 
         
-        self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+        self.MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
-        self.ontology.bind("mds", self.MDS)
+        self.ontology.bind("mds", self.MDS, override=True)
         self.metadata_template = metadata_template if metadata_template else {}
         self.metadata_obj = Metadata(self.metadata_template)
 
@@ -130,7 +130,7 @@ class AnalysisTracker:
         return {
             self.prefix: self.base_uri,
             "qudt": "http://qudt.org/schema/qudt/",
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
             "skos": "http://www.w3.org/2004/02/skos/core#",
             "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
             "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 
@@ -1013,7 +1013,7 @@ class AnalysisGroup:
                 home_path: str, 
                 orcid: Optional[str] = "0000-0000-0000-0000", 
                 metadata_template: Optional[dict] = None,
-                base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/mds/",
+                base_uri: Optional[str] = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
                 ontology_graph: Optional[Graph] = None,
                 script_version: Optional[str] = None,
                 prefix: Optional[str] = "mds",
@@ -1059,7 +1059,7 @@ class AnalysisGroup:
         self.prefix = prefix
         self.group_id = f"runGroup{str(uuid4().int)[-15:].zfill(15)}"
         self.QUDT = Namespace("http://qudt.org/schema/qudt/")
-        self.MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+        self.MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
         if metadata_template:
             self.metadata_template = metadata_template
         else:
@@ -1078,7 +1078,7 @@ class AnalysisGroup:
         return {
             self.prefix: self.base_uri,
             "qudt": "http://qudt.org/schema/qudt/",
-            "mds": "https://cwrusdle.bitbucket.io/mds/",
+            "mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
             "skos": "http://www.w3.org/2004/02/skos/core#",
             "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
             "rdfs": "http://www.w3.org/2000/01/rdf-schema#", 

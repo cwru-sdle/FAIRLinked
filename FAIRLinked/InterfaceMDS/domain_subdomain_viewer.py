@@ -5,7 +5,7 @@ from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 import os
 
 
-MDS = Namespace("https://cwrusdle.bitbucket.io/mds/")
+MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
 MDSDOM = Namespace("https://cwrusdle.bitbucket.io/mdsdom/")
 
 def domain_subdomain_viewer():

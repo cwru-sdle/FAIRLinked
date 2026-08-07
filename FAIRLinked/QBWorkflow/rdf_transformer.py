@@ -678,7 +678,7 @@ def create_observation_2(row: pd.Series,
     for prefix, namespace in ns_map.items():
         row_graph.bind(prefix, namespace)
 
-    MDS = Namespace("https://cwrusdle.bitbucket.io/mds#")
+    MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
     QUDT = Namespace("http://qudt.org/schema/qudt/")
     UNIT = Namespace("http://qudt.org/vocab/unit/")
     QK = Namespace("http://qudt.org/vocab/quantitykind/")
