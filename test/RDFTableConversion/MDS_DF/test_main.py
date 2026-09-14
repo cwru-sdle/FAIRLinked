@@ -184,10 +184,10 @@ class TestMatDatSciDfInit:
         )
         assert m.base_uri == "https://example.org/"
     
-    def test_auto_relation_discovery(self):
+    def test_auto_relation_discovery_requires_opt_in(self):
         """
-        Tests that get_relation_pairs_onto finds semantic links based on 
-        the ontology classes and inheritance.
+        Tests that ontology-derived links are disabled by default and are
+        added when infer_relations=True.
         """
         # 1. Setup a mini ontology
         # Measurement (Domain) -> measuredBy -> Tool (Range)
@@ -208,28 +208,33 @@ class TestMatDatSciDfInit:
         tmpl = {
             "@context": {"mds": NS},
             "@graph": [
-                {"skos:altLabel": "Temp_Col", "@type": "mds:TemperatureMeasurement"},
-                {"skos:altLabel": "Sensor_Col", "@type": "mds:Tool"}
+                {"skos:altLabel": "Temp_Col", "@type": str(TEMP_MEASUREMENT)},
+                {"skos:altLabel": "Sensor_Col", "@type": str(TOOL)}
             ]
         }
 
-        # 3. Initialize MatDatSciDf
+        # 3. The default keeps relations explicit-only
         df = pd.DataFrame({"Temp_Col": [100], "Sensor_Col": ["S1"]})
-        m = MatDatSciDf(
+        explicit_only = MatDatSciDf(
             df=df,
             metadata_template=tmpl,
             orcid="0000-0000-0000-0000",
             ontology_graph=onto
         )
+        prop_str = str(PROP)
+        assert prop_str not in explicit_only.data_relations.prop_pair_dict
 
-        # 4. Trigger the discovery and addition
-        # This is what you added to your __init__
-        discovered = m.get_relation_pairs_onto()
-        m.add_relations(data_relations=discovered)
+        # 4. Automatic discovery remains available as an opt-in
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=tmpl,
+            orcid="0000-0000-0000-0000",
+            ontology_graph=onto,
+            infer_relations=True,
+        )
 
         # 5. Assertions
         # Check that the property was found using its full URI string
-        prop_str = str(PROP)
         assert prop_str in m.data_relations.prop_pair_dict
         
         # Check that the specific columns were linked
@@ -531,4 +536,3 @@ class TestSerializeBulk:
         g1 = m1.serialize_bulk(str(tmp_path / "b1.jsonld"), write_files=False)
         g2 = m2.serialize_bulk(str(tmp_path / "b2.jsonld"), write_files=False)
         assert len(g2) > len(g1)
-
