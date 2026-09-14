@@ -1059,12 +1059,16 @@ class MatDatSciDf:
                             print(f"Skipping NA value for {alt_label} on row {idx} with row key {clean_row_key}")
                         
                         g.add((subj_uri, rowpredicate, Literal(clean_row_key)))
-                        g.add((subj_uri, DCTERMS.license, license_uri))
                         curator_uri = URIRef(f"https://orcid.org/{self.orcid}")
                         g.add((subj_uri, DCTERMS.creator, curator_uri))
                         
                         if not getattr(self, 'orcid_verified', True):
                             g.add((subj_uri, SKOS.note, Literal("Caution: Data curator ORCID was not verified at time of serialization.")))
+
+                # A license applies to the dataset represented by this file, not to
+                # every individual entity described in the file.
+                dataset_uri = Namespace(base_uri).Dataset
+                g.add((dataset_uri, DCTERMS.license, license_uri))
 
                 # ==========================================
                 # Process Custom RDFS Label Pairs
@@ -1180,8 +1184,8 @@ class MatDatSciDf:
                 column Y contains the literal text string that should be assigned 
                 as its 'rdfs:label'. If a cell in column Y is missing or empty, 
                 the label triple for that row is omitted.
-            license (str, optional): SPDX license ID or URI to be applied to the 
-                triples.
+            license (str, optional): SPDX license ID or URI applied once to the
+                dataset represented by the output file.
             write_files (bool, optional): Whether to write serialized data to disk. 
                 Defaults to True.
 
