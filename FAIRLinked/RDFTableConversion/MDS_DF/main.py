@@ -74,7 +74,8 @@ class MatDatSciDf:
                 metadata_rows: Optional[bool] = False,
                 ontology_graph: Optional[Graph] = None, 
                 base_uri="https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
-                local_unit_file: Optional[bool] = True):
+                local_unit_file: Optional[bool] = True,
+                infer_relations: bool = False):
         """
         Initializes the MatDatSciDf instance, validates identity, and constructs semantic objects.
 
@@ -96,6 +97,9 @@ class MatDatSciDf:
                 package-level MDS ontology.
             base_uri (str, optional): Base URI for RDF @id generation.
             local_unit_file: (bool, optional): Get units directly from QUDT units file in package or get from QUDT website
+            infer_relations (bool, optional): If True, automatically adds relationships inferred from
+                ontology domains and ranges. Defaults to False so only explicitly supplied relations
+                are serialized.
 
         Raises:
             warnings.warn: If the ORCID cannot be verified via API due to connection 
@@ -135,6 +139,7 @@ class MatDatSciDf:
             self.ontology = ontology_graph
         
         self.base_uri = base_uri
+        self.infer_relations = infer_relations
 
         self.MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
         self.ontology.bind("mds", self.MDS, override=True)
@@ -186,8 +191,9 @@ class MatDatSciDf:
 
         self.data_relations = DataRelationsDict(prop_col_pair_dict=data_relations_dict)
         self.metadata_obj = Metadata(metadata_template=self.metadata_template, matched_log=self.matched_log, unmatched_log=self.unmatched_log)
-        init_data_relations_dict = self.get_relation_pairs_onto()
-        self.add_relations(data_relations=init_data_relations_dict)
+        if self.infer_relations:
+            init_data_relations_dict = self.get_relation_pairs_onto()
+            self.add_relations(data_relations=init_data_relations_dict)
   
         
 

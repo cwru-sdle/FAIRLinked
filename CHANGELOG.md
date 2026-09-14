@@ -1,3 +1,8 @@
+# Unreleased
+
+Add an ``infer_relations`` constructor argument to ``MatDatSciDf``. Automatic
+domain/range-based relation discovery is now opt-in and defaults to ``False``.
+
 # 0.3.3.15
 
 Create argument for licensing when serializing JSONs with AnalysisGroup

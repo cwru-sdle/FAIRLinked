@@ -159,13 +159,7 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
         license=license_input
     )
 
-    base_uri = "https://cwrusdle.bitbucket.io/mds/"
-
-    if 'base_uri' not in locals():
-        base_uri = "https://cwrusdle.bitbucket.io/mds/"
-    else:
-        base_uri = locals()['base_uri']
-
+    base_uri = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#"
 
     # Check that results is a list of RDF graphs
     assert isinstance(results, list)
@@ -182,8 +176,10 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
     assert data["@context"].get("mds") == base_uri
     assert data["@context"].get("dcterms") == "http://purl.org/dc/terms/"
 
-    assert any((None,DCTERMS.license , None) in g for g in results), \
-        "Missing license information"
+    expected_license_uri = URIRef(expected_uri)
+    assert any(
+        (None, DCTERMS.license, expected_license_uri) in g for g in results
+    ), f"Missing expected license URI: {expected_uri}"
 
 @pytest.fixture
 def complex_sample_csv(tmp_path):
@@ -271,7 +267,6 @@ def test_extract_data_with_complex_properties(
             # Ensure the object is a URI, not just a string literal
             assert "http" in str(o)
     assert friend_found, "Object Property 'has friend' was not found in the graph"
-
 
 
 
