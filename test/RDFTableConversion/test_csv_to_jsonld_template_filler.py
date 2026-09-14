@@ -177,9 +177,15 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
     assert data["@context"].get("dcterms") == "http://purl.org/dc/terms/"
 
     expected_license_uri = URIRef(expected_uri)
-    assert any(
-        (None, DCTERMS.license, expected_license_uri) in g for g in results
-    ), f"Missing expected license URI: {expected_uri}"
+    expected_license_triple = (
+        URIRef(f"{base_uri}Dataset"),
+        DCTERMS.license,
+        expected_license_uri,
+    )
+    for graph in results:
+        assert list(graph.triples((None, DCTERMS.license, None))) == [
+            expected_license_triple
+        ]
 
 @pytest.fixture
 def complex_sample_csv(tmp_path):
@@ -267,6 +273,5 @@ def test_extract_data_with_complex_properties(
             # Ensure the object is a URI, not just a string literal
             assert "http" in str(o)
     assert friend_found, "Object Property 'has friend' was not found in the graph"
-
 
 

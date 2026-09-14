@@ -21,7 +21,7 @@ are mocked so that every test is fast and fully offline.
 import warnings
 from unittest.mock import MagicMock, patch, PropertyMock
 from rdflib import Graph, URIRef, Literal, Namespace
-from rdflib.namespace import RDF, RDFS, OWL
+from rdflib.namespace import RDF, RDFS, OWL, DCTERMS
 
 # ---------------------------------------------------------------------------
 # Shared helpers / factories
@@ -489,6 +489,15 @@ class TestSerializeRow:
         QUDT = Namespace("http://qudt.org/schema/qudt/")
         values = list(graphs[0].objects(predicate=QUDT.value))
         assert len(values) >= 1
+
+    def test_graph_contains_one_dataset_license(self, tmp_path):
+        m = make_mdsdf(cols=["Temperature", "Pressure"], rows=1)
+        graphs = m.serialize_row(str(tmp_path / "rdf"), write_files=False)
+        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
+
+        assert list(graphs[0].triples((None, DCTERMS.license, None))) == [
+            (m.MDS.Dataset, DCTERMS.license, license_uri)
+        ]
  
     def test_invalid_spdx_license_raises(self, tmp_path):
         m = make_mdsdf(cols=["Temperature"], rows=1)
@@ -536,3 +545,12 @@ class TestSerializeBulk:
         g1 = m1.serialize_bulk(str(tmp_path / "b1.jsonld"), write_files=False)
         g2 = m2.serialize_bulk(str(tmp_path / "b2.jsonld"), write_files=False)
         assert len(g2) > len(g1)
+
+    def test_graph_contains_one_dataset_license(self, tmp_path):
+        m = make_mdsdf(cols=["Temperature", "Pressure"], rows=3)
+        graph = m.serialize_bulk(str(tmp_path / "bulk.jsonld"), write_files=False)
+        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
+
+        assert list(graph.triples((None, DCTERMS.license, None))) == [
+            (m.MDS.Dataset, DCTERMS.license, license_uri)
+        ]
