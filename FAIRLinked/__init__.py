@@ -1,5 +1,5 @@
 
-__version__ = "0.3.3.16"
+__version__ = "0.3.3.17"
 
 from .RDFTableConversion import MatDatSciDf, AnalysisGroup, AnalysisTracker
 
