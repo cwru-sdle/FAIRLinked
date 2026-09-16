@@ -940,12 +940,12 @@ class MatDatSciDf:
                 )
 
             license_uri = URIRef(f"https://spdx.org/licenses/{license}.html")
-            write_license_triple(output_folder, base_uri, license_uri)
 
         else:
             license_uri = URIRef(license)
-            write_license_triple(output_folder, base_uri, license_uri)
 
+        if write_files:
+            write_license_triple(output_folder, base_uri, str(license_uri))
 
         for idx, row in df.iterrows():
             try:
@@ -1065,11 +1065,6 @@ class MatDatSciDf:
                         if not getattr(self, 'orcid_verified', True):
                             g.add((subj_uri, SKOS.note, Literal("Caution: Data curator ORCID was not verified at time of serialization.")))
 
-                # A license applies to the dataset represented by this file, not to
-                # every individual entity described in the file.
-                dataset_uri = Namespace(base_uri).Dataset
-                g.add((dataset_uri, DCTERMS.license, license_uri))
-
                 # ==========================================
                 # Process Custom RDFS Label Pairs
                 # ==========================================
@@ -1184,8 +1179,8 @@ class MatDatSciDf:
                 column Y contains the literal text string that should be assigned 
                 as its 'rdfs:label'. If a cell in column Y is missing or empty, 
                 the label triple for that row is omitted.
-            license (str, optional): SPDX license ID or URI applied once to the
-                dataset represented by the output file.
+            license (str, optional): SPDX license ID or URI written to a separate
+                ``dataset_license.jsonld`` file alongside the bulk output.
             write_files (bool, optional): Whether to write serialized data to disk. 
                 Defaults to True.
 
@@ -1227,7 +1222,15 @@ class MatDatSciDf:
         # 5. Save the aggregated file using the original context
         
         if write_files:
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            output_folder = os.path.dirname(output_path) or "."
+            os.makedirs(output_folder, exist_ok=True)
+            if not license:
+                license_uri = "https://spdx.org/licenses/CC0-1.0.html"
+            elif license.startswith("http"):
+                license_uri = license
+            else:
+                license_uri = f"https://spdx.org/licenses/{license}.html"
+            write_license_triple(output_folder, self.base_uri, license_uri)
             master_graph.serialize(
                 destination=output_path,
                 format=format,

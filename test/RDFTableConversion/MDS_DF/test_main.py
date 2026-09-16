@@ -490,14 +490,11 @@ class TestSerializeRow:
         values = list(graphs[0].objects(predicate=QUDT.value))
         assert len(values) >= 1
 
-    def test_graph_contains_one_dataset_license(self, tmp_path):
+    def test_graph_does_not_contain_license(self, tmp_path):
         m = make_mdsdf(cols=["Temperature", "Pressure"], rows=1)
         graphs = m.serialize_row(str(tmp_path / "rdf"), write_files=False)
-        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
 
-        assert list(graphs[0].triples((None, DCTERMS.license, None))) == [
-            (m.MDS.Dataset, DCTERMS.license, license_uri)
-        ]
+        assert list(graphs[0].triples((None, DCTERMS.license, None))) == []
  
     def test_invalid_spdx_license_raises(self, tmp_path):
         m = make_mdsdf(cols=["Temperature"], rows=1)
@@ -515,6 +512,18 @@ class TestSerializeRow:
         m.serialize_row(str(out), write_files=True)
         files = list(out.iterdir())
         assert len(files) >= 2
+
+        license_graph = Graph().parse(out / "dataset_license.jsonld", format="json-ld")
+        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
+        assert list(license_graph.triples((None, DCTERMS.license, None))) == [
+            (m.MDS.Dataset, DCTERMS.license, license_uri)
+        ]
+
+        for data_file in out.glob("*.jsonld"):
+            if data_file.name == "dataset_license.jsonld":
+                continue
+            data_graph = Graph().parse(data_file, format="json-ld")
+            assert list(data_graph.triples((None, DCTERMS.license, None))) == []
  
     def test_na_values_skipped(self, tmp_path):
         df = pd.DataFrame({"Temperature": [100, None]})
@@ -546,11 +555,24 @@ class TestSerializeBulk:
         g2 = m2.serialize_bulk(str(tmp_path / "b2.jsonld"), write_files=False)
         assert len(g2) > len(g1)
 
-    def test_graph_contains_one_dataset_license(self, tmp_path):
+    def test_graph_does_not_contain_license(self, tmp_path):
         m = make_mdsdf(cols=["Temperature", "Pressure"], rows=3)
         graph = m.serialize_bulk(str(tmp_path / "bulk.jsonld"), write_files=False)
-        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
 
-        assert list(graph.triples((None, DCTERMS.license, None))) == [
+        assert list(graph.triples((None, DCTERMS.license, None))) == []
+
+    def test_write_files_creates_separate_license_file(self, tmp_path):
+        m = make_mdsdf(cols=["Temperature", "Pressure"], rows=3)
+        output_path = tmp_path / "bulk.jsonld"
+        graph = m.serialize_bulk(str(output_path), write_files=True)
+
+        assert output_path.exists()
+        assert list(graph.triples((None, DCTERMS.license, None))) == []
+
+        license_graph = Graph().parse(
+            tmp_path / "dataset_license.jsonld", format="json-ld"
+        )
+        license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
+        assert list(license_graph.triples((None, DCTERMS.license, None))) == [
             (m.MDS.Dataset, DCTERMS.license, license_uri)
         ]

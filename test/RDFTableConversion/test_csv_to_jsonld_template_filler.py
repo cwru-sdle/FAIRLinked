@@ -182,10 +182,19 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
         DCTERMS.license,
         expected_license_uri,
     )
+    license_graph = Graph().parse(out_file, format="json-ld")
+    assert list(license_graph.triples((None, DCTERMS.license, None))) == [
+        expected_license_triple
+    ]
+
     for graph in results:
-        assert list(graph.triples((None, DCTERMS.license, None))) == [
-            expected_license_triple
-        ]
+        assert list(graph.triples((None, DCTERMS.license, None))) == []
+
+    for data_file in output_dir.glob("*.jsonld"):
+        if data_file.name == "dataset_license.jsonld":
+            continue
+        data_graph = Graph().parse(data_file, format="json-ld")
+        assert list(data_graph.triples((None, DCTERMS.license, None))) == []
 
 @pytest.fixture
 def complex_sample_csv(tmp_path):
@@ -237,7 +246,11 @@ def test_extract_data_with_complex_properties(
     # Basic assertions
     assert len(results) == 2  # Two data rows
     jsonld_files = list(output_dir.glob("*.jsonld"))
-    assert len(jsonld_files) == 2
+    data_files = [
+        path for path in jsonld_files if path.name != "dataset_license.jsonld"
+    ]
+    assert len(data_files) == 2
+    assert (output_dir / "dataset_license.jsonld").exists()
 
     EX = Namespace("http://example.org/")
     
