@@ -891,10 +891,6 @@ class MatDatSciDf:
         """
         Serializes each row of the DataFrame into individual RDF files using the 
         active semantic metadata template.
-
-        The reference ontology is expected to declare ``mds:LinkedData`` as a
-        class. Each generated file receives its own instance of that class, and
-        the selected license is attached to the instance.
         """
 
         df = self.df
