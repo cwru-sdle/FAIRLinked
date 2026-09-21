@@ -202,10 +202,10 @@ mds_df.add_column_metadata(
 
 #### Data relations Management
 
-Relations are explicit by default. Pass a relations dictionary to
+Relations are inferred by default. Pass a relations dictionary to
 ``data_relations_dict`` during initialization or call ``add_relations`` afterward.
-To opt into automatic domain/range-based discovery, construct the object with
-``infer_relations=True``.
+To use only explicitly supplied relations, construct the object with
+``infer_relations=False``.
 
 ```python
 micro_relations = {

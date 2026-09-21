@@ -92,8 +92,8 @@ Validation and Relations
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Before export, use the firewall to audit alignment and define internal links.
-Relations are explicit by default. Set ``infer_relations=True`` when constructing
-``MatDatSciDf`` only when automatic domain/range-based discovery is desired.
+Relations are inferred by default. Set ``infer_relations=False`` when constructing
+``MatDatSciDf`` when only explicitly supplied relations are desired.
 
 .. code-block:: python
 
@@ -257,7 +257,7 @@ Getting pre-defined relationships from ontology
    * - Method / Property
      - Purpose
    * - ``__init__``
-     - Initializes the wrapper, strips metadata rows, verifies the curator's ORCID via API, and links the reference ontology. Set ``infer_relations=True`` to opt into automatic relation discovery; the default is explicit relations only.
+     - Initializes the wrapper, strips metadata rows, verifies the curator's ORCID via API, and links the reference ontology. Automatic relation discovery is enabled by default; set ``infer_relations=False`` to use explicit relations only.
    * - ``template_generator``
      - Automatically crawls dataframe columns and maps them to ontology concepts using fuzzy matching or explicit header rows.
    * - ``validate_metadata``
@@ -553,7 +553,6 @@ Use the built-in SPDX utility to find valid licenses for your data serialization
 .. code-block:: python
 
     MatDatSciDf.search_license("Creative Commons")
-
 
 
 
