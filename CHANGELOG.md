@@ -1,8 +1,11 @@
-# Unreleased
+# 0.3.3.18
 
 Add an ``infer_relations`` constructor argument to ``MatDatSciDf``. Automatic
 domain/range-based relation discovery defaults to ``True`` and can be disabled
 with ``infer_relations=False``.
+
+Represent generated row and bulk outputs as distinct ``mds:LinkedData``
+instances and attach the selected license to the corresponding instance.
 
 # 0.3.3.15
 
