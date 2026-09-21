@@ -149,6 +149,9 @@ def test_extract_data_with_properties_all_keys(
 def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_input, expected_uri):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
+    base_uri = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#"
+    ontology_graph = Graph()
+    ontology_graph.add((URIRef(f"{base_uri}LinkedData"), RDF.type, OWL.Class))
 
     results = extract_data_from_csv(
         metadata_template=test_template,
@@ -156,10 +159,9 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
         row_key_cols=["Value1"],
         orcid="0009-0008-4355-0543",
         output_folder=str(output_dir),
-        license=license_input
+        license=license_input,
+        ontology_graph=ontology_graph,
     )
-
-    base_uri = "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#"
 
     # Check that results is a list of RDF graphs
     assert isinstance(results, list)
@@ -175,17 +177,29 @@ def test_extract_data_with_license(test_template, sample_csv, tmp_path, license_
     assert "@context" in data
     assert data["@context"].get("mds") == base_uri
     assert data["@context"].get("dcterms") == "http://purl.org/dc/terms/"
+    assert data["@id"].startswith("mds:LinkedData.")
+    assert data["@type"] == "mds:LinkedData"
 
     expected_license_uri = URIRef(expected_uri)
-    expected_license_triple = (
-        URIRef(f"{base_uri}Dataset"),
-        DCTERMS.license,
-        expected_license_uri,
-    )
+    linked_data_class = URIRef(f"{base_uri}LinkedData")
+    licensed_subjects = set()
     for graph in results:
-        assert list(graph.triples((None, DCTERMS.license, None))) == [
-            expected_license_triple
-        ]
+        license_triples = list(graph.triples((None, DCTERMS.license, None)))
+        assert len(license_triples) == 1
+        linked_data_uri, _, actual_license_uri = license_triples[0]
+        assert linked_data_uri != linked_data_class
+        assert actual_license_uri == expected_license_uri
+        assert (linked_data_uri, RDF.type, linked_data_class) in graph
+        licensed_subjects.add(linked_data_uri)
+
+    data_files = [
+        path for path in output_dir.glob("*.jsonld")
+        if path.name != "dataset_license.jsonld"
+    ]
+    expected_subjects = {
+        URIRef(f"{base_uri}LinkedData.{path.name}") for path in data_files
+    }
+    assert licensed_subjects == expected_subjects
 
 @pytest.fixture
 def complex_sample_csv(tmp_path):
@@ -273,5 +287,3 @@ def test_extract_data_with_complex_properties(
             # Ensure the object is a URI, not just a string literal
             assert "http" in str(o)
     assert friend_found, "Object Property 'has friend' was not found in the graph"
-
-

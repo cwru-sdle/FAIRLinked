@@ -924,11 +924,10 @@ class MatDatSciDf:
 
         rowpredicate = URIRef("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#row")
 
-        # check license
+        # Check and normalize the license before creating per-file instances.
         if not license:
-            license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
             print("No license provided. Default to CC0-1.0 (Public Domain)")
-
+            license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
         elif not license.startswith("http"):
             spdx_data = load_licenses()
             valid_ids = {lic["licenseId"] for lic in spdx_data["licenses"]}
@@ -938,13 +937,17 @@ class MatDatSciDf:
                     f"Invalid SPDX license ID '{license}'.\n"
                     f"Please use one from https://spdx.org/licenses/."
                 )
-
             license_uri = URIRef(f"https://spdx.org/licenses/{license}.html")
-            write_license_triple(output_folder, base_uri, license_uri)
-
         else:
             license_uri = URIRef(license)
-            write_license_triple(output_folder, base_uri, license_uri)
+
+        if license and write_files:
+            write_license_triple(
+                output_folder,
+                base_uri,
+                license_uri,
+                linked_data_id=f"{self.df_name}.license_manifest",
+            )
 
 
         for idx, row in df.iterrows():
@@ -1065,10 +1068,14 @@ class MatDatSciDf:
                         if not getattr(self, 'orcid_verified', True):
                             g.add((subj_uri, SKOS.note, Literal("Caution: Data curator ORCID was not verified at time of serialization.")))
 
-                # A license applies to the dataset represented by this file, not to
-                # every individual entity described in the file.
-                dataset_uri = Namespace(base_uri).Dataset
-                g.add((dataset_uri, DCTERMS.license, license_uri))
+                # Each output file is a distinct instance of mds:LinkedData. Its
+                # generated filename is also used as the instance identifier.
+                mds_namespace = Namespace(base_uri)
+                output_filename = f"{full_row_key}.jsonld"
+                linked_data_id = quote(output_filename, safe="._-")
+                linked_data_uri = mds_namespace[f"LinkedData.{linked_data_id}"]
+                g.add((linked_data_uri, RDF.type, mds_namespace.LinkedData))
+                g.add((linked_data_uri, DCTERMS.license, license_uri))
 
                 # ==========================================
                 # Process Custom RDFS Label Pairs
@@ -1131,7 +1138,7 @@ class MatDatSciDf:
                     g.remove(triple)
 
                 # Execute Semantic Remapping Firewall
-                output_file = os.path.join(output_folder, f"{full_row_key}.jsonld")
+                output_file = os.path.join(output_folder, output_filename)
                 g = self.semantic_remapping(g)
                 raw_jsonld = g.serialize(format="json-ld", context=context)
 
@@ -1185,7 +1192,7 @@ class MatDatSciDf:
                 as its 'rdfs:label'. If a cell in column Y is missing or empty, 
                 the label triple for that row is omitted.
             license (str, optional): SPDX license ID or URI applied once to the
-                dataset represented by the output file.
+                Linked Data representation in the output file.
             write_files (bool, optional): Whether to write serialized data to disk. 
                 Defaults to True.
 
@@ -1223,6 +1230,38 @@ class MatDatSciDf:
         # 4. Merge all triples into the master graph
         for g in row_graphs:
             master_graph += g
+
+        # Row serialization creates one LinkedData instance per row file. The bulk
+        # output is one file, so replace those row-file resources with one instance
+        # that identifies the aggregated representation.
+        licensed_subjects = set(master_graph.subjects(DCTERMS.license, None))
+        license_uris = set(master_graph.objects(None, DCTERMS.license))
+        for subject in licensed_subjects:
+            master_graph.remove((subject, None, None))
+
+        if license_uris:
+            license_uri = next(iter(license_uris))
+        elif not license:
+            license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
+        elif license.startswith("http"):
+            license_uri = URIRef(license)
+        else:
+            license_uri = URIRef(f"https://spdx.org/licenses/{license}.html")
+
+        output_filename = os.path.basename(output_path)
+        linked_data_id = quote(output_filename, safe="._-")
+        mds_namespace = Namespace(self.base_uri)
+        linked_data_uri = mds_namespace[f"LinkedData.{linked_data_id}"]
+        master_graph.add((linked_data_uri, RDF.type, mds_namespace.LinkedData))
+        master_graph.add((linked_data_uri, DCTERMS.license, license_uri))
+
+        if license and write_files:
+            write_license_triple(
+                os.path.dirname(output_path),
+                self.base_uri,
+                license_uri,
+                linked_data_id=output_filename,
+            )
 
         # 5. Save the aggregated file using the original context
         
