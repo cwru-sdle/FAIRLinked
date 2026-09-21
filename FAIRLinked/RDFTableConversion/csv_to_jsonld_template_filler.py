@@ -5,7 +5,7 @@ import uuid
 import pandas as pd
 from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import RDF, OWL, RDFS, DCTERMS
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 from ..InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
 from .. import helper_data as helper_data
 import hashlib
@@ -210,12 +210,19 @@ def resolve_predicate(key, ontology_graph):
     return pred_uri, label_type
 
 
-def write_license_triple(output_folder: str, base_uri: str, license_id: str):
+def write_license_triple(
+    output_folder: str,
+    base_uri: str,
+    license_id: str,
+    linked_data_id: str = "license_manifest",
+):
     """
-    Creates a compact JSON-LD file defining a single RDF triple that links a dataset to its license.
+    Creates a compact JSON-LD file describing a licensed Linked Data instance.
 
-    This function generates a minimal JSON-LD graph of the form:
-        mds:Dataset dcterms:license <SPDX_URI>
+    This function generates a minimal JSON-LD graph of the form::
+
+        mds:LinkedData.<identifier> rdf:type mds:LinkedData
+        mds:LinkedData.<identifier> dcterms:license <SPDX_URI>
 
     If a short SPDX identifier (e.g. "MIT", "CC-BY-4.0") is provided, the function verifies that the
     identifier exists in the official SPDX license list (`licenses.json`, bundled with the package)
@@ -223,7 +230,7 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
     `https://spdx.org/licenses/MIT.html`).  If a full URI beginning with "http" is supplied, the URI
     is used as-is.
 
-    The resulting triple is serialized to a compact JSON-LD file named
+    The resulting graph is serialized to a compact JSON-LD file named
     ``dataset_license.jsonld`` in the specified output folder.  The JSON-LD document includes a
     top-level ``@context`` containing compact namespace prefixes for ``mds`` and ``dcterms``.
 
@@ -234,12 +241,15 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
         created if it does not exist.
 
     base_uri : str
-        Base namespace URI of the MDS ontology.  The function appends a fragment (“#”) and uses
-        ``mds:Dataset`` as the subject IRI of the triple.
+        Base namespace URI used for the class and instance IRIs.
 
     license_id : str
         SPDX short identifier (e.g., "MIT", "CC-BY-4.0") OR full license URI.  Short identifiers are
         validated against the official SPDX license list before being converted into full URIs.
+
+    linked_data_id : str, optional
+        Identifier used to mint the Linked Data instance IRI. Defaults to
+        ``"license_manifest"``.
 
     Outputs
     -------
@@ -252,7 +262,8 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
             "mds": "https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
             "dcterms": "http://purl.org/dc/terms/"
           },
-          "@id": "mds:Dataset",
+          "@id": "mds:LinkedData.license_manifest",
+          "@type": "mds:LinkedData",
           "dcterms:license": {
             "@id": "https://spdx.org/licenses/MIT.html"
           }
@@ -290,7 +301,10 @@ def write_license_triple(output_folder: str, base_uri: str, license_id: str):
     g.bind("mds", MDS)
     g.bind("dcterms", DCTERMS)
 
-    g.add((MDS.Dataset, DCTERMS.license, URIRef(license_uri)))
+    instance_id = quote(str(linked_data_id), safe="._-") or "license_manifest"
+    linked_data_uri = MDS[f"LinkedData.{instance_id}"]
+    g.add((linked_data_uri, RDF.type, MDS.LinkedData))
+    g.add((linked_data_uri, DCTERMS.license, URIRef(license_uri)))
 
     # Serialize to JSON-LD (expanded form)
     jsonld_data = json.loads(g.serialize(format="json-ld"))
@@ -368,7 +382,14 @@ def extract_from_folder(
     # orcid = orcid.replace("-", "")
 
     if (license):
-        write_license_triple(output_base_folder, base_uri, license)
+        write_license_triple(
+            output_base_folder,
+            base_uri,
+            license,
+            linked_data_id=(
+                f"{os.path.basename(os.path.abspath(csv_folder))}.license_manifest"
+            ),
+        )
 
     for filename in os.listdir(csv_folder):
         if not filename.endswith(".csv"):
@@ -438,6 +459,3 @@ def extract_data_from_csv_interface(args):
         base_uri=args.base_uri,
         license=args.license
     )
-
-
-

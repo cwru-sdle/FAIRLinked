@@ -28,6 +28,7 @@ from rdflib.namespace import RDF, RDFS, OWL, DCTERMS
 # ---------------------------------------------------------------------------
 
 MDS_NS  = Namespace("https://cwrusdle.bitbucket.io/mds/")
+MDS_CURRENT_NS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
 QUDT_NS = Namespace("http://qudt.org/schema/qudt/")
 
 BASE_CONTEXT = {
@@ -63,6 +64,7 @@ def _build_ontology() -> Graph:
     """Minimal in-memory ontology with one object and one datatype property."""
     g = Graph()
     g.bind("mds", MDS_NS)
+    g.add((MDS_CURRENT_NS.LinkedData, RDF.type, OWL.Class))
     for local, ptype in [("measuredBy", OWL.ObjectProperty), ("hasValue", OWL.DatatypeProperty)]:
         uri = MDS_NS[local]
         g.add((uri, RDF.type, ptype))
@@ -491,14 +493,28 @@ class TestSerializeRow:
         values = list(graphs[0].objects(predicate=QUDT.value))
         assert len(values) >= 1
 
-    def test_graph_contains_one_dataset_license(self, tmp_path):
+    def test_graph_contains_one_linked_data_license(self, tmp_path):
         m = make_mdsdf(cols=["Temperature", "Pressure"], rows=1)
         graphs = m.serialize_row(str(tmp_path / "rdf"), write_files=False)
         license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
 
-        assert list(graphs[0].triples((None, DCTERMS.license, None))) == [
-            (m.MDS.Dataset, DCTERMS.license, license_uri)
-        ]
+        license_triples = list(graphs[0].triples((None, DCTERMS.license, None)))
+        assert len(license_triples) == 1
+        linked_data_uri, _, actual_license_uri = license_triples[0]
+        assert linked_data_uri != m.MDS.LinkedData
+        assert str(linked_data_uri).endswith(".jsonld")
+        assert "testdf" not in str(linked_data_uri).lower()
+        assert actual_license_uri == license_uri
+        assert (linked_data_uri, RDF.type, m.MDS.LinkedData) in graphs[0]
+
+    def test_each_row_has_a_distinct_linked_data_instance(self, tmp_path):
+        m = make_mdsdf(cols=["Temperature"], rows=2)
+        graphs = m.serialize_row(str(tmp_path / "rdf"), write_files=False)
+
+        subjects = [next(g.subjects(DCTERMS.license, None)) for g in graphs]
+        assert len(set(subjects)) == 2
+        assert all((subject, RDF.type, m.MDS.LinkedData) in graph
+                   for subject, graph in zip(subjects, graphs))
  
     def test_invalid_spdx_license_raises(self, tmp_path):
         m = make_mdsdf(cols=["Temperature"], rows=1)
@@ -547,11 +563,14 @@ class TestSerializeBulk:
         g2 = m2.serialize_bulk(str(tmp_path / "b2.jsonld"), write_files=False)
         assert len(g2) > len(g1)
 
-    def test_graph_contains_one_dataset_license(self, tmp_path):
+    def test_graph_contains_one_linked_data_license(self, tmp_path):
         m = make_mdsdf(cols=["Temperature", "Pressure"], rows=3)
         graph = m.serialize_bulk(str(tmp_path / "bulk.jsonld"), write_files=False)
         license_uri = URIRef("https://spdx.org/licenses/CC0-1.0.html")
 
-        assert list(graph.triples((None, DCTERMS.license, None))) == [
-            (m.MDS.Dataset, DCTERMS.license, license_uri)
-        ]
+        license_triples = list(graph.triples((None, DCTERMS.license, None)))
+        assert len(license_triples) == 1
+        linked_data_uri, _, actual_license_uri = license_triples[0]
+        assert linked_data_uri == m.MDS["LinkedData.bulk.jsonld"]
+        assert actual_license_uri == license_uri
+        assert (linked_data_uri, RDF.type, m.MDS.LinkedData) in graph
