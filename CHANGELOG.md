@@ -1,7 +1,8 @@
 # Unreleased
 
 Add an ``infer_relations`` constructor argument to ``MatDatSciDf``. Automatic
-domain/range-based relation discovery is now opt-in and defaults to ``False``.
+domain/range-based relation discovery defaults to ``True`` and can be disabled
+with ``infer_relations=False``.
 
 # 0.3.3.15
 

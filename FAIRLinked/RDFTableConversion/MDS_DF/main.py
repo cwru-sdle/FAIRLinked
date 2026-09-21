@@ -75,7 +75,7 @@ class MatDatSciDf:
                 ontology_graph: Optional[Graph] = None, 
                 base_uri="https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#",
                 local_unit_file: Optional[bool] = True,
-                infer_relations: bool = False):
+                infer_relations: bool = True):
         """
         Initializes the MatDatSciDf instance, validates identity, and constructs semantic objects.
 
@@ -98,8 +98,8 @@ class MatDatSciDf:
             base_uri (str, optional): Base URI for RDF @id generation.
             local_unit_file: (bool, optional): Get units directly from QUDT units file in package or get from QUDT website
             infer_relations (bool, optional): If True, automatically adds relationships inferred from
-                ontology domains and ranges. Defaults to False so only explicitly supplied relations
-                are serialized.
+                ontology domains and ranges. Defaults to True; set to False to serialize only
+                explicitly supplied relations.
 
         Raises:
             warnings.warn: If the ORCID cannot be verified via API due to connection 

@@ -184,10 +184,10 @@ class TestMatDatSciDfInit:
         )
         assert m.base_uri == "https://example.org/"
     
-    def test_auto_relation_discovery_requires_opt_in(self):
+    def test_auto_relation_discovery_enabled_by_default(self):
         """
-        Tests that ontology-derived links are disabled by default and are
-        added when infer_relations=True.
+        Tests that ontology-derived links are enabled by default and can be
+        disabled with infer_relations=False.
         """
         # 1. Setup a mini ontology
         # Measurement (Domain) -> measuredBy -> Tool (Range)
@@ -213,25 +213,26 @@ class TestMatDatSciDfInit:
             ]
         }
 
-        # 3. The default keeps relations explicit-only
+        # 3. Automatic discovery is enabled by default
         df = pd.DataFrame({"Temp_Col": [100], "Sensor_Col": ["S1"]})
-        explicit_only = MatDatSciDf(
+        m = MatDatSciDf(
             df=df,
             metadata_template=tmpl,
             orcid="0000-0000-0000-0000",
             ontology_graph=onto
         )
         prop_str = str(PROP)
-        assert prop_str not in explicit_only.data_relations.prop_pair_dict
+        assert prop_str in m.data_relations.prop_pair_dict
 
-        # 4. Automatic discovery remains available as an opt-in
-        m = MatDatSciDf(
+        # 4. Automatic discovery can be disabled explicitly
+        explicit_only = MatDatSciDf(
             df=df,
             metadata_template=tmpl,
             orcid="0000-0000-0000-0000",
             ontology_graph=onto,
-            infer_relations=True,
+            infer_relations=False,
         )
+        assert prop_str not in explicit_only.data_relations.prop_pair_dict
 
         # 5. Assertions
         # Check that the property was found using its full URI string
