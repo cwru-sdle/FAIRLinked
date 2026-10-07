@@ -54,8 +54,8 @@ class MatDatSciDf:
         orcid (str): Validated ORCID iD of the data curator.
         orcid_verified (bool): Boolean status of curator identity verification.
         df_name (str): Descriptive name for the dataset used in file exports.
-        ontology (rdflib.Graph): The reference ontology graph used for fuzzy 
-            matching and property resolution.
+        ontology (rdflib.Graph): The reference ontology graph used for normalized
+            exact term matching and property resolution.
         base_uri (str): The namespace prefix used for generating semantic subjects.
     """
 
@@ -185,13 +185,12 @@ class MatDatSciDf:
         else:
             self.df_name = df_name
 
-        if data_relations_dict is None:
-            data_relations_dict = {}
-
-
-        self.data_relations = DataRelationsDict(prop_col_pair_dict=data_relations_dict)
+        explicit_relations = data_relations_dict or {}
+        self.data_relations = DataRelationsDict(prop_col_pair_dict={})
         self.metadata_obj = Metadata(metadata_template=self.metadata_template, matched_log=self.matched_log, unmatched_log=self.unmatched_log)
         self.entities = set()
+        if explicit_relations:
+            self.add_relations(data_relations=explicit_relations)
         if self.infer_relations:
             init_data_relations_dict = self.get_relation_pairs_onto()
             self.add_relations(data_relations=init_data_relations_dict)
@@ -347,11 +346,75 @@ class MatDatSciDf:
                             relation_dict[prop_str].append(pair)
 
         return relation_dict
+
+    def _register_missing_relation_entities(self, data_relations: dict, onto_props: dict):
+        """Create ontology-backed entities for relation endpoints absent from metadata."""
+        known_labels = {
+            item.get("skos:altLabel")
+            for item in self.metadata_template.get("@graph", [])
+            if item.get("skos:altLabel")
+        }
+        ontology_terms = extract_terms_from_ontology(self.ontology)
+
+        for prop_key, pairs in data_relations.items():
+            prop_metadata = onto_props.get(prop_key)
+            prop_type = prop_metadata[1] if prop_metadata else None
+
+            for pair in pairs:
+                if len(pair) != 2:
+                    raise ValueError(
+                        f"Relation endpoints for '{prop_key}' must be a two-item pair: {pair!r}"
+                    )
+
+                for position, endpoint in zip(("subject", "object"), pair):
+                    if endpoint in known_labels:
+                        continue
+                    if endpoint in self.df.columns:
+                        if position == "object":
+                            # Object values without metadata are already supported:
+                            # datatype properties emit a literal, while object
+                            # properties mint a value-derived URI.
+                            continue
+                        raise ValueError(
+                            f"Relationship {position} '{endpoint}' is a DataFrame column "
+                            "without metadata. Add its column metadata before adding relations."
+                        )
+                    if position == "object" and prop_type != "Object Property":
+                        raise ValueError(
+                            f"Relationship object '{endpoint}' is not a known column or entity. "
+                            f"Only object properties can infer entity objects; '{prop_key}' "
+                            f"is {prop_type or 'not a recognized ontology property'}."
+                        )
+
+                    search_term = str(endpoint)
+                    if ":" in search_term and "://" not in search_term:
+                        search_term = search_term.split(":", 1)[1]
+                    elif "://" in search_term:
+                        search_term = search_term.split("#")[-1].rstrip("/").split("/")[-1]
+
+                    match = find_best_match(search_term, ontology_terms)
+                    if match is None:
+                        raise ValueError(
+                            f"Relationship {position} '{endpoint}' is neither an existing "
+                            "metadata label nor an exact normalized ontology class match."
+                        )
+
+                    study_stages = match.get("study_stage") or []
+                    study_stage = str(study_stages[0]) if study_stages else "UNK"
+                    self.add_entity(
+                        name=endpoint,
+                        rdf_type=match["iri"],
+                        definition=match.get("definition") or "Definition not available",
+                        study_stage=study_stage,
+                    )
+                    known_labels.add(endpoint)
+                    print(f"✅ Inferred entity '{endpoint}' as {match['iri']}.")
     
     def add_relations(self, data_relations: dict):
         data_rel_obj = self.data_relations
         onto_graph = self.ontology
         onto_props = self.get_relations()
+        self._register_missing_relation_entities(data_relations, onto_props)
         data_rel_obj.add_relations(data_relations=data_relations, 
                                 ontology_graph=onto_graph, 
                                 onto_props=onto_props)
@@ -654,8 +717,8 @@ class MatDatSciDf:
         """
         Generates a semantic metadata template by mapping DataFrame columns to ontology terms.
 
-        This method performs a fuzzy match between column headers and the loaded ontology. 
-        It attempts to automatically resolve the RDF type (@type), study stage, 
+        This method matches column headers to ontology terms after removing whitespace
+        and ignoring capitalization. It attempts to automatically resolve the RDF type (@type), study stage,
         and units. If a direct match is not found, or if 'skip_prompts' is False, 
         it can interactively prompt the user to provide missing metadata fields.
 
@@ -671,8 +734,8 @@ class MatDatSciDf:
             tuple: A tuple containing:
                 - metadata_template (dict): The complete JSON-LD dictionary with 
                   '@context' and '@graph' entries for each column.
-                - matched_log (list): A list of strings documenting successful 
-                  fuzzy-match associations (Column => IRI).
+                - matched_log (list): A list of strings documenting successful
+                  normalized exact-match associations (Column => IRI).
                 - unmatched_log (list): A list of column names that could not be 
                   found in the provided ontology.
 

@@ -559,7 +559,7 @@ class AnalysisTracker:
     def track_simple_datatype(self, name, val, parent_id=None):
         """
         Tracks primitive types (str, int, float, bool) and attempts to 
-        map them to ontology terms using fuzzy matching.
+        map them to ontology terms using normalized exact matching.
 
         Args:
             name: Variable name.

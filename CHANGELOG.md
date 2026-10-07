@@ -7,6 +7,10 @@ relationships without placeholder columns or values.
 Require ``add_column_metadata`` to reference an existing DataFrame column, and
 validate relationship endpoints against both columns and declared entities.
 
+Automatically register missing relationship endpoints when they uniquely match
+an ontology class after removing whitespace and ignoring capitalization. Remove
+fuzzy ontology-term matching so misspellings fail instead of silently resolving.
+
 # 0.3.3.18
 
 Add an ``infer_relations`` constructor argument to ``MatDatSciDf``. Automatic

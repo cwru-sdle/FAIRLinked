@@ -2,7 +2,6 @@ import pandas as pd
 import json
 import re
 import os
-import difflib
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 from ..InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
@@ -21,14 +20,12 @@ def normalize(text):
     """
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
 
+def normalize_term(text):
+    """Normalize ontology terms by ignoring capitalization and whitespace."""
+    return re.sub(r'\s+', '', str(text)).casefold()
+
 def get_local_name(uri):
-        uri_str = str(uri)
-        # Split by / or # and get the last part
-        if '/' in uri_str:
-            return uri_str.split('/')[-1]
-        elif '#' in uri_str:
-            return uri_str.split('#')[-1]
-        return uri_str
+        return re.split(r'[/#]', str(uri))[-1]
 
 def extract_terms_from_ontology(ontology_graph):
     """
@@ -43,10 +40,13 @@ def extract_terms_from_ontology(ontology_graph):
     MDS = Namespace("https://cwrusdle.bitbucket.io/files/MDS_Onto/index-en.html#")
     
     terms = []
-    for s in ontology_graph.subjects(RDF.type, OWL.Class):
+    class_subjects = set(ontology_graph.subjects(RDF.type, OWL.Class))
+    class_subjects.update(ontology_graph.subjects(RDF.type, RDFS.Class))
+    for s in class_subjects:
         
-        # Get both altLabels and rdfs:labels
+        # Match both ontology labels and the class IRI's local name.
         labels = list(ontology_graph.objects(s, SKOS.altLabel)) + list(ontology_graph.objects(s, RDFS.label))
+        labels.append(get_local_name(s))
         # Get definitions
         term_definitions = list(ontology_graph.objects(s, SKOS.definition))
         definition = str(term_definitions[0]) if term_definitions else ""
@@ -56,7 +56,7 @@ def extract_terms_from_ontology(ontology_graph):
             terms.append({
                 "iri": str(s),
                 "label": label_str,
-                "normalized": normalize(label_str),
+                "normalized": normalize_term(label_str),
                 "definition": definition,
                 "study_stage": study_stage
             })
@@ -74,20 +74,17 @@ def find_best_match(column, ontology_terms):
     Returns:
         dict or None: The best-matching ontology term, or None if no good match is found.
     """
-    norm_col = normalize(column)
-
-    # First, try exact normalized match
+    norm_col = normalize_term(column)
     matches = [term for term in ontology_terms if term["normalized"] == norm_col]
-    if matches:
-        return matches[0]
-
-    # Otherwise, find close match using difflib
-    all_norm = [term["normalized"] for term in ontology_terms]
-    close_matches = difflib.get_close_matches(norm_col, all_norm, n=1, cutoff=0.8)
-
-    if close_matches:
-        match_norm = close_matches[0]
-        return next(term for term in ontology_terms if term["normalized"] == match_norm)
+    unique_matches = {term["iri"]: term for term in matches}
+    if len(unique_matches) == 1:
+        return next(iter(unique_matches.values()))
+    if len(unique_matches) > 1:
+        candidates = ", ".join(sorted(unique_matches))
+        raise ValueError(
+            f"Ontology term '{column}' is ambiguous after normalization; "
+            f"matches: {candidates}"
+        )
 
     return None
 

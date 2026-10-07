@@ -212,6 +212,11 @@ Relations are inferred by default. Pass a relations dictionary to
 To use only explicitly supplied relations, construct the object with
 ``infer_relations=False``.
 
+When a relationship endpoint is not already a column or declared entity,
+FAIRLinked resolves it as an ontology class after removing whitespace and
+ignoring capitalization, then registers it as an entity. Matching is exact
+after normalization; misspellings and ambiguous matches raise ``ValueError``.
+
 ```python
 micro_relations = {
     "is about": [

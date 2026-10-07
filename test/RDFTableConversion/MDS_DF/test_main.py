@@ -9,6 +9,10 @@ import tempfile
 import shutil
 from pathlib import Path
 from FAIRLinked.RDFTableConversion.MDS_DF.main import MatDatSciDf
+from FAIRLinked.RDFTableConversion.MDS_DF.utility import (
+    extract_terms_from_ontology,
+    find_best_match,
+)
 
 
 """
@@ -172,7 +176,7 @@ class TestMatDatSciDfInit:
     def test_data_relations_dict_initialised(self):
         dr = {"mds:measuredBy": [["Temperature", "Sensor_ID"]]}
         m = make_mdsdf(cols=["Temperature", "Sensor_ID"], data_relations_dict=dr)
-        assert "mds:measuredBy" in m.data_relations.prop_pair_dict
+        assert str(MDS_NS.measuredBy) in m.data_relations.prop_pair_dict
 
     def test_base_uri_stored(self):
         df = _make_df()
@@ -427,6 +431,59 @@ class TestDataRelationsWrappers:
         m = make_mdsdf(cols=["Temperature", "Sensor_ID"])
         m.view_data_relations()  # empty dict — must not raise
         capsys.readouterr()
+
+    def test_missing_endpoint_is_inferred_as_entity_from_ontology(self):
+        onto = _build_ontology()
+        onto.add((MDS_NS.PVArray, RDF.type, OWL.Class))
+        df = pd.DataFrame({"ArrayModel": ["Model A"]})
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=_make_template(["ArrayModel"]),
+            orcid="0000-0000-0000-0000",
+            ontology_graph=onto,
+            infer_relations=False,
+        )
+
+        m.add_relations({"mds:measuredBy": [("PV Array", "ArrayModel")]})
+
+        assert "PV Array" in m.entities
+        entity = next(
+            item for item in m.metadata_template["@graph"]
+            if item.get("skos:altLabel") == "PV Array"
+        )
+        assert entity["@type"] == str(MDS_NS.PVArray)
+
+    def test_missing_endpoint_typo_does_not_fuzzy_match(self):
+        onto = _build_ontology()
+        onto.add((MDS_NS.PVArray, RDF.type, OWL.Class))
+        m = MatDatSciDf(
+            df=pd.DataFrame({"ArrayModel": ["Model A"]}),
+            metadata_template=_make_template(["ArrayModel"]),
+            orcid="0000-0000-0000-0000",
+            ontology_graph=onto,
+            infer_relations=False,
+        )
+
+        with pytest.raises(ValueError, match="exact normalized ontology class"):
+            m.add_relations({"mds:measuredBy": [("PV Arra", "ArrayModel")]})
+
+
+class TestOntologyTermMatching:
+    def test_ignores_spaces_and_capitalization(self):
+        onto = Graph()
+        onto.add((MDS_NS.ArrayModel, RDF.type, OWL.Class))
+        terms = extract_terms_from_ontology(onto)
+
+        match = find_best_match("array model", terms)
+
+        assert match["iri"] == str(MDS_NS.ArrayModel)
+
+    def test_does_not_fuzzy_match_misspelling(self):
+        onto = Graph()
+        onto.add((MDS_NS.ArrayModel, RDF.type, OWL.Class))
+        terms = extract_terms_from_ontology(onto)
+
+        assert find_best_match("ArrayModle", terms) is None
 
 
 class TestRepr:
