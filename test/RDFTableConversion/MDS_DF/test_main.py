@@ -547,73 +547,6 @@ class TestSerializeRow:
         values_row1 = list(graphs[1].objects(predicate=QUDT.value))
         assert len(values_row1) == 0
 
-    def test_relationship_property_uses_context_alias_without_property_node(self, tmp_path):
-        m = make_mdsdf(
-            cols=["Temperature", "Sensor_ID"],
-            rows=1,
-            data_relations_dict={"mds:measuredBy": [("Temperature", "Sensor_ID")]},
-        )
-        prop_uri = MDS_NS.measuredBy
-        m.ontology.set((prop_uri, RDFS.label, Literal("measured by", lang="en")))
-
-        output_dir = tmp_path / "rdf"
-        graph = m.serialize_row(str(output_dir), write_files=True)[0]
-        output = json.loads(next(output_dir.iterdir()).read_text())
-
-        assert output["@context"]["measured by"] == {"@id": str(prop_uri)}
-        assert '"measured by"' in next(output_dir.iterdir()).read_text()
-        relationship_values = [
-            node["measured by"]
-            for node in output["@graph"]
-            if "measured by" in node
-        ]
-        assert relationship_values
-        assert all(isinstance(value, dict) and "@id" in value for value in relationship_values)
-        assert list(graph.predicate_objects(prop_uri)) == []
-
-    @pytest.mark.parametrize(
-        "existing_label",
-        [None, "mds:hasInputCurrent", str(MDS_NS.hasInputCurrent)],
-    )
-    def test_relationship_property_gets_humanized_fallback_label(
-        self, tmp_path, existing_label
-    ):
-        ontology = _build_ontology()
-        prop_uri = MDS_NS.hasInputCurrent
-        ontology.add((prop_uri, RDF.type, OWL.DatatypeProperty))
-        if existing_label:
-            ontology.add((prop_uri, RDFS.label, Literal(existing_label)))
-
-        m = MatDatSciDf(
-            df=_make_df(["Temperature", "InputCurrent"], rows=1),
-            metadata_template=_make_template(["Temperature", "InputCurrent"]),
-            orcid="0000-0000-0000-0000",
-            ontology_graph=ontology,
-            data_relations_dict={str(prop_uri): [("Temperature", "InputCurrent")]},
-        )
-
-        output_dir = tmp_path / "rdf"
-        graph = m.serialize_row(str(output_dir), write_files=True)[0]
-        output = json.loads(next(output_dir.iterdir()).read_text())
-
-        assert output["@context"]["has input current"] == {"@id": str(prop_uri)}
-        assert list(graph.predicate_objects(prop_uri)) == []
-
-    def test_unused_relationship_property_is_not_added_to_context(self, tmp_path):
-        m = make_mdsdf(
-            cols=["Temperature", "Sensor_ID"],
-            rows=1,
-            data_relations_dict={"mds:measuredBy": [("Temperature", "Sensor_ID")]},
-        )
-        m.df.loc[m.df.index[0], "Sensor_ID"] = None
-
-        output_dir = tmp_path / "rdf"
-        graph = m.serialize_row(str(output_dir), write_files=True)[0]
-        output = json.loads(next(output_dir.iterdir()).read_text())
-
-        assert "measuredBy" not in output["@context"]
-        assert list(graph.predicate_objects(MDS_NS.measuredBy)) == []
-
 
 class TestSerializeBulk:
     def test_returns_single_graph(self, tmp_path):
@@ -641,26 +574,3 @@ class TestSerializeBulk:
         assert linked_data_uri == m.MDS["LinkedData.bulk.jsonld"]
         assert actual_license_uri == license_uri
         assert (linked_data_uri, RDF.type, m.MDS.LinkedData) in graph
-
-    def test_relationship_property_uses_context_alias_without_property_node(self, tmp_path):
-        m = make_mdsdf(
-            cols=["Temperature", "Sensor_ID"],
-            rows=1,
-            data_relations_dict={"mds:measuredBy": [("Temperature", "Sensor_ID")]},
-        )
-        prop_uri = MDS_NS.measuredBy
-        m.ontology.set((prop_uri, RDFS.label, Literal("measured by", lang="en")))
-        output_path = tmp_path / "bulk.jsonld"
-
-        graph = m.serialize_bulk(str(output_path), write_files=True)
-        output = json.loads(output_path.read_text())
-
-        assert output["@context"]["measured by"] == {"@id": str(prop_uri)}
-        relationship_values = [
-            node["measured by"]
-            for node in output["@graph"]
-            if "measured by" in node
-        ]
-        assert relationship_values
-        assert all(isinstance(value, dict) and "@id" in value for value in relationship_values)
-        assert list(graph.predicate_objects(prop_uri)) == []

@@ -10,7 +10,7 @@ import pandas as pd
 from rdflib import Graph, URIRef, Literal, Namespace, XSD
 from rdflib.collection import Collection
 from rdflib.namespace import RDF, SKOS, OWL, RDFS, DCTERMS
-from urllib.parse import quote, unquote
+from urllib.parse import quote
 import traceback
 import requests
 from ...InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
@@ -32,83 +32,6 @@ from tqdm import tqdm
 from .metadata_manager import Metadata
 from .data_relations_manager import DataRelationsDict
 import tempfile
-
-
-def _human_readable_property_name(prop_uri: URIRef, ontology_graph: Graph) -> str:
-    """Return an ontology label or derive a readable name from a property IRI."""
-    labels = list(ontology_graph.objects(prop_uri, RDFS.label))
-    labels.sort(
-        key=lambda label: (getattr(label, "language", None) or "").lower() not in {"en", "en-us"}
-    )
-
-    for label in labels:
-        label_text = str(label).strip()
-        if label_text and not re.match(r"^[a-z][a-z0-9+.-]*:", label_text, re.IGNORECASE):
-            return label_text
-
-    local_name = re.split(r"[/#:]", str(prop_uri).rstrip("/#"))[-1]
-    local_name = unquote(local_name)
-    local_name = re.sub(r"[_-]+", " ", local_name)
-    local_name = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", local_name)
-    local_name = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", local_name)
-    label_text = re.sub(r"\s+", " ", local_name).strip().lower()
-
-    return label_text or "property"
-
-
-def _resolve_relationship_property(key, ontology_graph: Graph, prop_metadata_dict: dict):
-    """Resolve a configured relationship key to its IRI and OWL property type."""
-    prop_uri, prop_type = resolve_predicate(key, ontology_graph)
-
-    if prop_uri is None:
-        prop_metadata = prop_metadata_dict.get(key)
-        if not prop_metadata:
-            return None, None
-        prop_uri, prop_type = prop_metadata
-
-    return URIRef(prop_uri), prop_type
-
-
-def _relationship_context(
-    context,
-    prop_column_pair_dict: dict,
-    ontology_graph: Graph,
-    prop_metadata_dict: dict,
-    data_graph: Graph,
-):
-    """Add aliases for relationship predicates without adding RDF metadata nodes."""
-    if not isinstance(context, dict) or not prop_column_pair_dict:
-        return context
-
-    aliased_context = copy.deepcopy(context)
-
-    for key in prop_column_pair_dict:
-        prop_uri, prop_type = _resolve_relationship_property(
-            key, ontology_graph, prop_metadata_dict
-        )
-        if prop_uri is None or prop_type not in {"Object Property", "Datatype Property"}:
-            continue
-        if not any(data_graph.triples((None, prop_uri, None))):
-            continue
-
-        base_alias = _human_readable_property_name(prop_uri, ontology_graph)
-        alias = base_alias
-        suffix = 2
-        while alias in aliased_context:
-            existing = aliased_context[alias]
-            existing_uri = existing.get("@id") if isinstance(existing, dict) else existing
-            if existing_uri == str(prop_uri):
-                break
-            alias = f"{base_alias} ({suffix})"
-            suffix += 1
-
-        # Do not use ``@type: @id`` here. Although valid JSON-LD, that coercion
-        # compacts linked resources to strings, which prevents some graph
-        # visualizers from recognizing the explicit ``{"@id": ...}`` edge target.
-        aliased_context[alias] = {"@id": str(prop_uri)}
-
-    return aliased_context
-
 
 class MatDatSciDf:
     """
@@ -967,8 +890,7 @@ class MatDatSciDf:
 
         """
         Serializes each row of the DataFrame into individual RDF files using the 
-        active semantic metadata template. Relationship predicates receive
-        human-readable JSON-LD context aliases without becoming graph nodes.
+        active semantic metadata template.
         """
 
         df = self.df
@@ -980,7 +902,7 @@ class MatDatSciDf:
         ontology_graph = self.ontology
         metadata_template = metadata_obj.metadata_temp
         base_uri = self.base_uri
-        context = copy.deepcopy(metadata_template.get("@context", {}))
+        context = metadata_template.get("@context", {})
         graph_template = metadata_template.get("@graph", [])
         prop_metadata_dict = self.get_relations()
 
@@ -1173,11 +1095,16 @@ class MatDatSciDf:
                 # ==========================================
                 if prop_column_pair_dict:
                     for key, column_pair_list in prop_column_pair_dict.items():
-                        pred_uri, prop_type = _resolve_relationship_property(
-                            key, ontology_graph, prop_metadata_dict
-                        )
-                        if pred_uri is None:
-                            continue
+                        prop_uri, prop_type = resolve_predicate(key, ontology_graph)
+
+                        if prop_uri is None:
+                            prop_metadata = prop_metadata_dict.get(key)
+                            if not prop_metadata:
+                                continue
+                            prop_uri, prop_type = prop_metadata
+                            pred_uri = URIRef(prop_uri)
+                        else:
+                            pred_uri = URIRef(prop_uri)
 
                         for subj_col, obj_col in column_pair_list:
                             if subj_col not in row or pd.isna(row[subj_col]):
@@ -1213,14 +1140,7 @@ class MatDatSciDf:
                 # Execute Semantic Remapping Firewall
                 output_file = os.path.join(output_folder, output_filename)
                 g = self.semantic_remapping(g)
-                row_context = _relationship_context(
-                    context,
-                    prop_column_pair_dict,
-                    ontology_graph,
-                    prop_metadata_dict,
-                    g,
-                )
-                raw_jsonld = g.serialize(format="json-ld", context=row_context)
+                raw_jsonld = g.serialize(format="json-ld", context=context)
 
                 clean_graph = Graph()
                 clean_graph.parse(data=raw_jsonld, format='json-ld')
@@ -1229,7 +1149,7 @@ class MatDatSciDf:
                     clean_graph.serialize(
                         destination=output_file, 
                         format=format, 
-                        context=row_context,
+                        context=context, 
                         indent=2,
                         auto_compact=True
                     )
@@ -1293,7 +1213,7 @@ class MatDatSciDf:
         
         # 2. Extract the original context to ensure consistency
         # This is what keeps your "mds:" and "qudt:" prefixes alive
-        context = copy.deepcopy(metadata_obj.metadata_temp.get("@context", {}))
+        context = metadata_obj.metadata_temp.get("@context", {})
 
         # 3. Generate all row graphs
         # serialize_row to have a 'write_files=False' flag.
@@ -1334,14 +1254,6 @@ class MatDatSciDf:
         linked_data_uri = mds_namespace[f"LinkedData.{linked_data_id}"]
         master_graph.add((linked_data_uri, RDF.type, mds_namespace.LinkedData))
         master_graph.add((linked_data_uri, DCTERMS.license, license_uri))
-
-        context = _relationship_context(
-            context,
-            self.data_relations.prop_pair_dict,
-            self.ontology,
-            self.get_relations(),
-            master_graph,
-        )
 
         if license and write_files:
             write_license_triple(
