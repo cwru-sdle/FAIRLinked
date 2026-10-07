@@ -1,3 +1,13 @@
+# 0.3.3.20
+
+Automatically call ``MatDatSciDf.add_entity`` for relationship endpoints that
+are not already present in the subject lookup and uniquely resolve to an
+ontology class.
+
+Remove fuzzy matching from column-name and relationship-endpoint ontology
+resolution. Matching is now deterministic: terms are normalized by removing
+whitespace and ignoring capitalization before they are compared.
+
 # 0.3.3.19
 
 Add ``MatDatSciDf.add_entity`` for declaring typed RDF entities that are not
@@ -6,10 +16,6 @@ relationships without placeholder columns or values.
 
 Require ``add_column_metadata`` to reference an existing DataFrame column, and
 validate relationship endpoints against both columns and declared entities.
-
-Automatically register missing relationship endpoints when they uniquely match
-an ontology class after removing whitespace and ignoring capitalization. Remove
-fuzzy ontology-term matching so misspellings fail instead of silently resolving.
 
 # 0.3.3.18
 
