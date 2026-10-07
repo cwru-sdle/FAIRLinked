@@ -150,6 +150,18 @@ class TestValidateDataRelations:
         result = d.validate_data_relations(simple_df, simple_ontology, onto_props)
         assert result is False
 
+    def test_declared_entity_is_valid_relation_endpoint(
+        self, simple_ontology, onto_props, simple_df
+    ):
+        d = DataRelationsDict({"measuredBy": [("PVArray", "Sensor_ID")]})
+        result = d.validate_data_relations(
+            simple_df,
+            simple_ontology,
+            onto_props,
+            declared_entities={"PVArray"},
+        )
+        assert result is True
+
     def test_invalid_property_returns_false(
         self, simple_ontology, onto_props, simple_df
     ):

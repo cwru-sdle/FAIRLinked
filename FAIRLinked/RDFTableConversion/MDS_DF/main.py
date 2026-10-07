@@ -191,6 +191,7 @@ class MatDatSciDf:
 
         self.data_relations = DataRelationsDict(prop_col_pair_dict=data_relations_dict)
         self.metadata_obj = Metadata(metadata_template=self.metadata_template, matched_log=self.matched_log, unmatched_log=self.unmatched_log)
+        self.entities = set()
         if self.infer_relations:
             init_data_relations_dict = self.get_relation_pairs_onto()
             self.add_relations(data_relations=init_data_relations_dict)
@@ -370,7 +371,12 @@ class MatDatSciDf:
         """Wrapper to validate relations using the instance's own data and ontology."""
         onto_metadata = self.get_relations()
         data_rel_obj = self.data_relations
-        return data_rel_obj.validate_data_relations(self.df, self.ontology, onto_metadata)
+        return data_rel_obj.validate_data_relations(
+            self.df,
+            self.ontology,
+            onto_metadata,
+            declared_entities=self.entities,
+        )
 
     def view_data_relations(self):
         """
@@ -380,7 +386,8 @@ class MatDatSciDf:
             df=self.df, 
             df_name = self.df_name,
             ontology_graph=self.ontology, 
-            onto_props=self.get_relations()
+            onto_props=self.get_relations(),
+            declared_entities=self.entities,
         )
 
 
@@ -442,10 +449,9 @@ class MatDatSciDf:
         Registers and appends metadata for a specific data column to both the temporary 
         JSON-LD graph and the internal RDFLib Graph.
 
-        This method prevents duplicate entries by checking the existing JSON-LD `@graph` 
-        for the column name. If the column does not exist, it constructs a clean Python 
-        dictionary representing the JSON-LD entity, appends it to the temporary graph 
-        structure, and synchronizes it by parsing it into the internal `template_graph`.
+        The column must already exist in the DataFrame. This method prevents duplicate
+        entries by checking the existing JSON-LD `@graph`, then appends the semantic
+        definition and synchronizes it with the internal `template_graph`.
 
         Parameters
         ----------
@@ -472,11 +478,36 @@ class MatDatSciDf:
         Raises
         ------
         ValueError
-            If required parameters are malformed (handled by downstream JSON/RDF parsers).
+            If ``col_name`` is not an existing DataFrame column.
         """
+        if col_name not in self.df.columns:
+            raise ValueError(
+                f"Cannot add column metadata for '{col_name}': the DataFrame has no "
+                "such column. Use add_entity() for entities without columns."
+            )
+
         existing = self.metadata_obj.add_column_metadata(col_name, rdf_type, unit, definition, study_stage)
         if existing:
             print(f"⚠️ Metadata for '{col_name}' already exists. Use update_metadata instead.")
+        self.metadata_template = self.metadata_obj.metadata_temp
+
+    def add_entity(self, name: str, rdf_type: str,
+                   definition: str = "Definition not available",
+                   study_stage: str = "UNK"):
+        """Register a typed RDF entity that is not backed by a DataFrame column.
+
+        The entity is instantiated once per serialized row key and may be used as
+        either endpoint of an object-property relation. It does not receive a
+        ``qudt:value`` because it is not a tabular value.
+        """
+        if name in self.df.columns:
+            raise ValueError(
+                f"Cannot add entity '{name}': a DataFrame column already uses that "
+                "name. Use add_column_metadata() for column-backed values."
+            )
+
+        self.metadata_obj.add_entity(name, rdf_type, definition, study_stage)
+        self.entities.add(name)
         self.metadata_template = self.metadata_obj.metadata_temp
 
     def delete_column_metadata(self, col_name: str):
@@ -497,6 +528,7 @@ class MatDatSciDf:
         new_metadata_obj = Metadata(metadata_template=metadata_template)
         self.metadata_obj = new_metadata_obj
         self.metadata_template = metadata_template
+        self.entities = set()
 
     def view_metadata(self, format: str = "table"):
         """
@@ -579,7 +611,7 @@ class MatDatSciDf:
             print("✅ [UNDEFINED COLUMNS] All DataFrame columns are defined in the metadata.")
 
         # --- CHECK 2: Empty Metadata Entries (Definitions without data) ---
-        empty_entries = template_labels - df_columns
+        empty_entries = template_labels - df_columns - self.entities
         if empty_entries:
             print(f"⚠️  [EMPTY ENTRIES] {len(empty_entries)} metadata definitions have no matching data columns.")
             print("Note: These will result in RDF nodes missing 'qudt:value' triples.")
@@ -1107,26 +1139,29 @@ class MatDatSciDf:
                             pred_uri = URIRef(prop_uri)
 
                         for subj_col, obj_col in column_pair_list:
-                            if subj_col not in row or pd.isna(row[subj_col]):
-                                continue
-                            
                             subj_uri = subject_lookup.get(subj_col)
                             if not subj_uri:
-                                continue
-                            
-                            obj_val = row[obj_col]
-                            if hasattr(obj_val, 'item'):
-                                obj_val = obj_val.item()
-                            if pd.isna(obj_val):
                                 continue
 
                             if prop_type == "Object Property":
                                 obj_uri = subject_lookup.get(obj_col)
                                 if obj_uri is None:
+                                    if obj_col not in row or pd.isna(row[obj_col]):
+                                        continue
+                                    obj_val = row[obj_col]
+                                    if hasattr(obj_val, 'item'):
+                                        obj_val = obj_val.item()
                                     obj_val_str = str(obj_val).strip()
+                                    if not obj_val_str:
+                                        continue
                                     obj_uri = URIRef(f"{base_uri}{quote(obj_val_str, safe='')}")
                                 g.add((subj_uri, pred_uri, obj_uri))
                             elif prop_type == "Datatype Property":
+                                if obj_col not in row or pd.isna(row[obj_col]):
+                                    continue
+                                obj_val = row[obj_col]
+                                if hasattr(obj_val, 'item'):
+                                    obj_val = obj_val.item()
                                 g.add((subj_uri, pred_uri, Literal(obj_val)))
 
                 # Remove empty QUDT values

@@ -345,7 +345,10 @@ class TestMetadataWrappers:
         assert any("Updated def" in str(d) for d in defs)
  
     def test_add_column_metadata_appears_in_template(self):
-        m = make_mdsdf(cols=["Temperature"])
+        m = make_mdsdf(
+            cols=["Temperature", "Humidity"],
+            metadata_template=_make_template(["Temperature"]),
+        )
         m.add_column_metadata(
             col_name="Humidity",
             rdf_type="mds:Humidity",
@@ -356,6 +359,34 @@ class TestMetadataWrappers:
         labels = [item.get("skos:altLabel")
                   for item in m.metadata_template.get("@graph", [])]
         assert "Humidity" in labels
+
+    def test_add_column_metadata_rejects_missing_column(self):
+        m = make_mdsdf(cols=["Temperature"])
+
+        with pytest.raises(ValueError, match="Use add_entity"):
+            m.add_column_metadata("PVArray", "mds:PhotovoltaicArray")
+
+    def test_add_entity_rejects_dataframe_column(self):
+        m = make_mdsdf(cols=["Temperature"])
+
+        with pytest.raises(ValueError, match="Use add_column_metadata"):
+            m.add_entity("Temperature", "mds:Temperature")
+
+    def test_add_entity_appears_in_template_without_unit(self):
+        m = make_mdsdf(cols=["Temperature"])
+        m.add_entity(
+            "PVArray",
+            "mds:PhotovoltaicArray",
+            definition="Photovoltaic array at the site",
+        )
+
+        entity = next(
+            item for item in m.metadata_template["@graph"]
+            if item.get("skos:altLabel") == "PVArray"
+        )
+        assert entity["@type"] == "mds:PhotovoltaicArray"
+        assert "qudt:hasUnit" not in entity
+        assert "PVArray" in m.entities
  
     def test_view_metadata_table_does_not_raise(self, capsys):
         m = make_mdsdf()
@@ -546,6 +577,28 @@ class TestSerializeRow:
         # Row 1 (index 1) graph should have no qudt:value triple
         values_row1 = list(graphs[1].objects(predicate=QUDT.value))
         assert len(values_row1) == 0
+
+    def test_declared_entity_can_be_object_property_subject(self, tmp_path):
+        m = make_mdsdf(cols=["ArrayModel"], rows=1)
+        m.add_entity(
+            "PVArray",
+            "mds:PhotovoltaicArray",
+            definition="Photovoltaic array at the site",
+        )
+        m.add_relations({"mds:measuredBy": [("PVArray", "ArrayModel")]})
+
+        assert m.validate_data_relations() is True
+        graph = m.serialize_row(
+            str(tmp_path / "rdf"),
+            row_key_cols=["ArrayModel"],
+            write_files=False,
+        )[0]
+
+        triples = list(graph.triples((None, MDS_NS.measuredBy, None)))
+        assert len(triples) == 1
+        subject, _, obj = triples[0]
+        assert "PhotovoltaicArray" in str(subject)
+        assert "ArrayModel" in str(obj)
 
 
 class TestSerializeBulk:
