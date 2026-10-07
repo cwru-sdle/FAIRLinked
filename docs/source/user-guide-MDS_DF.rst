@@ -259,7 +259,7 @@ Getting pre-defined relationships from ontology
    * - ``__init__``
      - Initializes the wrapper, strips metadata rows, verifies the curator's ORCID via API, and links the reference ontology. Automatic relation discovery is enabled by default; set ``infer_relations=False`` to use explicit relations only.
    * - ``template_generator``
-     - Automatically crawls dataframe columns and maps them to ontology concepts using fuzzy matching or explicit header rows.
+     - Maps dataframe columns to ontology concepts using exact matches after removing whitespace and ignoring capitalization, or uses explicit header rows.
    * - ``validate_metadata``
      - Performs a two-way integrity audit checking for undefined data columns, empty metadata placeholders, or missing schema fields.
    * - ``update_metadata``
@@ -555,7 +555,6 @@ Use the built-in SPDX utility to find valid licenses for your data serialization
 .. code-block:: python
 
     MatDatSciDf.search_license("Creative Commons")
-
 
 
 

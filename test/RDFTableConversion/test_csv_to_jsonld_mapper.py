@@ -42,7 +42,7 @@ def sample_ontology_graph():
     dt_prop = ex.hasAge
     g.add((dt_prop, RDF.type, OWL.DatatypeProperty))
     g.add((dt_prop, RDFS.label, Literal("has age")))
-    return load_mds_ontology_graph()
+    return g
 
 def test_extract_data_from_csv_basic(sample_metadata_template, sample_csv, tmp_path):
     output_dir = tmp_path / "output"
@@ -68,8 +68,8 @@ def test_extract_data_with_properties(sample_metadata_template, sample_csv, tmp_
     output_dir.mkdir()
 
     prop_dict = {
-        "has friend": [("Value1", "Value1")],  # trivial self-link
-        "has age": [("Value1", "Value1")]
+        "has friend": [("Sample", "Sample")],  # trivial self-link
+        "has age": [("Sample", "Sample")]
     }
 
     results = extract_data_from_csv(
@@ -152,7 +152,6 @@ def test_jsonld_template_generator(sample_csv, sample_ontology_graph, mock_units
         with patch('builtins.print'):
             # Ensure your generator passes mock_units to the prompt function
             jsonld_template_generator(sample_csv, sample_ontology_graph, out, matched, unmatched)
-
 
 
 
