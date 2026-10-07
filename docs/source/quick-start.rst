@@ -116,7 +116,8 @@ To turn serialized JSON-LDs back into an MDS_DF, run ``from_rdf_dir``:
 Metadata management
 -------------------
 
-Users can update their metadata template using ``update_metadata``, ``add_column_metadata``, or ``delete_column_metadata``.
+Use ``add_column_metadata`` for existing DataFrame columns and ``add_entity``
+for typed RDF entities that do not have backing columns.
 
 .. code-block:: python
 
@@ -134,6 +135,12 @@ Users can update their metadata template using ``update_metadata``, ``add_column
        study_stage="Result"
    )
 
+   mds_df.add_entity(
+       name="Sample",
+       rdf_type="mds:Sample",
+       definition="Sample associated with this row."
+   )
+
 .. list-table:: Metadata Management Methods
    :widths: 25 50 25
    :header-rows: 1
@@ -145,8 +152,11 @@ Users can update their metadata template using ``update_metadata``, ``add_column
      - Updates a specific semantic field for an existing column entry.
      - ``col_name``, ``field``, ``value``
    * - ``add_column_metadata``
-     - Manually defines semantic metadata for a new column or one found during an audit.
+     - Defines semantic metadata for an existing DataFrame column.
      - ``col_name``, ``rdf_type``, ``unit``, ``definition``
+   * - ``add_entity``
+     - Declares a typed RDF entity without creating a placeholder DataFrame column.
+     - ``name``, ``rdf_type``, ``definition``, ``study_stage``
    * - ``delete_metadata``
      - Removes a column's entire semantic definition from the graph and template.
      - ``col_name``
@@ -456,7 +466,6 @@ Finally, select your row identifiers:
     Conversion completed under mode='row-by-row'.
 
 To deserialize, answer 'yes' to the first question and provide the paths to your JSON-LD folder and output directory.
-
 
 
 

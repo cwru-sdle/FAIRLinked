@@ -338,6 +338,27 @@ class Metadata:
             # parse ONLY this new entry to keep it in sync
             self.template_graph.parse(data=json.dumps(entry), format="json-ld")
 
+        def add_entity(self, name: str, rdf_type: str,
+                       definition: str = "Definition not available",
+                       study_stage: str = "UNKNOWN"):
+            """Register a typed RDF entity that is not backed by a data column."""
+            graph = self.metadata_temp.get("@graph", [])
+            if any(item.get("skos:altLabel") == name for item in graph):
+                raise ValueError(f"Metadata for '{name}' already exists.")
+
+            entry = {
+                "@id": rdf_type if ":" in rdf_type else f"mds:{rdf_type}",
+                "@type": rdf_type if ":" in rdf_type else f"mds:{rdf_type}",
+                "skos:altLabel": name,
+                "skos:definition": definition,
+                "prov:generatedAtTime": datetime.now(timezone.utc).isoformat(),
+                "mds:hasStudyStage": study_stage,
+            }
+
+            graph.append(entry)
+            self.metadata_temp["@graph"] = graph
+            self.template_graph.parse(data=json.dumps(entry), format="json-ld")
+
         def delete_column_metadata(self, col_name: str):
             """
             Removes all metadata associated with a specific column from both 

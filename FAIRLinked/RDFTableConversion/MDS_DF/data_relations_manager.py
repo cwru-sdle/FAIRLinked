@@ -113,13 +113,14 @@ class DataRelationsDict:
                                     df: pd.DataFrame, 
                                     ontology_graph: Graph, 
                                     onto_props: dict, 
-                                    df_name: Optional[str] = "DataFrame") -> bool:
+                                    df_name: Optional[str] = "DataFrame",
+                                    declared_entities: Optional[set[str]] = None) -> bool:
             """
             Validates the DataRelationsDict against the DataFrame and the Ontology.
 
             This method ensures that:
             1. Every property key used can be resolved (via rdfs:label, CURIE, or full URI).
-            2. Every column name paired with a property actually exists in the DataFrame.
+            2. Every relation endpoint is either a DataFrame column or a declared entity.
 
             Args:
                 df (pd.DataFrame): The DataFrame containing the experimental data.
@@ -127,12 +128,14 @@ class DataRelationsDict:
                 ontology_graph (Graph): The RDFLib Graph object for the ontology (used for CURIE expansion).
                 onto_props (dict): The dictionary from MatDatSciDf.get_relations() 
                     mapping labels to (URI, Type).
+                declared_entities (set[str], optional): Names of metadata-only RDF
+                    entities that may be used as relation endpoints.
 
             Returns:
-                bool: True if all relations and columns are valid, False otherwise.
+                bool: True if all properties and endpoint references are valid.
             """
             all_valid = True
-            df_columns = set(df.columns)
+            valid_references = set(df.columns) | set(declared_entities or set())
             
             # Create a lookup for all valid URIs currently in the ontology metadata
             # value[0] is the URI string from our (URI, type) tuple
@@ -168,11 +171,11 @@ class DataRelationsDict:
                 else:
                     # Property is valid; now check the column pairs associated with it
                     for subj_col, obj_col in pairs:
-                        if subj_col not in df_columns:
-                            print(f"❌ Column Error: Subject '{subj_col}' for property '{prop_key}' not found in {df_name}.")
+                        if subj_col not in valid_references:
+                            print(f"❌ Reference Error: Subject '{subj_col}' for property '{prop_key}' is not a column or declared entity in {df_name}.")
                             all_valid = False
-                        if obj_col not in df_columns:
-                            print(f"❌ Column Error: Object '{obj_col}' for property '{prop_key}' not found in {df_name}.")
+                        if obj_col not in valid_references:
+                            print(f"❌ Reference Error: Object '{obj_col}' for property '{prop_key}' is not a column or declared entity in {df_name}.")
                             all_valid = False
 
             if all_valid:
@@ -186,16 +189,17 @@ class DataRelationsDict:
                                     df: Optional[pd.DataFrame] = None, 
                                     df_name: Optional[str] = "DataFrame",
                                     ontology_graph: Optional[Graph] = None, 
-                                    onto_props: Optional[dict] = None):
+                                    onto_props: Optional[dict] = None,
+                                    declared_entities: Optional[set[str]] = None):
                 """
                         Displays a human-readable summary of column relationships with integrated validation status.
 
                         This method serves two purposes:
                         1. **Simple Visualization**: If called without arguments, it prints a clean map of the 
                         defined Subject-Predicate-Object relationships.
-                        2. **Active Validation**: If a DataFrame and Ontology components are provided, it 
-                        performs a "pre-flight check" to verify that every property exists in the ontology 
-                        and every column exists in the data.
+                        2. **Active Validation**: If a DataFrame and Ontology components are provided, it
+                        performs a "pre-flight check" to verify that every property exists in the ontology
+                        and every endpoint is a data column or declared entity.
 
                         The output uses status symbols:
                         - ✅ : The property or column is valid or validation was skipped.
@@ -211,6 +215,8 @@ class DataRelationsDict:
                                 Defaults to None.
                             onto_props (dict, optional): A dictionary of valid ontology properties 
                                 (Labels mapped to URIs). Defaults to None.
+                            declared_entities (set[str], optional): Metadata-only entity
+                                names that are valid relation endpoints.
 
                         Note:
                             - Validation is case-sensitive for both properties and column names.
@@ -223,7 +229,10 @@ class DataRelationsDict:
 
                 # Prepare validation sets
                 valid_uris = {v[0] for v in onto_props.values()} if onto_props else set()
-                df_cols = set(df.columns) if isinstance(df, pd.DataFrame) else set()
+                valid_references = (
+                    set(df.columns) | set(declared_entities or set())
+                    if isinstance(df, pd.DataFrame) else set()
+                )
 
                 print("\n--- 🔗 Data Relations Validation Summary ---")
                 
@@ -254,8 +263,8 @@ class DataRelationsDict:
                     for subj, obj in pairs:
                         # Validate Columns only if df is provided
                         if isinstance(df, pd.DataFrame):
-                            subj_icon = "" if subj in df_cols else f" ❌ [Col '{subj}' not found in {df_name}]"
-                            obj_icon = "" if obj in df_cols else f" ❌ [Col '{obj}' not found in {df_name}]"
+                            subj_icon = "" if subj in valid_references else f" ❌ [Reference '{subj}' not found in {df_name}]"
+                            obj_icon = "" if obj in valid_references else f" ❌ [Reference '{obj}' not found in {df_name}]"
                         else:
                             subj_icon = ""
                             obj_icon = ""

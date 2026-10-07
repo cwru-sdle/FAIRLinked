@@ -267,7 +267,9 @@ Getting pre-defined relationships from ontology
    * - ``update_metadata_bulk``
      - Overwrites metadata values for multiple columns simultaneously using a batch JSON-LD template dictionary.
    * - ``add_column_metadata``
-     - Registers a completely new column entry into both the JSON-LD context map and the internal tracking graph.
+     - Registers metadata for an existing DataFrame column and rejects names that are not present in the DataFrame.
+   * - ``add_entity``
+     - Registers a typed RDF entity that has no backing DataFrame column and can participate in object-property relations.
    * - ``delete_column_metadata``
      - Removes an existing column's semantic mapping definitions from the current instance.
    * - ``get_relations``
@@ -553,7 +555,6 @@ Use the built-in SPDX utility to find valid licenses for your data serialization
 .. code-block:: python
 
     MatDatSciDf.search_license("Creative Commons")
-
 
 
 

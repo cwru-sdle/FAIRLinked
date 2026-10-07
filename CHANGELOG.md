@@ -1,8 +1,20 @@
-# Unreleased
+# 0.3.3.19
+
+Add ``MatDatSciDf.add_entity`` for declaring typed RDF entities that are not
+backed by DataFrame columns. Declared entities can participate in object-property
+relationships without placeholder columns or values.
+
+Require ``add_column_metadata`` to reference an existing DataFrame column, and
+validate relationship endpoints against both columns and declared entities.
+
+# 0.3.3.18
 
 Add an ``infer_relations`` constructor argument to ``MatDatSciDf``. Automatic
 domain/range-based relation discovery defaults to ``True`` and can be disabled
 with ``infer_relations=False``.
+
+Represent generated row and bulk outputs as distinct ``mds:LinkedData``
+instances and attach the selected license to the corresponding instance.
 
 # 0.3.3.15
 

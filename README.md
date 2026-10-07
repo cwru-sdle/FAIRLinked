@@ -167,7 +167,9 @@ reconstructed_mds_df = MatDatSciDf.from_rdf_dir(
 
 #### Metadata management
 
-Users can update their metadata template using ``update_metadata`` (which handles an already existing entry), ``add_column_metadata`` (which adds a new entry to the template), or ``delete_column_metadata`` (deletes an entry from the metadata template)
+Use ``add_column_metadata`` only for columns that exist in the DataFrame. Use
+``add_entity`` for typed RDF entities that have no backing column but need to
+participate in object-property relationships.
 
 ```python
 
@@ -186,8 +188,10 @@ mds_df.add_column_metadata(
     study_stage="Result"
 )
 
-mds_df.add_column_metadata(
-    col_name="YoungModulus"
+mds_df.add_entity(
+    name="Sample",
+    rdf_type="mds:Sample",
+    definition="Sample associated with this row."
 )
 
 ```
@@ -195,7 +199,8 @@ mds_df.add_column_metadata(
 | Method | Description | Key Arguments |
 | :--- | :--- | :--- |
 | `update_metadata` | Updates a specific semantic field (e.g., definition, unit, or type) for an existing column entry. | `col_name`, `field`, `value` |
-| `add_column_metadata` | Manually defines semantic metadata for a new column or one found during an audit. | `col_name`, `rdf_type`, `unit`, `definition` |
+| `add_column_metadata` | Defines semantic metadata for an existing DataFrame column. Raises `ValueError` if the column does not exist. | `col_name`, `rdf_type`, `unit`, `definition` |
+| `add_entity` | Declares a typed RDF entity without creating a placeholder DataFrame column. | `name`, `rdf_type`, `definition`, `study_stage` |
 | `delete_metadata` |Removes a column's entire semantic definition from the internal RDF graph and template. | `col_name` |
 | `view_metadata` | Renders the current metadata template as a table or raw JSON-LD. | `format` ("table" or "json") |
 | `validate_metadata` | Performs a two-way check to ensure DataFrame columns and metadata entries are aligned. | None |
