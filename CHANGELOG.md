@@ -1,3 +1,8 @@
+# 0.3.3.21
+
+When more than one ontology class has the same normalized term, use the first
+match and warn with the selected class and the complete candidate IRI list.
+
 # 0.3.3.20
 
 Default ``MatDatSciDf(infer_relations=False)`` so relationships are explicit
@@ -5,8 +10,6 @@ unless ontology-based inference is deliberately enabled.
 
 Automatically call ``MatDatSciDf.add_entity`` for relationship endpoints that
 are not already present in the subject lookup and resolve to an ontology class.
-When more than one class has the same normalized term, use the first match and
-warn with the selected class and the complete candidate IRI list.
 
 Remove fuzzy matching from column-name and relationship-endpoint ontology
 resolution. Matching is now deterministic: terms are normalized by removing
