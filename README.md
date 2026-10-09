@@ -207,15 +207,17 @@ mds_df.add_entity(
 
 #### Data relations Management
 
-Relations are inferred by default. Pass a relations dictionary to
+Relations are not inferred by default. Pass a relations dictionary to
 ``data_relations_dict`` during initialization or call ``add_relations`` afterward.
-To use only explicitly supplied relations, construct the object with
-``infer_relations=False``.
+To add ontology-derived relations automatically, construct the object with
+``infer_relations=True``.
 
 When a relationship endpoint is not already a column or declared entity,
 FAIRLinked resolves it as an ontology class after removing whitespace and
 ignoring capitalization, then registers it as an entity. Matching is exact
-after normalization; misspellings and ambiguous matches raise ``ValueError``.
+after normalization; misspellings do not match, and the first result is used
+when multiple ontology classes share the same normalized label. In that case,
+FAIRLinked warns which class was selected and lists all matching class IRIs.
 
 ```python
 micro_relations = {

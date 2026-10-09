@@ -8,6 +8,7 @@ from urllib.parse import quote, urlparse
 from ... import helper_data as helper_data
 import hashlib
 import requests
+import warnings
 from importlib import resources
 
 def load_licenses():
@@ -361,27 +362,30 @@ def find_best_match(column, ontology_terms):
 
     Capitalization and whitespace are ignored. No fuzzy or edit-distance
     matching is performed. If multiple ontology classes normalize to the same
-    term, the match is considered ambiguous and a ``ValueError`` is raised.
+    term, the first match is returned and a warning identifies the selected
+    class and all candidates.
 
     Args:
         column (str): The name of the column from the CSV file.
         ontology_terms (list[dict]): List of extracted ontology terms.
 
     Returns:
-        dict or None: The uniquely matching ontology term, or None.
+        dict or None: The first matching ontology term, or None.
     """
     norm_col = normalize_term(column)
     matches = [term for term in ontology_terms if term["normalized"] == norm_col]
 
-    unique_matches = {term["iri"]: term for term in matches}
-    if len(unique_matches) == 1:
-        return next(iter(unique_matches.values()))
-    if len(unique_matches) > 1:
-        candidates = ", ".join(sorted(unique_matches))
-        raise ValueError(
-            f"Ontology term '{column}' is ambiguous after normalization; "
-            f"matches: {candidates}"
-        )
+    if matches:
+        candidate_iris = list(dict.fromkeys(term["iri"] for term in matches))
+        if len(candidate_iris) > 1:
+            warnings.warn(
+                f"Ontology term '{column}' matched multiple classes; selected "
+                f"the first match '{matches[0]['iri']}' from candidates: "
+                f"[{', '.join(candidate_iris)}].",
+                UserWarning,
+                stacklevel=2,
+            )
+        return matches[0]
 
     return None
 

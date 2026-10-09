@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import re
 import os
+import warnings
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 from ..InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
@@ -76,15 +77,17 @@ def find_best_match(column, ontology_terms):
     """
     norm_col = normalize_term(column)
     matches = [term for term in ontology_terms if term["normalized"] == norm_col]
-    unique_matches = {term["iri"]: term for term in matches}
-    if len(unique_matches) == 1:
-        return next(iter(unique_matches.values()))
-    if len(unique_matches) > 1:
-        candidates = ", ".join(sorted(unique_matches))
-        raise ValueError(
-            f"Ontology term '{column}' is ambiguous after normalization; "
-            f"matches: {candidates}"
-        )
+    if matches:
+        candidate_iris = list(dict.fromkeys(term["iri"] for term in matches))
+        if len(candidate_iris) > 1:
+            warnings.warn(
+                f"Ontology term '{column}' matched multiple classes; selected "
+                f"the first match '{matches[0]['iri']}' from candidates: "
+                f"[{', '.join(candidate_iris)}].",
+                UserWarning,
+                stacklevel=2,
+            )
+        return matches[0]
 
     return None
 

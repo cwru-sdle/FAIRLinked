@@ -190,10 +190,10 @@ class TestMatDatSciDfInit:
         )
         assert m.base_uri == "https://example.org/"
     
-    def test_auto_relation_discovery_enabled_by_default(self):
+    def test_auto_relation_discovery_disabled_by_default(self):
         """
-        Tests that ontology-derived links are enabled by default and can be
-        disabled with infer_relations=False.
+        Tests that ontology-derived links are disabled by default and can be
+        enabled with infer_relations=True.
         """
         # 1. Setup a mini ontology
         # Measurement (Domain) -> measuredBy -> Tool (Range)
@@ -219,33 +219,33 @@ class TestMatDatSciDfInit:
             ]
         }
 
-        # 3. Automatic discovery is enabled by default
+        # 3. Automatic discovery is disabled by default
         df = pd.DataFrame({"Temp_Col": [100], "Sensor_Col": ["S1"]})
-        m = MatDatSciDf(
+        explicit_only = MatDatSciDf(
             df=df,
             metadata_template=tmpl,
             orcid="0000-0000-0000-0000",
             ontology_graph=onto
         )
         prop_str = str(PROP)
-        assert prop_str in m.data_relations.prop_pair_dict
+        assert prop_str not in explicit_only.data_relations.prop_pair_dict
 
-        # 4. Automatic discovery can be disabled explicitly
-        explicit_only = MatDatSciDf(
+        # 4. Automatic discovery can be enabled explicitly
+        inferred = MatDatSciDf(
             df=df,
             metadata_template=tmpl,
             orcid="0000-0000-0000-0000",
             ontology_graph=onto,
-            infer_relations=False,
+            infer_relations=True,
         )
-        assert prop_str not in explicit_only.data_relations.prop_pair_dict
+        assert prop_str in inferred.data_relations.prop_pair_dict
 
         # 5. Assertions
         # Check that the property was found using its full URI string
-        assert prop_str in m.data_relations.prop_pair_dict
+        assert prop_str in inferred.data_relations.prop_pair_dict
         
         # Check that the specific columns were linked
-        pairs = m.data_relations.prop_pair_dict[prop_str]
+        pairs = inferred.data_relations.prop_pair_dict[prop_str]
         assert ("Temp_Col", "Sensor_Col") in pairs
 
 
@@ -485,6 +485,30 @@ class TestOntologyTermMatching:
 
         assert find_best_match("ArrayModle", terms) is None
 
+    def test_returns_first_match_when_normalized_labels_are_duplicated(self):
+        terms = [
+            {
+                "iri": "https://example.org/first",
+                "label": "Identifier",
+                "normalized": "identifier",
+            },
+            {
+                "iri": "https://example.org/second",
+                "label": "Identifier",
+                "normalized": "identifier",
+            },
+        ]
+
+        with pytest.warns(UserWarning) as warning_records:
+            match = find_best_match("Identifier", terms)
+
+        assert match["iri"] == "https://example.org/first"
+        assert str(warning_records[0].message) == (
+            "Ontology term 'Identifier' matched multiple classes; selected "
+            "the first match 'https://example.org/first' from candidates: "
+            "[https://example.org/first, https://example.org/second]."
+        )
+
 
 class TestRepr:
     def test_contains_df_name(self):
@@ -634,6 +658,55 @@ class TestSerializeRow:
         # Row 1 (index 1) graph should have no qudt:value triple
         values_row1 = list(graphs[1].objects(predicate=QUDT.value))
         assert len(values_row1) == 0
+
+    def test_zero_is_a_valid_entity_identifier(self, tmp_path):
+        df = pd.DataFrame({"Coordinate": [0.0]})
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=_make_template(["Coordinate"]),
+            orcid="0000-0000-0000-0000",
+            ontology_graph=_build_ontology(),
+            infer_relations=False,
+        )
+
+        with warnings.catch_warnings(record=True) as caught:
+            graph = m.serialize_row(
+                str(tmp_path / "rdf"),
+                id_cols=["Coordinate"],
+                write_files=False,
+            )[0]
+
+        assert not any(
+            "Cannot find entity identifier" in str(warning.message)
+            for warning in caught
+        )
+        assert any(
+            str(subject).endswith("Coordinate.0.0")
+            for subject in graph.subjects()
+        )
+
+    def test_missing_identifier_warning_reports_row_column_and_value(self, tmp_path):
+        df = pd.DataFrame({"Coordinate": [""]})
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=_make_template(["Coordinate"]),
+            orcid="0000-0000-0000-0000",
+            ontology_graph=_build_ontology(),
+            infer_relations=False,
+        )
+
+        with pytest.warns(UserWarning) as warning_records:
+            m.serialize_row(
+                str(tmp_path / "rdf"),
+                id_cols=["Coordinate"],
+                write_files=False,
+            )
+
+        messages = [str(record.message) for record in warning_records]
+        assert (
+            "Cannot find entity identifier: row=0, "
+            "column='Coordinate', value=''"
+        ) in messages
 
     def test_declared_entity_can_be_object_property_subject(self, tmp_path):
         m = make_mdsdf(cols=["ArrayModel"], rows=1)
