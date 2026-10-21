@@ -972,7 +972,74 @@ class MatDatSciDf:
     
         return data_graph
 
-                
+    def _remove_literal_only_column_nodes(
+        self,
+        data_graph: Graph,
+        subject_lookup: dict[str, URIRef],
+        prop_column_pair_dict: Optional[dict],
+        id_cols: Optional[list[str]] = None,
+        label_pairs: Optional[list[tuple[str, str]]] = None,
+    ) -> Graph:
+        """Remove generated nodes for columns used exclusively as RDF literals.
+
+        Metadata generation initially represents every DataFrame column as an
+        RDF node.  A column used as the object of an ``owl:DatatypeProperty``,
+        however, is serialized directly as a literal value.  This cleanup
+        removes the redundant generated node unless the column also has an
+        entity role: a relationship subject, an ``owl:ObjectProperty`` object,
+        an explicit identifier column, or the subject of a label pair.
+
+        The DataFrame and metadata template are not modified, and the direct
+        datatype-property triple remains in ``data_graph``.
+
+        Args:
+            data_graph: Per-row RDF graph after relationship serialization.
+            subject_lookup: Mapping from DataFrame column names to generated
+                RDF node URIs for the current row.
+            prop_column_pair_dict: Property URI mappings to
+                ``(subject_column, object_column)`` pairs.
+            id_cols: Columns explicitly designated as entity identifiers.
+            label_pairs: ``(entity_column, label_column)`` mappings.
+
+        Returns:
+            The same graph with literal-only column nodes removed.
+        """
+        if not prop_column_pair_dict:
+            return data_graph
+
+        datatype_object_columns = set()
+        entity_columns = set(id_cols or [])
+        entity_columns.update(
+            subject_column for subject_column, _ in (label_pairs or [])
+        )
+        prop_metadata_dict = self.get_relations()
+
+        for prop_key, column_pairs in prop_column_pair_dict.items():
+            _, prop_type = resolve_predicate(prop_key, self.ontology)
+            if prop_type is None:
+                prop_metadata = prop_metadata_dict.get(prop_key)
+                if prop_metadata:
+                    _, prop_type = prop_metadata
+
+            for subject_column, object_column in column_pairs:
+                # Every relationship subject must remain an RDF entity.
+                entity_columns.add(subject_column)
+
+                if prop_type == "Object Property":
+                    entity_columns.add(object_column)
+                elif prop_type == "Datatype Property":
+                    datatype_object_columns.add(object_column)
+
+        literal_only_columns = datatype_object_columns - entity_columns
+        for column in literal_only_columns:
+            node_uri = subject_lookup.get(column)
+            if node_uri is None:
+                continue
+            data_graph.remove((node_uri, None, None))
+            data_graph.remove((None, None, node_uri))
+
+        return data_graph
+
 
     def serialize_row(self, 
                     output_folder: str, 
@@ -1243,6 +1310,14 @@ class MatDatSciDf:
                 ]
                 for triple in triples_to_remove:
                     g.remove(triple)
+
+                g = self._remove_literal_only_column_nodes(
+                    data_graph=g,
+                    subject_lookup=subject_lookup,
+                    prop_column_pair_dict=prop_column_pair_dict,
+                    id_cols=id_cols,
+                    label_pairs=label_pairs,
+                )
 
                 # Execute Semantic Remapping Firewall
                 output_file = os.path.join(output_folder, output_filename)
