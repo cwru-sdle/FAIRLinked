@@ -1,5 +1,7 @@
 import os
 import json
+import math
+import numbers
 import re
 import copy
 import random
@@ -32,6 +34,23 @@ from tqdm import tqdm
 from .metadata_manager import Metadata
 from .data_relations_manager import DataRelationsDict
 import tempfile
+
+
+def _format_identifier_value(value) -> str:
+    """Format a value for an identifier without mutating its source column."""
+    if hasattr(value, "item"):
+        value = value.item()
+
+    if isinstance(value, numbers.Integral) and not isinstance(value, bool):
+        return str(int(value))
+
+    if isinstance(value, numbers.Real) and not isinstance(value, bool):
+        numeric_value = float(value)
+        if math.isfinite(numeric_value) and numeric_value.is_integer():
+            return str(int(numeric_value))
+
+    return str(value).strip()
+
 
 class MatDatSciDf:
     """
@@ -1144,7 +1163,7 @@ class MatDatSciDf:
                 else:
                     row_key = ""
                     for x in set(c) & set(row_key_cols):
-                        row_key += str(df.at[idx, x]).strip() + "-"
+                        row_key += _format_identifier_value(df.at[idx, x]) + "-"
                 
                 orcid_rk = orcid.replace("-", "")
                 full_row_key = f"{row_key}or{orcid_rk}".replace(" ", "")
@@ -1186,7 +1205,8 @@ class MatDatSciDf:
                                 stacklevel=2,
                             )
                             continue
-                        entity_identifier = normalize(re.sub(r'[^a-zA-Z0-9_\-\.]', '', str(raw_identifier)))
+                        identifier_text = _format_identifier_value(raw_identifier)
+                        entity_identifier = normalize(re.sub(r'[^a-zA-Z0-9_\-\.]', '', identifier_text))
                         subject_uri = self.MDS[f"{localname}.{entity_identifier}"]
                     else:
                         subject_uri = self.MDS[f"{localname}.{clean_row_key}"]
@@ -1290,7 +1310,7 @@ class MatDatSciDf:
                                     obj_val = row[obj_col]
                                     if hasattr(obj_val, 'item'):
                                         obj_val = obj_val.item()
-                                    obj_val_str = str(obj_val).strip()
+                                    obj_val_str = _format_identifier_value(obj_val)
                                     if not obj_val_str:
                                         continue
                                     obj_uri = URIRef(f"{base_uri}{quote(obj_val_str, safe='')}")
