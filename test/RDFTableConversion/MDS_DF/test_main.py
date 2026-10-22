@@ -25,7 +25,7 @@ are mocked so that every test is fast and fully offline.
 import warnings
 from unittest.mock import MagicMock, patch, PropertyMock
 from rdflib import Graph, URIRef, Literal, Namespace
-from rdflib.namespace import RDF, RDFS, OWL, DCTERMS
+from rdflib.namespace import RDF, RDFS, OWL, DCTERMS, SKOS
 
 # ---------------------------------------------------------------------------
 # Shared helpers / factories
@@ -605,6 +605,55 @@ class TestSerializeRow:
         values = list(graphs[0].objects(predicate=QUDT.value))
         assert len(values) >= 1
 
+    def test_datatype_property_object_is_literal_without_column_node(self, tmp_path):
+        df = pd.DataFrame({"Sensor": ["S1"], "Reading": [12.5]})
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=_make_template(["Sensor", "Reading"]),
+            orcid="0000-0000-0000-0000",
+            ontology_graph=_build_ontology(),
+            infer_relations=False,
+        )
+        m.add_relations({"mds:hasValue": [("Sensor", "Reading")]})
+
+        graph = m.serialize_row(
+            str(tmp_path / "rdf"),
+            row_key_cols=["Sensor"],
+            write_files=False,
+        )[0]
+
+        triples = list(graph.triples((None, MDS_NS.hasValue, None)))
+        assert len(triples) == 1
+        assert triples[0][2] == Literal(12.5)
+        assert list(graph.subjects(SKOS.altLabel, Literal("Reading"))) == []
+        assert len(list(graph.subjects(SKOS.altLabel, Literal("Sensor")))) == 1
+
+    def test_datatype_object_node_remains_when_used_by_object_property(self, tmp_path):
+        df = pd.DataFrame({"Sensor": ["S1"], "Reading": [12.5]})
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=_make_template(["Sensor", "Reading"]),
+            orcid="0000-0000-0000-0000",
+            ontology_graph=_build_ontology(),
+            infer_relations=False,
+        )
+        m.add_relations(
+            {
+                "mds:hasValue": [("Sensor", "Reading")],
+                "mds:measuredBy": [("Sensor", "Reading")],
+            }
+        )
+
+        graph = m.serialize_row(
+            str(tmp_path / "rdf"),
+            row_key_cols=["Sensor"],
+            write_files=False,
+        )[0]
+
+        reading_nodes = list(graph.subjects(SKOS.altLabel, Literal("Reading")))
+        assert len(reading_nodes) == 1
+        assert list(graph.triples((None, MDS_NS.measuredBy, reading_nodes[0])))
+
     def test_graph_contains_one_linked_data_license(self, tmp_path):
         m = make_mdsdf(cols=["Temperature", "Pressure"], rows=1)
         graphs = m.serialize_row(str(tmp_path / "rdf"), write_files=False)
@@ -681,9 +730,42 @@ class TestSerializeRow:
             for warning in caught
         )
         assert any(
-            str(subject).endswith("Coordinate.0.0")
+            str(subject).endswith("Coordinate.0")
             for subject in graph.subjects()
         )
+        assert m.df.loc[0, "Coordinate"] == 0.0
+        assert m.df["Coordinate"].dtype == df["Coordinate"].dtype
+
+    def test_integral_float_is_normalized_only_for_identifiers_and_row_key(self, tmp_path):
+        df = pd.DataFrame({"SampleID": [1001.0], "Measurement": [12.5]})
+        m = MatDatSciDf(
+            df=df,
+            metadata_template=_make_template(["SampleID", "Measurement"]),
+            orcid="0000-0000-0000-0000",
+            ontology_graph=_build_ontology(),
+            infer_relations=False,
+        )
+
+        graph = m.serialize_row(
+            str(tmp_path / "rdf"),
+            row_key_cols=["SampleID"],
+            id_cols=["SampleID"],
+            write_files=False,
+        )[0]
+
+        sample_subject = next(
+            subject for subject in graph.subjects()
+            if str(subject).endswith("SampleID.1001")
+        )
+        linked_data_subject = next(graph.subjects(RDF.type, m.MDS.LinkedData))
+        sample_value = next(graph.objects(sample_subject, QUDT_NS.value))
+
+        assert "1001.0" not in str(linked_data_subject)
+        assert "1001-or" in str(linked_data_subject)
+        assert sample_value.toPython() == 1001.0
+        assert m.df.loc[0, "SampleID"] == 1001.0
+        assert m.df.loc[0, "Measurement"] == 12.5
+        assert m.df.dtypes.equals(df.dtypes)
 
     def test_missing_identifier_warning_reports_row_column_and_value(self, tmp_path):
         df = pd.DataFrame({"Coordinate": [""]})
