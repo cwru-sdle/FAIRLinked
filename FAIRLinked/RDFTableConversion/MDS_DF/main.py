@@ -52,6 +52,20 @@ def _format_identifier_value(value) -> str:
     return str(value).strip()
 
 
+def _create_subject_uri(
+    namespace: Namespace,
+    class_name: str,
+    identifier: str,
+    column_name: Optional[str] = None,
+) -> URIRef:
+    """Create a data-node URI, optionally disambiguated by column name."""
+    parts = [class_name]
+    if column_name is not None:
+        parts.append(quote(str(column_name).strip(), safe="-._~"))
+    parts.append(identifier)
+    return URIRef(namespace[".".join(parts)])
+
+
 class MatDatSciDf:
     """
     A semantic wrapper for Pandas DataFrames in the Materials Data Science domain.
@@ -1172,6 +1186,7 @@ class MatDatSciDf:
                 # ==========================================
                 # Prepare Template Fields & Subject URIs
                 # ==========================================
+                uri_candidates = []
                 for item in template_copy:
                     if "@type" not in item or not item["@type"]:
                         warnings.warn(f"Missing or empty @type in template item: {item}")
@@ -1207,12 +1222,28 @@ class MatDatSciDf:
                             continue
                         identifier_text = _format_identifier_value(raw_identifier)
                         entity_identifier = normalize(re.sub(r'[^a-zA-Z0-9_\-\.]', '', identifier_text))
-                        subject_uri = self.MDS[f"{localname}.{entity_identifier}"]
+                        identifier = entity_identifier
                     else:
-                        subject_uri = self.MDS[f"{localname}.{clean_row_key}"]
+                        identifier = clean_row_key
 
-                    item["@id"] = URIRef(subject_uri)
-                    subject_lookup[item["skos:altLabel"]] = URIRef(subject_uri)
+                    subject_uri = _create_subject_uri(self.MDS, localname, identifier)
+                    uri_candidates.append((item, localname, identifier, subject_uri))
+
+                uri_counts = {}
+                for _, _, _, subject_uri in uri_candidates:
+                    uri_counts[subject_uri] = uri_counts.get(subject_uri, 0) + 1
+
+                for item, localname, identifier, subject_uri in uri_candidates:
+                    if uri_counts[subject_uri] > 1:
+                        subject_uri = _create_subject_uri(
+                            self.MDS,
+                            localname,
+                            identifier,
+                            column_name=item["skos:altLabel"],
+                        )
+
+                    item["@id"] = subject_uri
+                    subject_lookup[item["skos:altLabel"]] = subject_uri
 
                     if "prov:generatedAtTime" in item and isinstance(item["prov:generatedAtTime"], dict):
                         item["prov:generatedAtTime"]["@value"] = datetime.now(timezone.utc).isoformat()

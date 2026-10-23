@@ -1,3 +1,16 @@
+# 0.3.3.22
+
+Remove generated RDF nodes for columns serialized exclusively as datatype-
+property literals, while preserving columns that also serve as entities.
+
+Format row-key and identifier values consistently as strings. Integral numeric
+identifiers no longer gain a trailing ``.0``, and source DataFrame values and
+dtypes remain unchanged.
+
+Disambiguate serialization URI collisions when multiple columns use the same
+ontology class. Colliding nodes retain the class name and add their encoded
+column header to the URI; non-colliding URI formats remain unchanged.
+
 # 0.3.3.21
 
 When more than one ontology class has the same normalized term, use the first
