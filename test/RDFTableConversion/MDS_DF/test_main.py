@@ -116,6 +116,25 @@ def make_mdsdf(
     )
 
 
+def make_shared_class_mdsdf():
+    columns = ["Sample", "Initial Temperature", "Final Temperature"]
+    template = _make_template(columns)
+    for item in template["@graph"]:
+        if "Temperature" in item["skos:altLabel"]:
+            item["@type"] = "mds:Temperature"
+
+    return MatDatSciDf(
+        df=pd.DataFrame({
+            "Sample": ["S1"],
+            "Initial Temperature": [20],
+            "Final Temperature": [30],
+        }),
+        metadata_template=template,
+        orcid="0000-0000-0000-0000",
+        ontology_graph=_build_ontology(),
+    )
+
+
 class TestMatDatSciDfInit:
     def test_placeholder_orcid_not_verified(self):
         m = make_mdsdf()
@@ -605,6 +624,23 @@ class TestSerializeRow:
         values = list(graphs[0].objects(predicate=QUDT.value))
         assert len(values) >= 1
 
+    def test_shared_class_uris_are_disambiguated_by_column_name(self, tmp_path):
+        m = make_shared_class_mdsdf()
+        graph = m.serialize_row(
+            str(tmp_path / "rdf"),
+            row_key_cols=["Sample"],
+            write_files=False,
+        )[0]
+
+        initial = next(graph.subjects(SKOS.altLabel, Literal("Initial Temperature")))
+        final = next(graph.subjects(SKOS.altLabel, Literal("Final Temperature")))
+
+        assert initial != final
+        assert str(initial).endswith("Temperature.Initial%20Temperature.S1")
+        assert str(final).endswith("Temperature.Final%20Temperature.S1")
+        assert [str(value) for value in graph.objects(initial, QUDT_NS.value)] == ["20"]
+        assert [str(value) for value in graph.objects(final, QUDT_NS.value)] == ["30"]
+
     def test_datatype_property_object_is_literal_without_column_node(self, tmp_path):
         df = pd.DataFrame({"Sensor": ["S1"], "Reading": [12.5]})
         m = MatDatSciDf(
@@ -820,6 +856,20 @@ class TestSerializeBulk:
         result = m.serialize_bulk(str(out), write_files=False)
         from rdflib import Graph as RDFGraph
         assert isinstance(result, RDFGraph)
+
+    def test_shared_class_uris_remain_distinct(self, tmp_path):
+        m = make_shared_class_mdsdf()
+        graph = m.serialize_bulk(
+            str(tmp_path / "bulk.jsonld"),
+            row_key_cols=["Sample"],
+            write_files=False,
+        )
+
+        subjects = {
+            next(graph.subjects(SKOS.altLabel, Literal(column)))
+            for column in ("Initial Temperature", "Final Temperature")
+        }
+        assert len(subjects) == 2
  
     def test_triple_count_grows_with_rows(self, tmp_path):
         m1 = make_mdsdf(cols=["Temperature"], rows=2)
