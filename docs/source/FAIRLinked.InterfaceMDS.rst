@@ -1,61 +1,42 @@
-FAIRLinked.InterfaceMDS package
-===============================
+********************
+Ontology Tools API
+********************
 
-Submodules
-----------
+``FAIRLinked.InterfaceMDS`` contains utilities for loading, browsing,
+searching, filtering, and extending MDS-Onto.
 
-FAIRLinked.InterfaceMDS.add\_ontology\_term module
---------------------------------------------------
-
-.. automodule:: FAIRLinked.InterfaceMDS.add_ontology_term
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-FAIRLinked.InterfaceMDS.convert\_ttl\_to\_drawio module
--------------------------------------------------------
-
-.. automodule:: FAIRLinked.InterfaceMDS.convert_ttl_to_drawio
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-FAIRLinked.InterfaceMDS.domain\_subdomain\_viewer module
---------------------------------------------------------
-
-.. automodule:: FAIRLinked.InterfaceMDS.domain_subdomain_viewer
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-FAIRLinked.InterfaceMDS.load\_mds\_ontology module
---------------------------------------------------
+Load MDS-Onto
+=============
 
 .. automodule:: FAIRLinked.InterfaceMDS.load_mds_ontology
-   :members:
-   :show-inheritance:
-   :undoc-members:
 
-FAIRLinked.InterfaceMDS.rdf\_subject\_extractor module
-------------------------------------------------------
+.. autofunction:: FAIRLinked.InterfaceMDS.load_mds_ontology.load_mds_ontology_graph
+
+Browse domains and subdomains
+=============================
+
+.. automodule:: FAIRLinked.InterfaceMDS.domain_subdomain_viewer
+
+.. autofunction:: FAIRLinked.InterfaceMDS.domain_subdomain_viewer.domain_subdomain_viewer
+
+.. autofunction:: FAIRLinked.InterfaceMDS.domain_subdomain_viewer.domain_subdomain_directory
+
+Search ontology terms
+=====================
 
 .. automodule:: FAIRLinked.InterfaceMDS.rdf_subject_extractor
-   :members:
-   :show-inheritance:
-   :undoc-members:
 
-FAIRLinked.InterfaceMDS.term\_search\_general module
-----------------------------------------------------
+.. autofunction:: FAIRLinked.InterfaceMDS.rdf_subject_extractor.extract_subject_details
+
+.. autofunction:: FAIRLinked.InterfaceMDS.rdf_subject_extractor.fuzzy_filter_subjects_strict
 
 .. automodule:: FAIRLinked.InterfaceMDS.term_search_general
-   :members:
-   :show-inheritance:
-   :undoc-members:
 
-Module contents
----------------
+.. autofunction:: FAIRLinked.InterfaceMDS.term_search_general.term_search_general
 
-.. automodule:: FAIRLinked.InterfaceMDS
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Add ontology terms
+==================
+
+.. automodule:: FAIRLinked.InterfaceMDS.add_ontology_term
+
+.. autofunction:: FAIRLinked.InterfaceMDS.add_ontology_term.add_term_to_ontology

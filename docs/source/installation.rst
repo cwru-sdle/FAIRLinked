@@ -1,34 +1,50 @@
+************
 Installation
-==========
+************
 
-Requirements
-------------
+FAIRLinked supports Python 3.10 and newer. Installing it in a virtual
+environment keeps its dependencies isolated from other projects.
 
-rdflib>=7.0.0
-typing-extensions>=4.0.0
-pyarrow>=11.0.0
-openpyxl>=3.0.0
-pandas>=1.0.0
-cemento>=0.6.1
-fuzzysearch>=0.8.0
-tqdm>=4.0.0
+Install from PyPI
+=================
 
+.. code-block:: console
 
-Install from PyPi
--------------
+   $ python -m venv .venv
+   $ source .venv/bin/activate
+   (.venv) $ python -m pip install FAIRLinked
 
-.. code-block:: bash
+Confirm the command-line interface is available:
 
-   pip install FAIRLinked
+.. code-block:: console
 
+   (.venv) $ FAIRLinked --help
 
-Development Installation
+Development installation
+========================
 
-.. code-block:: bash
+Clone the repository and install the package in editable mode:
 
-    git clone https://github.com/cwru-sdle/FAIRLinked
-    cd FAIRLinked
-    pip install .
+.. code-block:: console
+
+   $ git clone https://github.com/cwru-sdle/FAIRLinked.git
+   $ cd FAIRLinked
+   $ python -m venv .venv
+   $ source .venv/bin/activate
+   (.venv) $ python -m pip install -e .
+
+To build this documentation locally, install the documentation requirements as
+well:
+
+.. code-block:: console
+
+   (.venv) $ python -m pip install -r docs/requirements.txt
+
+Next step
+=========
+
+Continue to the :doc:`user-guide-pages/quickstart` for a minimal
+DataFrame-to-JSON-LD example.
 
 
 

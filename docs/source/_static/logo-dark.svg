@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">FAIRLinked logo</title>
+  <desc id="desc">A JSON-LD document with five linked nodes arranged like a sunrise.</desc>
+  <g fill="none" stroke="#A6D2E6" stroke-width="17" stroke-linecap="round" aria-hidden="true">
+    <path d="M256 330H58M256 330 116 190M256 330V130M256 330 396 190M256 330H454"/>
+  </g>
+  <g fill="#007AB8" stroke="#A6D2E6" stroke-width="14" aria-hidden="true">
+    <circle cx="58" cy="330" r="29"/><circle cx="116" cy="190" r="29"/><circle cx="256" cy="130" r="29"/>
+    <circle cx="396" cy="190" r="29"/><circle cx="454" cy="330" r="29"/>
+  </g>
+  <circle cx="256" cy="330" r="84" fill="#09143A" stroke="#A6D2E6" stroke-width="15"/>
+  <path fill="#FFFFFF" stroke="#A6D2E6" stroke-width="11" stroke-linejoin="round" d="M224 282h46l24 24v74h-70Z"/>
+  <path fill="#007AB8" stroke="#A6D2E6" stroke-width="11" stroke-linejoin="round" d="M270 282v24h24Z"/>
+  <g transform="translate(259 337) scale(.85) translate(-256 -337)" fill="none" stroke="#007AB8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M246 316c-9 0-9 7-9 12s-4 9-9 9c5 0 9 4 9 9s0 12 9 12M266 316c9 0 9 7 9 12s4 9 9 9c-5 0-9 4-9 9s0 12-9 12"/>
+  </g>
+  <g transform="translate(259 337) scale(.85) translate(-256 -337)" fill="#003071" aria-hidden="true"><circle cx="256" cy="326" r="5"/><circle cx="256" cy="337" r="5"/><circle cx="256" cy="348" r="5"/></g>
+</svg>

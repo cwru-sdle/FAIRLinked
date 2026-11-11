@@ -1,280 +1,161 @@
+**********
 User Guide
-==========
+**********
 
+FAIRLinked provides several ways to add semantics to materials data. Start with
+the DataFrame workflow unless you specifically need the RDF Data Cube model or
+the older CSV-template interface.
 
-Subpackages
------------
+Section Navigation
+==================
 
-The package is organized into three subpackages, each addressing different levels of semantic web expertise
-and data modeling requirements:
+.. toctree::
+   :maxdepth: 2
 
-1. `InterfaceMDS`: A library of functions that enables direct interaction with MDS-Onto, allowing users
-to query, extend, and integrate ontology-driven metadata into their datasets and analytical pipelines.
+   installation
+   user-guide-pages/quickstart
+   user-guide-pages/datatype-properties
+   user-guide-pages/creating-entities
 
-2. `QBWorkflow`: A comprehensive FAIRification workflow designed for users familiar with the RDF Data
-Cube vocabulary. This workflow supports the creation of richly structured, multidimensional datasets
-that adhere to linked data best practices and can be easily queried, combined, and analyzed.
+Choose a workflow
+=================
 
-3. `RDFTableConversion`: A streamlined FAIRification workflow for users who prefer a lighter approach
-that does not require RDF Data Cube. Instead, it leverages a JSON-LD template populated with
-standard JSON objects derived from table columns. This approach enables users to transform tabular
-datasets into linked data while maintaining control over metadata content and structure.
+.. list-table:: FAIRLinked workflows
+   :header-rows: 1
+   :widths: 24 44 32
 
-By offering both advanced and simplified pathways for converting data into semantically rich, machine-readable
-formats, FAIRLinked lowers the barrier to adopting FAIR principles in the materials science community.
-Its modular design allows researchers to choose the workflow that best matches their technical expertise,
-data complexity, and intended use cases, thereby promoting greater data discoverability, interoperability, and
-reuse.
+   * - Workflow
+     - Best for
+     - Main interface
+   * - Semantic DataFrame
+     - Python and notebook users working with pandas data
+     - ``MatDatSciDf``
+   * - Ontology tools
+     - Searching, filtering, or extending MDS-Onto
+     - ``InterfaceMDS`` or the CLI
+   * - CSV template
+     - Existing pipelines based on metadata-header CSV files
+     - ``RDFTableConversion``
+   * - RDF Data Cube
+     - Multidimensional datasets that must use the RDF Data Cube vocabulary
+     - ``FAIRLinked data-cube-run``
 
-.. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/fig1-fairlinked.png
+Semantic DataFrame workflow
+===========================
 
+``MatDatSciDf`` keeps three parts of a dataset synchronized:
 
-# InterfaceMDS Subpackage
+* a pandas DataFrame containing measurements;
+* ontology-backed metadata describing columns and other entities; and
+* semantic relationships between those entities.
 
-.. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/InterfaceMDSGitHub.png
+The usual workflow is:
+
+1. Create ``MatDatSciDf`` from a DataFrame.
+2. Review automatically matched metadata with ``view_metadata``.
+3. Add or update metadata and relationships.
+4. Validate the result.
+5. Serialize one graph per row or one graph for the full dataset.
+
+Metadata
+--------
+
+Use ``update_metadata`` to refine the metadata created for a DataFrame column.
+Use ``add_column_metadata`` only when a column has no metadata entry, and use
+``add_entity`` for a semantic entity that is not a table column.
 
 .. code-block:: python
 
-   import FAIRLinked.InterfaceMDS
+   fair_data.update_metadata("Temperature", "type", "Temperature")
+   fair_data.update_metadata("Temperature", "unit", "unit:DEG_C")
+   fair_data.update_metadata(
+       "Temperature",
+       "definition",
+       "Temperature during the measurement.",
+   )
+   fair_data.update_metadata("Temperature", "stage", "Result")
 
-Functions in Interface MDS allow users to interact with MDS-Onto and search for terms relevant to their domains. 
-This includes loading MDS-Onto into an RDFLib Graph, view domains and subdomains, term search, and add new ontology 
-terms to a local copy.
+   fair_data.add_entity(
+       name="Instrument",
+       rdf_type="mds:Instrument",
+       definition="Instrument used to collect the measurement.",
+   )
 
+Relations
+---------
 
-## Load latest version of MDS-Onto
+Relationships are expressed as a mapping from a property to one or more
+``(subject, object)`` pairs:
 
 .. code-block:: python
 
-   import FAIRLinked.InterfaceMDS.load_mds_ontology 
+   fair_data.add_relations(
+       {
+           "is about": [("Hardness", "Sample")],
+           "has agent": [("Measurement", "Instrument")],
+       }
+   )
+
+Serialization
+-------------
+
+``serialize_bulk`` creates one graph for the full dataset.
+``serialize_row`` creates a graph for each record. ``from_rdf_dir`` reconstructs
+a semantic DataFrame from a directory of RDF files.
+
+Ontology tools
+==============
+
+The ``FAIRLinked.InterfaceMDS`` package loads MDS-Onto and helps users explore
+its terms.
+
+.. code-block:: python
+
    from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-
-   mds_graph = load_mds_ontology_graph()
-
-
-## View domains/subdomains in MDS-Onto
-
-Terms in MDS-Onto are categorized under domains and subdomains, groupings related to topic areas currently being researched at SDLE and collaborators. 
-More information about domains and subdomains can be found at `here <https://cwrusdle.bitbucket.io/>`_
-
-.. code-block:: python
-
-   import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
-   from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_viewer
-
-   domain_subdomain_viewer()
-
-
-## View domains/subdomains tree in MDS-Onto
-
-.. code-block:: python
-
-   import FAIRLinked.InterfaceMDS.domain_subdomain_viewer
-   from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_directory
-
-   domain_subdomain_directory()
-
-Generate an actual file directory with sub-ontologies tagged by domain/subdomain:
-
-.. code-block:: python
-
-   import FAIRLinked.InterfaceMDS.load_mds_ontology 
-   from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-   from FAIRLinked.InterfaceMDS.domain_subdomain_viewer import domain_subdomain_directory
-
-   mds_graph = load_mds_ontology_graph()
-   domain_subdomain_directory(onto_graph=mds_graph, output_dir="path/to/output")
-
-
-## Search for ontology terms
-
-.. code-block:: python
-
-   from FAIRLinked.InterfaceMDS.rdf_subject_extractor import extract_subject_details, fuzzy_filter_subjects_strict
-   from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-
-   mds_graph = load_mds_ontology_graph()
-   onto_dataframe = extract_subject_details(mds_graph)
-   search_results = fuzzy_filter_subjects_strict(df=onto_dataframe, keywords=["Detector"])
-
-   print(search_results)
-
-
-## Find Domain, Subdomain, and Study Stages
-
-.. code-block:: python
-
    from FAIRLinked.InterfaceMDS.term_search_general import term_search_general
 
-   term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"])
+   graph = load_mds_ontology_graph()
+   term_search_general(
+       mds_ontology_graph=graph,
+       query_term="Chem-Rxn",
+       search_types=["SubDomain"],
+   )
 
-Save results to Turtle:
+The :doc:`command-line` provides equivalent commands for common ontology tasks.
 
-.. code-block:: python
+CSV-template workflow
+=====================
 
-   term_search_general(query_term="Chem-Rxn", search_types=["SubDomain"], 
-                       ttl_extr=True, ttl_path="path/to/output.ttl")
+The lower-level ``RDFTableConversion`` interface supports CSV files whose first
+three rows describe RDF type, unit, and study stage. It can generate a JSON-LD
+metadata template, serialize rows, and reconstruct a CSV from JSON-LD files.
 
+New projects should generally prefer ``MatDatSciDf`` because it exposes the
+same concepts through a single object-oriented interface.
 
-## Add a new term to Ontology
+RDF Data Cube workflow
+======================
 
-.. code-block:: python
+Run the interactive workflow when your output must follow the `W3C RDF Data
+Cube vocabulary <https://www.w3.org/TR/vocab-data-cube/>`_:
 
-   from FAIRLinked.InterfaceMDS.add_ontology_term import add_term_to_ontology
+.. code-block:: console
 
-   add_term_to_ontology("path/to/mds-onto/file.ttl")
+   $ FAIRLinked data-cube-run
 
+The command prompts for ontology, namespace, input data, identifiers, and output
+locations. This workflow is more structured than the DataFrame workflow and is
+intended for users already familiar with RDF Data Cube concepts.
 
+Analysis provenance
+===================
 
-# RDF Table Conversion Subpackage
-
-.. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/figs/fig2-fairlinked.png
-
-.. code-block:: python
-
-   import FAIRLinked.RDFTableConversion
-
-Functions in this subpackage allow you to:
-
-* generate a JSON-LD metadata template from a CSV with MDS-compliant terms,
-* generate JSON-LDs filled with data and MDS semantic relationships,
-* convert a directory of JSON-LDs back into tabular format.
-
-
-## Generate a JSON-LD template from CSV
-
-.. code-block:: python
-
-   from rdflib import Graph
-   from FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper import jsonld_template_generator
-
-   mds_graph = Graph()
-   mds_graph.parse("path/to/ontology/file")
-
-   jsonld_template_generator(csv_path="path/to/data.csv", 
-                              ontology_graph=mds_graph, 
-                              output_path="path/to/output/template.jsonld", 
-                              matched_log_path="path/to/output/matched.log", 
-                              unmatched_log_path="path/to/output/unmatched.log",
-                              skip_prompts=False)
-
-
-## Create JSON-LDs from CSVs
+``AnalysisTracker`` captures one analysis run. ``AnalysisGroup`` coordinates
+related runs and can create group-level reports and RDF provenance output. Both
+classes are available from the top-level package:
 
 .. code-block:: python
 
-   import json
-   from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import extract_data_from_csv
+   from FAIRLinked import AnalysisGroup, AnalysisTracker
 
-   with open("path/to/metadata/template.jsonld", "r") as f:
-       metadata_template = json.load(f)
-
-   extract_data_from_csv(metadata_template=metadata_template, 
-                         csv_file="path/to/data.csv",
-                         row_key_cols=["sample_id"],
-                         id_cols=["sample_id", "measurement_id"],
-                         orcid="0000-0000-0000-0000", 
-                         output_folder="path/to/output/json-lds")
-
-
-.. note::
-   Please make sure to follow the proper formatting guidelines for the input CSV file.
-   
-   * Each column name should be the "common" or alternative name for this object
-   * The following three rows should be reserved for the **type**, **units**, and **study stage** in that order
-   * If values for these are not available, the space should be left blank
-   * Data for each sample can then begin on the 5th row
-
-   Please see the following images for reference:
-
-   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/fulltable.png
-      :alt: Full Table
-      :align: center
-
-   Minimum Viable Data:
-
-   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/mintable.png
-      :alt: Sparse Table
-      :align: center
-
-   During the template generating process, the user may be prompted for data for different columns. When no units are detected, the user will be prompted for the type of unit, and then given a list of valid units to choose from.
-
-   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/kind.png
-      :alt: Kind
-      :align: center
-
-   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/unit.png
-      :alt: Unit
-      :align: center
-
-   When no study stage is detected, the user will similarly be given a list of study stages to choose from.
-
-   .. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/resources/images/studystage.png
-      :alt: Study Stage
-      :align: center
-
-
-
-
-
-## Create JSON-LDs with relationships
-
-In the example below, "relationship_label" should be the rdfs:label value, the full IRI, or the CURIE  associated with the property.
-
-.. code-block:: python
-
-   import json
-   from FAIRLinked.InterfaceMDS.load_mds_ontology import load_mds_ontology_graph
-   from FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler import extract_data_from_csv
-
-   mds_graph = load_mds_ontology_graph()
-
-   with open("path/to/metadata/template.jsonld", "r") as f:
-       metadata_template = json.load(f)
-
-   prop_col_pair_dict = {
-       "relationship_label": [("column_1", "column_2")]
-   }
-
-   extract_data_from_csv(metadata_template=metadata_template, 
-                         csv_file="path/to/data.csv",
-                         row_key_cols=["column_1", "column_3"],
-                         id_cols=["column_1", "column_2"],
-                         orcid="0000-0000-0000-0000", 
-                         output_folder="path/to/output/json-lds",
-                         prop_column_pair_dict=prop_col_pair_dict,
-                         ontology_graph=mds_graph)
-
-
-## Convert JSON-LD directory back to CSV
-
-.. code-block:: python
-
-   from FAIRLinked.RDFTableConversion.jsonld_batch_converter import jsonld_directory_to_csv
-
-   jsonld_directory_to_csv(input_dir="path/to/json-lds",
-                           output_basename="dataset",
-                           output_dir="path/to/output")
-
-
-
-
-# RDF DataCube Workflow
-
-.. code-block:: python
-
-   from FAIRLinked.QBWorkflow.rdf_data_cube_workflow import rdf_data_cube_workflow_start
-
-   rdf_data_cube_workflow_start()
-
-The RDF DataCube workflow turns tabular data into a format compliant with the `RDF Data Cube vocabulary <https://www.w3.org/TR/vocab-data-cube/>`_.
-
-.. image:: https://raw.githubusercontent.com/cwru-sdle/FAIRLinked/main/FAIRLinkedv0.2.png
-
-
-
-
-
-
-
-
+Continue to the :doc:`api-reference` for a compact map of the public package.

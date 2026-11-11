@@ -1,0 +1,40 @@
+{# Keep the five main documentation sections visible and collect utility pages
+   in a stable dropdown instead of relying on viewport-dependent overflow. #}
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    {{ generate_header_nav_html(n_links_before_dropdown=99, dropdown_text=theme_header_dropdown_text) }}
+
+    <li class="nav-item dropdown{% if pagename in ['genindex', 'py-modindex', 'search', 'changelog'] %} current active{% endif %}">
+      <button
+        class="btn dropdown-toggle nav-item"
+        type="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        More
+      </button>
+      <ul class="dropdown-menu">
+        <li>
+          <a class="nav-link dropdown-item nav-internal{% if pagename == 'genindex' %} active{% endif %}" href="{{ pathto('genindex') }}">
+            General Index
+          </a>
+        </li>
+        <li>
+          <a class="nav-link dropdown-item nav-internal{% if pagename == 'py-modindex' %} active{% endif %}" href="{{ pathto('py-modindex') }}">
+            Python Module Index
+          </a>
+        </li>
+        <li>
+          <a class="nav-link dropdown-item nav-internal{% if pagename == 'search' %} active{% endif %}" href="{{ pathto('search') }}">
+            Search
+          </a>
+        </li>
+        <li>
+          <a class="nav-link dropdown-item nav-internal{% if pagename == 'changelog' %} active{% endif %}" href="{{ pathto('changelog') }}">
+            Changelog
+          </a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
