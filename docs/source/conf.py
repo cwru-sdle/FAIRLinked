@@ -20,7 +20,7 @@ match = re.search(r'__version__\s*=\s*[\'"]([^\'"]+)[\'"]', init_content)
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "FAIRLinked"
+project = "FAIRlinked"
 copyright = "2026, CWRU SDLE-MDS3 Center of Excellence"
 author = "SDLE Research Center at Case Western Reserve University"
 if match:
@@ -70,10 +70,9 @@ switcher_json_url = (
 
 html_theme_options = {
     "logo": {
-        "alt_text": "FAIRLinked - Home",
-        "text": "FAIRLinked",
-        "image_light": "_static/logo-light.svg",
-        "image_dark": "_static/logo-dark.svg",
+        "alt_text": "FAIRlinked - Home",
+        "image_light": "_static/fairlinked_logo.png",
+        "image_dark": "_static/fairlinked_logo.png",
     },
     "icon_links": [
         {

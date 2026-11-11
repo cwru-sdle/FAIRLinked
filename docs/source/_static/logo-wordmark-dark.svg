@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="170 850 1720 380" role="img" aria-labelledby="title desc">
+  <title id="title">FAIRlinked logo</title>
+  <desc id="desc">FAIRlinked wordmark over a linked-node network.</desc>
+  <defs>
+    <filter id="dark-cutout" color-interpolation-filters="sRGB">
+      <feColorMatrix in="SourceGraphic" result="cutout" type="matrix" values="
+        1  0  0  0  0
+        0  1  0  0  0
+        0  0  1  0  0
+       -1 -1 -1  0  3"/>
+      <feComponentTransfer in="cutout">
+        <feFuncR type="gamma" amplitude="1.6" exponent="0.78" offset="0.04"/>
+        <feFuncG type="gamma" amplitude="1.6" exponent="0.78" offset="0.04"/>
+        <feFuncB type="gamma" amplitude="1.6" exponent="0.78" offset="0.04"/>
+      </feComponentTransfer>
+    </filter>
+    <mask id="lowercase-l" maskUnits="userSpaceOnUse" x="0" y="0" width="2048" height="2048">
+      <rect width="2048" height="2048" fill="white"/>
+      <rect x="1025" y="1098" width="82" height="70" fill="black"/>
+    </mask>
+  </defs>
+  <image href="fairlinked-logo-source.jpeg" width="2048" height="2048"
+         filter="url(#dark-cutout)" mask="url(#lowercase-l)"/>
+</svg>

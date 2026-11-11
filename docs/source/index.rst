@@ -1,16 +1,16 @@
-.. image:: /_static/logo-light.svg
-   :width: 180px
-   :class: homepage-logo only-light
-   :alt: FAIRLinked logo
+.. rst-class:: visually-hidden-title
 
-.. image:: /_static/logo-dark.svg
-   :width: 180px
-   :class: homepage-logo only-dark
-   :alt: FAIRLinked logo
+FAIRlinked
+==========
 
-**********
-FAIRLinked
-**********
+.. raw:: html
+
+   <div class="homepage-brand" aria-label="FAIRlinked logo">
+     <img class="homepage-logo only-light" src="_static/fairlinked_logo.png" alt="FAIRlinked logo">
+     <img class="homepage-logo only-dark" src="_static/fairlinked_logo.png" alt="FAIRlinked logo">
+   </div>
+
+   <br>
 
 .. toctree::
    :maxdepth: 2
@@ -29,12 +29,12 @@ FAIRLinked
 `MDS-Onto <https://cwrusdle.bitbucket.io/>`_ |
 `PyPI <https://pypi.org/project/FAIRLinked/>`_
 
-``FAIRLinked`` transforms tabular research data into semantically rich Linked
+``FAIRlinked`` transforms tabular research data into semantically rich Linked
 Data aligned with MDS-Onto. It helps materials researchers describe datasets,
 record relationships and analysis provenance, and serialize results as RDF or
 JSON-LD.
 
-Use FAIRLinked to:
+Use FAIRlinked to:
 
 * attach ontology-backed metadata to pandas DataFrames;
 * serialize tabular records to RDF and reconstruct them later;
@@ -50,7 +50,7 @@ Use FAIRLinked to:
       Quick Start
       ^^^^^^^^^^^
 
-      Install FAIRLinked and convert a small DataFrame into JSON-LD.
+      Install FAIRlinked and convert a small DataFrame into JSON-LD.
 
       +++
 
@@ -67,7 +67,7 @@ Use FAIRLinked to:
       User Guide
       ^^^^^^^^^^
 
-      Choose a workflow and learn the main FAIRLinked concepts.
+      Choose a workflow and learn the main FAIRlinked concepts.
 
       +++
 
