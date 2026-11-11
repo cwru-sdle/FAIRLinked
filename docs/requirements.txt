@@ -1,5 +1,7 @@
 sphinx
-sphinx-rtd-theme
+pydata-sphinx-theme
+sphinx-design
+myst-parser
 rdflib>=7.6.0
 typing-extensions>=4.0.0
 pyarrow>=11.0.0

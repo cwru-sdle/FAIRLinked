@@ -1,38 +1,28 @@
-FAIRLinked.RDFTableConversion package
-=====================================
+************************
+Table Conversion API
+************************
 
-Submodules
-----------
+``FAIRLinked.RDFTableConversion`` provides the lower-level CSV-template
+workflow. New Python projects will usually find :class:`MatDatSciDf
+<FAIRLinked.RDFTableConversion.MDS_DF.main.MatDatSciDf>` more convenient.
 
-FAIRLinked.RDFTableConversion.csv\_to\_jsonld\_mapper module
-------------------------------------------------------------
+Generate a metadata template
+============================
 
 .. automodule:: FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper
-   :members:
-   :show-inheritance:
-   :undoc-members:
 
-FAIRLinked.RDFTableConversion.csv\_to\_jsonld\_template\_filler module
-----------------------------------------------------------------------
+.. autofunction:: FAIRLinked.RDFTableConversion.csv_to_jsonld_mapper.jsonld_template_generator
+
+Serialize tabular data
+======================
 
 .. automodule:: FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler
-   :members:
-   :show-inheritance:
-   :undoc-members:
 
-FAIRLinked.RDFTableConversion.jsonld\_batch\_converter module
--------------------------------------------------------------
+.. autofunction:: FAIRLinked.RDFTableConversion.csv_to_jsonld_template_filler.extract_data_from_csv
+
+Reconstruct tabular data
+========================
 
 .. automodule:: FAIRLinked.RDFTableConversion.jsonld_batch_converter
-   :members:
-   :show-inheritance:
-   :undoc-members:
 
-
-Module contents
----------------
-
-.. automodule:: FAIRLinked.RDFTableConversion
-   :members:
-   :show-inheritance:
-   :undoc-members:
+.. autofunction:: FAIRLinked.RDFTableConversion.jsonld_batch_converter.jsonld_directory_to_csv

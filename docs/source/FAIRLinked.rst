@@ -1,21 +1,14 @@
-FAIRLinked package
-==================
+************************
+FAIRLinked API Reference
+************************
 
-Subpackages
------------
+The API is organized around semantic DataFrames, ontology utilities, table
+conversion, and the RDF Data Cube workflow.
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
-   FAIRLinked.InterfaceMDS
-   FAIRLinked.QBWorkflow
-   FAIRLinked.RDFTableConversion
    FAIRLinked.RDFTableConversion.MDS_DF
-
-Module contents
----------------
-
-.. automodule:: FAIRLinked
-   :members:
-   :show-inheritance:
-   :undoc-members:
+   FAIRLinked.InterfaceMDS
+   FAIRLinked.RDFTableConversion
+   FAIRLinked.QBWorkflow
